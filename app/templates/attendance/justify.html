@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Justificar Asistencia{% endblock %}
+{% block content %}
+<h2>📝 Justificar Asistencia</h2>
+<div class="card">
+    <div class="card-body">
+        <p><strong>Docente:</strong> {{ record.first_name }} {{ record.last_name }}</p>
+        <p><strong>Fecha:</strong> {{ record.attendance_date }}</p>
+        <p><strong>Estado actual:</strong> {{ record.status }}</p>
+        <p><strong>Entrada:</strong> {{ record.check_in or '-' }}</p>
+
+        <form method="POST">
+            <div class="mb-3">
+                <label for="reason" class="form-label">Motivo de la justificación *</label>
+                <textarea class="form-control" id="reason" name="reason" rows="3" required
+                          placeholder="Ej: Cita médica, permiso personal, etc."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Guardar justificación</button>
+            <a href="{{ url_for('attendance.report') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

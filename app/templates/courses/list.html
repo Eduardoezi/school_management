@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Lista de Cursos{% endblock %}
+{% block content %}
+<h2>📚 Cursos</h2>
+
+<a href="{{ url_for('courses.create_view') }}" class="btn btn-primary mb-3">+ Nuevo curso</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Profesor</th>
+            <th>Grado</th>
+            <th>Sección</th>
+            <th>Año académico</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for course in courses %}
+        <tr>
+            <td>{{ course.id }}</td>
+            <td>{{ course.name }}</td>
+            <td>{{ course.code }}</td>
+            <td>{{ course.teacher_first_name }} {{ course.teacher_last_name or '-' }}</td>
+            <td>{{ course.grade or '-' }}</td>
+            <td>{{ course.section or '-' }}</td>
+            <td>{{ course.academic_year or '-' }}</td>
+            <td>
+                <a href="{{ url_for('courses.edit_view', course_code=course.code) }}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{{ url_for('courses.delete_view', course_code=course.code) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este curso?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

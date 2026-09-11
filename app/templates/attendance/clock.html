@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Marcar Asistencia{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="text-center mb-4">🕒 Registro de Asistencia</h2>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="teacher_id" class="form-label">Cédula</label>
+                        <input type="text" class="form-control form-control-lg text-center"
+                               id="teacher_id" name="teacher_id" required autofocus
+                               placeholder="Ingrese su cédula">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="in" class="btn btn-success btn-lg">
+                            ➡️ Marcar ENTRADA
+                        </button>
+                        <button type="submit" name="action" value="out" class="btn btn-danger btn-lg">
+                            ⬅️ Marcar SALIDA
+                        </button>
+                    </div>
+                </form>
+
+                {% if record %}
+                <hr>
+                <h5>Estado de hoy:</h5>
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Entrada:</strong> {{ record.check_in or '-' }}</li>
+                    <li class="list-group-item"><strong>Salida:</strong> {{ record.check_out or '-' }}</li>
+                    <li class="list-group-item"><strong>Estado:</strong> {{ record.status }}</li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

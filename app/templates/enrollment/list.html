@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Inscripciones{% endblock %}
+{% block content %}
+<h2>📋 Inscripciones</h2>
+<a href="{{ url_for('enrollment.new_enrollment') }}" class="btn btn-primary mb-3">+ Nueva inscripción</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Cédula escolar</th>
+            <th>Estudiante</th>
+            <th>Curso</th>
+            <th>Fecha inscripción</th>
+            <th>Estado</th>
+            <th>Fecha egreso</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in enrollments %}
+        <tr>
+            <td>{{ e.id }}</td>
+            <td>{{ e.school_id }}</td>
+            <td>{{ e.first_name }} {{ e.last_name }}</td>
+            <td>{{ e.course_name }} ({{ e.course_code }})</td>
+            <td>{{ e.enrollment_date or '-' }}</td>
+            <td>{{ e.status }}</td>
+            <td>{{ e.egreso_date or '-' }}</td>
+            <td>
+                <a href="{{ url_for('enrollment.edit_view', enrollment_id=e.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{{ url_for('enrollment.delete_view', enrollment_id=e.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

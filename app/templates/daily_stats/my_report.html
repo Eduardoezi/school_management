@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Reporte Diario de Asistencia{% endblock %}
+{% block content %}
+<h2>📝 Reporte Diario de Asistencia</h2>
+
+{% if not teacher %}
+    <div class="alert alert-warning">
+        Tu usuario no está vinculado a un docente. Contacta al directivo.
+    </div>
+{% elif not courses %}
+    <div class="alert alert-info">
+        No tienes cursos asignados. Contacta al directivo.
+    </div>
+{% else %}
+    <form method="GET" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="date" class="form-control" name="date" value="{{ selected_date }}">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Cambiar fecha</button>
+        </div>
+    </form>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Curso: {{ courses[0].name }} ({{ courses[0].code }})</h5>
+            <form method="POST">
+                <input type="hidden" name="course_code" value="{{ courses[0].code }}">
+                <input type="hidden" name="stat_date" value="{{ selected_date }}">
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Niñas presentes</label>
+                        <input type="number" class="form-control" name="girls_present" min="0" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Niños presentes</label>
+                        <input type="number" class="form-control" name="boys_present" min="0" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Niñas ausentes</label>
+                        <input type="number" class="form-control" name="girls_absent" min="0" value="0">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Niños ausentes</label>
+                        <input type="number" class="form-control" name="boys_absent" min="0" value="0">
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <input type="text" class="form-control" name="notes" maxlength="255">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar reporte</button>
+            </form>
+        </div>
+    </div>
+
+    {% if my_stats %}
+    <h5>Reportes ya cargados en esta fecha</h5>
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Curso</th><th>Niñas</th><th>Niños</th><th>Total</th><th>Observaciones</th></tr>
+        </thead>
+        <tbody>
+            {% for s in my_stats %}
+            <tr>
+                <td>{{ s.course_code }}</td>
+                <td>{{ s.girls_present }}</td>
+                <td>{{ s.boys_present }}</td>
+                <td>{{ s.total_present }}</td>
+                <td>{{ s.notes or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+{% endif %}
+{% endblock %}

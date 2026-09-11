@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Asistencia de Profesores{% endblock %}
+{% block content %}
+<h2>🕒 Asistencia de Profesores</h2>
+<p>Registro del día: {{ date if date else 'Hoy' }}</p>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Profesor</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for att in attendances %}
+        <tr>
+            <td>{{ att.first_name }} {{ att.last_name }}</td>
+            <td>{{ att.check_in or '-' }}</td>
+            <td>{{ att.check_out or '-' }}</td>
+            <td>{{ att.status or 'No registrado' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('attendance.index') }}" class="btn btn-secondary">Actualizar</a>
+{% endblock %}

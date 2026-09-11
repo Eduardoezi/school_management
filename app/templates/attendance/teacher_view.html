@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Mi Asistencia{% endblock %}
+{% block content %}
+<h2>📋 Mi Asistencia - Hoy</h2>
+<p><strong>Profesor:</strong> {{ teacher.first_name }} {{ teacher.last_name }}</p>
+{% if record %}
+    <p><strong>Entrada:</strong> {{ record.check_in or 'No registrada' }}</p>
+    <p><strong>Salida:</strong> {{ record.check_out or 'No registrada' }}</p>
+    <p><strong>Estado:</strong> {{ record.status }}</p>
+{% else %}
+    <p>No hay registro de asistencia para hoy.</p>
+{% endif %}
+<form method="POST" action="{{ url_for('attendance.checkin') }}" style="display:inline;">
+    <button type="submit" class="btn btn-success">Registrar Entrada</button>
+</form>
+<form method="POST" action="{{ url_for('attendance.checkout') }}" style="display:inline;">
+    <button type="submit" class="btn btn-danger">Registrar Salida</button>
+</form>
+{% endblock %}

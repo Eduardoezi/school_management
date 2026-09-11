@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Lista de Docentes{% endblock %}
+{% block content %}
+<h2>👨‍🏫 Docentes</h2>
+
+<a href="{{ url_for('teachers.create_view') }}" class="btn btn-primary mb-3">+ Nuevo docente</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Cédula</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Fecha de contratación</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for teacher in teachers %}
+        <tr>
+            <td>{{ teacher.id }}</td>
+            <td>{{ teacher.first_name }}</td>
+            <td>{{ teacher.last_name }}</td>
+            <td>{{ teacher.email or '-' }}</td>
+            <td>{{ teacher.hire_date or '-' }}</td>
+            <td>
+                <a href="{{ url_for('teachers.edit_view', teacher_id=teacher.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{{ url_for('teachers.delete_view', teacher_id=teacher.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este docente?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

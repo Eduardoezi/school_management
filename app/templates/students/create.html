@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Estudiante{% endblock %}
+{% block content %}
+
+<h2>➕ Registrar Nuevo Estudiante</h2>
+<form method="POST">
+    <h4>Datos del Estudiante</h4>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="first_name" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="first_name" name="first_name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="last_name" class="form-label">Apellido *</label>
+            <input type="text" class="form-control" id="last_name" name="last_name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="multiple_birth_order" class="form-label">Orden en parto múltiple *</label>
+            <input type="number" class="form-control" id="multiple_birth_order" name="multiple_birth_order"
+                   min="1" max="9" value="1" required>
+            <small class="text-muted">1 = hijo único o primer nacido, 2 = segundo gemelo, etc.</small>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="birth_date" class="form-label">Fecha de nacimiento</label>
+            <input type="date" class="form-control" id="birth_date" name="birth_date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="course_code" class="form-label">Curso (opcional)</label>
+            <select class="form-select" id="course_code" name="course_code">
+                <option value="">-- Sin curso por ahora --</option>
+                {% for course in courses %}
+                <option value="{{ course.code }}">{{ course.name }} ({{ course.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="disability" class="form-label">Discapacidad (si aplica)</label>
+            <input type="text" class="form-control" id="disability" name="disability" placeholder="Ej: visual, motora, etc.">
+        </div>
+    </div>
+
+    <h4>Datos del Representante</h4>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="rep_cedula_id" class="form-label">Cédula del Representante *</label>
+            <input type="text" class="form-control" id="rep_cedula_id" name="rep_cedula_id" required placeholder="Ej: V-12345678">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_first_name" class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="rep_first_name" name="rep_first_name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_last_name" class="form-label">Apellido *</label>
+            <input type="text" class="form-control" id="rep_last_name" name="rep_last_name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="rep_email" name="rep_email">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_phone" class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="rep_phone" name="rep_phone">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_address" class="form-label">Dirección</label>
+            <input type="text" class="form-control" id="rep_address" name="rep_address">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rep_relationship" class="form-label">Parentesco *</label>
+            <select class="form-select" id="rep_relationship" name="rep_relationship" required>
+                <option value="">Seleccione</option>
+                <option value="Padre">Padre</option>
+                <option value="Madre">Madre</option>
+                <option value="Tutor">Tutor</option>
+                <option value="Otro">Otro</option>
+            </select>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('students.list_view') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+<script>
+document.getElementById('rep_cedula_id').addEventListener('blur', function() {
+    const cedula = this.value.trim();
+    if (!cedula) return;
+    fetch(`/students/api/representative/${encodeURIComponent(cedula)}`)
+        .then(r => r.json())
+        .then(res => {
+            if (res.found) {
+                const d = res.data;
+                document.getElementById('rep_first_name').value = d.first_name || '';
+                document.getElementById('rep_last_name').value = d.last_name || '';
+                document.getElementById('rep_email').value = d.email || '';
+                document.getElementById('rep_phone').value = d.phone || '';
+                document.getElementById('rep_address').value = d.address || '';
+                document.getElementById('rep_relationship').value = d.relationship || '';
+                alert('Representante ya registrado. Sus datos se cargaron automáticamente.');
+            }
+        });
+});
+</script>
+{% endblock %}

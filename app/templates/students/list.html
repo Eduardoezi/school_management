@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Lista de Estudiantes{% endblock %}
+{% block content %}
+<h2>📋 Estudiantes</h2>
+<a href="{{ url_for('students.create_view') }}" class="btn btn-primary mb-3">+ Nuevo estudiante</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Cédula escolar</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Curso</th>
+            <th>Representante</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.id }}</td>
+            <td>{{ student.school_id or 'Sin asignar' }}</td>
+            <td>{{ student.first_name }}</td>
+            <td>{{ student.last_name }}</td>
+            <td>{{ student.course_name or '-' }}</td>
+            <td>{{ student.rep_first_name }} {{ student.rep_last_name or '-' }}</td>
+            <td>
+                <a href="{{ url_for('students.detail_view', student_id=student.id) }}" class="btn btn-sm btn-info">Ver/Editar</a>
+                <a href="{{ url_for('students.delete_view', student_id=student.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

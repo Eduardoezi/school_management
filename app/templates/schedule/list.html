@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Horarios Escolares{% endblock %}
+{% block content %}
+<h2>🗓️ Horarios Escolares</h2>
+<a href="{{ url_for('schedule.create_view') }}" class="btn btn-primary mb-3">+ Nuevo horario</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Día</th>
+            <th>Hora inicio</th>
+            <th>Hora fin</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in schedules %}
+        <tr>
+            <td>{{ s.code_schedules or '-' }}</td>
+            <td>
+                {% set dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] %}
+                {{ dias[s.day_of_week - 1] }}
+            </td>
+            <td>{{ s.start_time }}</td>
+            <td>{{ s.end_time }}</td>
+            <td>
+                <a href="{{ url_for('schedule.edit_view', schedule_id=s.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{{ url_for('schedule.delete_view', schedule_id=s.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center">No hay horarios registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

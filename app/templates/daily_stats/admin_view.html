@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Estadística Diaria{% endblock %}
+{% block content %}
+<h2>📊 Estadística Diaria de la Escuela</h2>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <input type="date" class="form-control" name="date" value="{{ selected_date }}">
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">Consultar</button>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('daily_stats.history') }}" class="btn btn-outline-secondary w-100">Ver histórico</a>
+    </div>
+</form>
+
+<h4>Resumen por grado — {{ selected_date }}</h4>
+<table class="table table-bordered">
+    <thead class="table-secondary">
+        <tr><th>Grado</th><th>Niñas</th><th>Niños</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+        {% set total_n = namespace(n=0, a=0) %}
+        {% for row in summary %}
+        <tr>
+            <td>{{ row.grade }}</td>
+            <td>{{ row.niñas }}</td>
+            <td>{{ row.niños }}</td>
+            <td><strong>{{ row.total }}</strong></td>
+        </tr>
+        {% set total_n.n = total_n.n + row.niñas %}
+        {% set total_n.a = total_n.a + row.niños %}
+        {% endfor %}
+        <tr class="table-info">
+            <td><strong>TOTAL</strong></td>
+            <td><strong>{{ total_n.n }}</strong></td>
+            <td><strong>{{ total_n.a }}</strong></td>
+            <td><strong>{{ total_n.n + total_n.a }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Detalle por curso</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Grado</th><th>Sección</th><th>Curso</th>
+            <th>Niñas</th><th>Niños</th><th>Total</th>
+            <th>Ausentes</th><th>Docente</th><th>Observaciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in stats %}
+        <tr>
+            <td>{{ s.grade or '-' }}</td>
+            <td>{{ s.section or '-' }}</td>
+            <td>{{ s.course_name }} ({{ s.course_code }})</td>
+            <td>{{ s.girls_present }}</td>
+            <td>{{ s.boys_present }}</td>
+            <td><strong>{{ s.total_present }}</strong></td>
+            <td>{{ s.total_absent }}</td>
+            <td>{{ s.teacher_first_name }} {{ s.teacher_last_name }}</td>
+            <td>{{ s.notes or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center text-muted">
+            Aún no hay reportes cargados para esta fecha.
+        </td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if summary %}
+<div class="alert alert-success">
+    <strong>Texto para WhatsApp:</strong>
+    <pre class="mt-2 mb-0" id="textoWhatsapp">
+📊 Asistencia del día {{ selected_date }} — IEE Villa de Cura
+{% for row in summary %}• {{ row.grade }}: {{ row.total }} estudiantes ({{ row.niñas }} niñas, {{ row.niños }} niños)
+{% endfor %}TOTAL GENERAL: {{ summary|sum(attribute='total') }} estudiantes
+    </pre>
+    <button class="btn btn-sm btn-primary mt-2" onclick="copiarTexto()">Copiar</button>
+</div>
+
+<script>
+function copiarTexto() {
+    const txt = document.getElementById('textoWhatsapp').innerText;
+    navigator.clipboard.writeText(txt).then(() => alert('Texto copiado.'));
+}
+</script>
+{% endif %}
+{% endblock %}

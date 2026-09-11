@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Asistencia de Docentes{% endblock %}
+{% block content %}
+<h2>📋 Asistencia de Docentes - Hoy</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Cédula</th>
+            <th>Docente</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Estado</th>
+            <th>Observaciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in attendance_list %}
+        <tr>
+            <td>{{ a.teacher_id }}</td>
+            <td>{{ a.first_name }} {{ a.last_name }}</td>
+            <td>{{ a.check_in or '-' }}</td>
+            <td>{{ a.check_out or '-' }}</td>
+            <td>
+                {% if a.status == 'present' %}<span class="badge bg-success">Presente</span>
+                {% elif a.status == 'late' %}<span class="badge bg-warning text-dark">Tarde</span>
+                {% elif a.status == 'absent' %}<span class="badge bg-danger">Ausente</span>
+                {% else %}<span class="badge bg-secondary">Justificado</span>{% endif %}
+            </td>
+            <td>{{ a.remarks or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center">No hay registros hoy.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

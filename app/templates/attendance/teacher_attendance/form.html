@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if attendance else 'Nuevo' }} Registro de Asistencia{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if attendance else 'Nuevo' }} Registro de Asistencia</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="teacher_id" class="form-label">Profesor</label>
+        <select class="form-select" id="teacher_id" name="teacher_id" required>
+            <option value="">Seleccionar</option>
+            {% for t in teachers %}
+            <option value="{{ t.id }}" {% if attendance and attendance.teacher_id == t.id %}selected{% endif %}>
+                {{ t.first_name }} {{ t.last_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="date" class="form-label">Fecha</label>
+        <input type="date" class="form-control" id="date" name="date" value="{{ attendance.date if attendance else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="check_in" class="form-label">Hora de entrada</label>
+        <input type="time" class="form-control" id="check_in" name="check_in" value="{{ attendance.check_in if attendance else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="check_out" class="form-label">Hora de salida (opcional)</label>
+        <input type="time" class="form-control" id="check_out" name="check_out" value="{{ attendance.check_out if attendance else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="status" class="form-label">Estado</label>
+        <select class="form-select" id="status" name="status">
+            <option value="presente" {% if attendance and attendance.status == 'presente' %}selected{% endif %}>Presente</option>
+            <option value="ausente" {% if attendance and attendance.status == 'ausente' %}selected{% endif %}>Ausente</option>
+            <option value="justificado" {% if attendance and attendance.status == 'justificado' %}selected{% endif %}>Justificado</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="notes" class="form-label">Notas</label>
+        <textarea class="form-control" id="notes" name="notes" rows="2">{{ attendance.notes if attendance else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('attendance.index') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Editar Curso{% endblock %}
+{% block content %}
+<h2>✏️ Editar Curso</h2>
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="name" class="form-label">Nombre del curso *</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ course.name }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="code" class="form-label">Código (identificador único)</label>
+            <input type="text" class="form-control" id="code" name="code" value="{{ course.code }}" readonly>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="teacher_id" class="form-label">Profesor asignado</label>
+            <select class="form-select" id="teacher_id" name="teacher_id">
+                <option value="">-- Sin profesor --</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}" {% if teacher.id == course.teacher_id %}selected{% endif %}>
+                    {{ teacher.first_name }} {{ teacher.last_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="grade" class="form-label">Grado</label>
+            <input type="text" class="form-control" id="grade" name="grade" value="{{ course.grade or '' }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="section" class="form-label">Sección</label>
+            <input type="text" class="form-control" id="section" name="section" value="{{ course.section or '' }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="academic_year" class="form-label">Año académico</label>
+            <input type="text" class="form-control" id="academic_year" name="academic_year" value="{{ course.academic_year or '' }}">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar cambios</button>
+    <a href="{{ url_for('courses.list_view') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

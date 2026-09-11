@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Histórico de Estadísticas{% endblock %}
+{% block content %}
+<h2>📈 Histórico de Estadísticas</h2>
+
+<form method="GET" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" class="form-control" name="from_date" value="{{ from_date or '' }}" required>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" class="form-control" name="to_date" value="{{ to_date or '' }}" required>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Curso (opcional)</label>
+        <select class="form-select" name="course_code">
+            <option value="">-- Todos --</option>
+            {% for c in courses %}
+            <option value="{{ c.code }}" {% if course_code == c.code %}selected{% endif %}>
+                {{ c.name }} ({{ c.code }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-primary w-100">Buscar</button>
+    </div>
+</form>
+
+{% if records %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fecha</th><th>Grado</th><th>Sección</th><th>Curso</th>
+            <th>Niñas</th><th>Niños</th><th>Total</th><th>Ausentes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in records %}
+        <tr>
+            <td>{{ r.stat_date }}</td>
+            <td>{{ r.grade }}</td>
+            <td>{{ r.section }}</td>
+            <td>{{ r.course_name }} ({{ r.course_code }})</td>
+            <td>{{ r.girls_present }}</td>
+            <td>{{ r.boys_present }}</td>
+            <td>{{ r.total_present }}</td>
+            <td>{{ r.total_absent }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif from_date %}
+<p class="text-muted">No hay registros para el rango seleccionado.</p>
+{% endif %}
+{% endblock %}

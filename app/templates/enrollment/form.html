@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if enrollment else 'Nueva' }} Inscripción{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if enrollment else 'Nueva' }} Inscripción</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="school_id" class="form-label">Estudiante (Cédula escolar) *</label>
+        <select class="form-select" id="school_id" name="school_id" required>
+            <option value="">Seleccionar</option>
+            {% for s in students %}
+            <option value="{{ s.school_id }}" {% if enrollment and enrollment.school_id == s.school_id %}selected{% endif %}>
+                {{ s.school_id }} - {{ s.first_name }} {{ s.last_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="course_code" class="form-label">Curso *</label>
+        <select class="form-select" id="course_code" name="course_code" required>
+            <option value="">Seleccionar</option>
+            {% for c in courses %}
+            <option value="{{ c.code }}" {% if enrollment and enrollment.course_code == c.code %}selected{% endif %}>
+                {{ c.name }} ({{ c.code }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="enrollment_date" class="form-label">Fecha de inscripción</label>
+        <input type="date" class="form-control" id="enrollment_date" name="enrollment_date"
+               value="{{ enrollment.enrollment_date if enrollment else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="status" class="form-label">Estado</label>
+        <select class="form-select" id="status" name="status">
+            <option value="activo" {% if enrollment and enrollment.status == 'activo' %}selected{% endif %}>Activo</option>
+            <option value="inactivo" {% if enrollment and enrollment.status == 'inactivo' %}selected{% endif %}>Inactivo</option>
+            <option value="egresado" {% if enrollment and enrollment.status == 'egresado' %}selected{% endif %}>Egresado</option>
+            <option value="retirado" {% if enrollment and enrollment.status == 'retirado' %}selected{% endif %}>Retirado</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="egreso_date" class="form-label">Fecha de egreso (si aplica)</label>
+        <input type="date" class="form-control" id="egreso_date" name="egreso_date"
+               value="{{ enrollment.egreso_date if enrollment else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('enrollment.list_view') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
