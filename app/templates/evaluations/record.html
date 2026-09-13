@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Registrar Evaluación{% endblock %}
+{% block content %}
+<h2>📝 Registrar Evaluación</h2>
+<p><strong>Estudiante:</strong> {{ student.first_name }} {{ student.last_name }} ({{ student.school_id }})</p>
+
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Periodo de evaluación *</label>
+        <select class="form-select" name="period_id" required>
+            <option value="">Seleccione</option>
+            {% for p in periods %}
+            <option value="{{ p.id }}">{{ p.academic_year }} - {{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% for area in areas %}
+    <div class="card mb-3">
+        <div class="card-header bg-light"><strong>{{ area.name }}</strong></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-9 mb-2">
+                    <label class="form-label">Indicadores*</label>
+                    <textarea class="form-control" name="indicadores_{{ area.id }}" rows="2" required></textarea>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Literal *</label>
+                    <select class="form-select" name="literal_{{ area.id }}" required>
+                        <option value="">--</option>
+                        <option value="L">Logrado (L)</option>
+                        <option value="EP">En Proceso (EP)</option>
+                        <option value="EI">En Inicio (EI)</option>
+                        <option value="NL">No Logrado (NL)</option>
+                    </select>
+                </div>
+                <div class="col-md-9 mb-2">
+                    <label class="form-label">Descripción del progreso *</label>
+                    <textarea class="form-control" name="description_{{ area.id }}" rows="2" required></textarea>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Recomendaciones para el hogar</label>
+                    <textarea class="form-control" name="recommendations_{{ area.id }}" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-success">Guardar evaluaciones</button>
+    <a href="{{ url_for('evaluations.history', student_id=student.id) }}" class="btn btn-secondary">Ver histórico</a>
+</form>
+{% endblock %}

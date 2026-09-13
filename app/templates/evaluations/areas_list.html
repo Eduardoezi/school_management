@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Áreas de Evaluación{% endblock %}
+{% block content %}
+<h2>⚙️ Áreas de Desarrollo</h2>
+<a href="{{ url_for('evaluations.area_create') }}" class="btn btn-primary mb-3">+ Nueva área</a>
+<table class="table table-striped">
+    <thead><tr><th>Orden</th><th>Nombre</th><th>Descripción</th><th>Activa</th></tr></thead>
+    <tbody>
+        {% for a in areas %}
+        <tr>
+            <td>{{ a.sort_order }}</td>
+            <td>{{ a.name }}</td>
+            <td>{{ a.description or '-' }}</td>
+            <td>{{ 'Sí' if a.active else 'No' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted">No hay áreas registradas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Volver al panel</a>
+{% endblock %}

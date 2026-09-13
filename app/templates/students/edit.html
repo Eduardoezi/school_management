@@ -17,22 +17,26 @@
         </div>
         <div class="col-md-6 mb-3">
             <label for="first_name" class="form-label">Nombre *</label>
-            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ student.first_name }}" required>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                value="{{ student.first_name }}" required>
         </div>
         <div class="col-md-6 mb-3">
             <label for="last_name" class="form-label">Apellido *</label>
-            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ student.last_name }}" required>
+            <input type="text" class="form-control" id="last_name" name="last_name"
+                value="{{ student.last_name }}" required>
         </div>
         <div class="col-md-6 mb-3">
             <label for="birth_date" class="form-label">Fecha de nacimiento</label>
-            <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ student.birth_date or '' }}">
+            <input type="date" class="form-control" id="birth_date" name="birth_date"
+                value="{{ student.birth_date or '' }}">
         </div>
         <div class="col-md-6 mb-3">
             <label for="course_code" class="form-label">Curso actual</label>
             <select class="form-select" id="course_code" name="course_code">
                 <option value="">-- Sin curso --</option>
                 {% for course in courses %}
-                <option value="{{ course.code }}" {% if course.code == student.course_code %}selected{% endif %}>
+                <option value="{{ course.code }}"
+                    {% if course.code == student.course_code %}selected{% endif %}>
                     {{ course.name }} ({{ course.code }})
                 </option>
                 {% endfor %}
@@ -41,36 +45,42 @@
         </div>
         <div class="col-md-6 mb-3">
             <label for="disability" class="form-label">Discapacidad (si aplica)</label>
-            <input type="text" class="form-control" id="disability" name="disability" value="{{ student.disability or '' }}" placeholder="Ej: visual, motora, etc.">
+            <input type="text" class="form-control" id="disability" name="disability"
+                value="{{ student.disability or '' }}" placeholder="Ej: visual, motora, etc.">
         </div>
     </div>
 
     <h4 class="mt-4">Datos del Representante</h4>
     <div class="row">
         <div class="col-md-6 mb-3">
-            <label for="rep_cedula_id" class="form-label">Cédula del Representante *</label>
-            <input type="text" class="form-control" id="rep_cedula_id" name="rep_cedula_id" 
-                value="{{ student.rep_cedula_id or '' }}" required>
+            <label for="representative_cedula" class="form-label">Cédula del Representante *</label>
+            <input type="text" class="form-control" id="representative_cedula" name="representative_cedula"
+                value="{{ student.representative_cedula or '' }}" required>
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_first_name" class="form-label">Nombre *</label>
-            <input type="text" class="form-control" id="rep_first_name" name="rep_first_name" value="{{ student.rep_first_name or '' }}" required>
+            <input type="text" class="form-control" id="rep_first_name" name="rep_first_name"
+                value="{{ student.rep_first_name or '' }}" required>
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_last_name" class="form-label">Apellido *</label>
-            <input type="text" class="form-control" id="rep_last_name" name="rep_last_name" value="{{ student.rep_last_name or '' }}" required>
+            <input type="text" class="form-control" id="rep_last_name" name="rep_last_name"
+                value="{{ student.rep_last_name or '' }}" required>
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="rep_email" name="rep_email" value="{{ student.rep_email or '' }}">
+            <input type="email" class="form-control" id="rep_email" name="rep_email"
+                value="{{ student.rep_email or '' }}">
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_phone" class="form-label">Teléfono</label>
-            <input type="text" class="form-control" id="rep_phone" name="rep_phone" value="{{ student.rep_phone or '' }}">
+            <input type="text" class="form-control" id="rep_phone" name="rep_phone"
+                value="{{ student.rep_phone or '' }}">
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_address" class="form-label">Dirección</label>
-            <input type="text" class="form-control" id="rep_address" name="rep_address" value="{{ student.rep_address or '' }}">
+            <input type="text" class="form-control" id="rep_address" name="rep_address"
+                value="{{ student.rep_address or '' }}">
         </div>
         <div class="col-md-6 mb-3">
             <label for="rep_relationship" class="form-label">Parentesco *</label>
@@ -79,12 +89,46 @@
                 <option value="Padre" {% if student.rep_relationship == 'Padre' %}selected{% endif %}>Padre</option>
                 <option value="Madre" {% if student.rep_relationship == 'Madre' %}selected{% endif %}>Madre</option>
                 <option value="Tutor" {% if student.rep_relationship == 'Tutor' %}selected{% endif %}>Tutor</option>
-                <option value="Otro" {% if student.rep_relationship == 'Otro' %}selected{% endif %}>Otro</option>
+                <option value="Otro"  {% if student.rep_relationship == 'Otro'  %}selected{% endif %}>Otro</option>
             </select>
         </div>
-        <input type="hidden" name="rep_id" value="{{ student.rep_id or '' }}">
     </div>
+
     <button type="submit" class="btn btn-success">Guardar Cambios</button>
     <a href="{{ url_for('students.list_view') }}" class="btn btn-secondary">Cancelar</a>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cedulaInput = document.getElementById('representative_cedula');
+    if (!cedulaInput) return;
+
+    cedulaInput.addEventListener('blur', function() {
+        const cedula = this.value.trim();
+        if (!cedula) return;
+
+        fetch(`/students/api/representative/${encodeURIComponent(cedula)}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.found) {
+                    const d = res.data;
+                    document.getElementById('rep_first_name').value = d.first_name || '';
+                    document.getElementById('rep_last_name').value  = d.last_name || '';
+                    document.getElementById('rep_email').value      = d.email || '';
+                    document.getElementById('rep_phone').value      = d.phone || '';
+                    document.getElementById('rep_address').value    = d.address || '';
+                    document.getElementById('rep_relationship').value = d.relationship || '';
+
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-info alert-dismissible fade show mt-2';
+                    aviso.innerHTML = 'Representante ya registrado. Sus datos se cargaron automáticamente.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                    cedulaInput.parentNode.appendChild(aviso);
+                    setTimeout(() => aviso.remove(), 4000);
+                }
+            })
+            .catch(err => console.error('Error consultando representante:', err));
+    });
+});
+</script>
 {% endblock %}

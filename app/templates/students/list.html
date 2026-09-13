@@ -2,15 +2,42 @@
 {% block title %}Lista de Estudiantes{% endblock %}
 {% block content %}
 <h2>📋 Estudiantes</h2>
-<a href="{{ url_for('students.create_view') }}" class="btn btn-primary mb-3">+ Nuevo estudiante</a>
+
+{# ---------- Botones de vista solo para directivo/secretario ---------- #}
+{% if current_user.role in ['directivo', 'secretario'] %}
+<div class="btn-group mb-3" role="group">
+    <a href="{{ url_for('students.list_view', view='enrolled') }}"
+       class="btn {% if view_mode == 'enrolled' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        📘 Solo inscritos
+    </a>
+    <a href="{{ url_for('students.list_view', view='all') }}"
+       class="btn {% if view_mode == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        📚 Todos (histórico)
+    </a>
+</div>
+{% endif %}
+
+{% if current_user.role in ['directivo', 'secretario'] %}
+<a href="{{ url_for('students.create_view') }}" class="btn btn-success mb-3">+ Nuevo estudiante</a>
+{% endif %}
+
+{# ---------- Título dinámico ---------- #}
+{% if view_mode == 'teacher' %}
+    <div class="alert alert-info">Mostrando solo los estudiantes de tu curso.</div>
+{% elif view_mode == 'enrolled' %}
+    <div class="alert alert-info">Mostrando solo estudiantes con inscripción activa.</div>
+{% elif view_mode == 'all' %}
+    <div class="alert alert-warning">Mostrando TODOS los estudiantes (incluye inactivos, egresados y retirados).</div>
+{% endif %}
+
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>ID</th>
             <th>Cédula escolar</th>
             <th>Nombre</th>
             <th>Apellido</th>
             <th>Curso</th>
+            <th>Estado</th>
             <th>Representante</th>
             <th>Acciones</th>
         </tr>
@@ -18,15 +45,49 @@
     <tbody>
         {% for student in students %}
         <tr>
-            <td>{{ student.id }}</td>
             <td>{{ student.school_id or 'Sin asignar' }}</td>
             <td>{{ student.first_name }}</td>
             <td>{{ student.last_name }}</td>
             <td>{{ student.course_name or '-' }}</td>
+            <td>
+                {% if student.enrollment_status == 'activo' %}
+                    <span class="badge bg-success">Activo</span>
+                {% elif student.enrollment_status == 'inactivo' %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% elif student.enrollment_status == 'egresado' %}
+                    <span class="badge bg-primary">Egresado</span>
+                {% elif student.enrollment_status == 'retirado' %}
+                    <span class="badge bg-danger">Retirado</span>
+                {% else %}
+                    <span class="badge bg-light text-dark">Sin inscripción</span>
+                {% endif %}
+            </td>
             <td>{{ student.rep_first_name }} {{ student.rep_last_name or '-' }}</td>
             <td>
-                <a href="{{ url_for('students.detail_view', student_id=student.id) }}" class="btn btn-sm btn-info">Ver/Editar</a>
-                <a href="{{ url_for('students.delete_view', student_id=student.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+                <a href="{{ url_for('students.detail_view', student_id=student.id) }}"
+                   class="btn btn-sm btn-info">Ver/Editar</a>
+
+                {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
+                    <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
+                       class="btn btn-sm btn-secondary">Histórico</a>
+                {% endif %}
+
+                {% if current_user.role == 'maestro' %}
+                    <a href="{{ url_for('evaluations.record', student_id=student.id) }}"
+                       class="btn btn-sm btn-primary">Evaluar</a>
+                {% endif %}
+
+                {% if current_user.role == 'directivo' %}
+                    <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('¿Eliminar?')">Eliminar</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7" class="text-center text-muted">
+                No hay estudiantes para mostrar en esta vista.
             </td>
         </tr>
         {% endfor %}

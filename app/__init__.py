@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, app
 from flask_login import LoginManager
 from app.config import Config
 from app.models.user import User
@@ -27,7 +27,9 @@ def create_app():
     from app.routes.attendance import attendance_bp
     from app.routes.schedule import schedule_bp
     from app.routes.daily_stats import daily_stats_bp
+    from app.routes.evaluations import evaluations_bp
 
+    app.register_blueprint(evaluations_bp)
     app.register_blueprint(daily_stats_bp)
     app.register_blueprint(attendance_bp)
     app.register_blueprint(schedule_bp)

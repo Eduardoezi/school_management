@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Periodos de Evaluación{% endblock %}
+{% block content %}
+<h2>📅 Periodos de Evaluación</h2>
+<a href="{{ url_for('evaluations.period_create') }}" class="btn btn-primary mb-3">+ Nuevo periodo</a>
+<table class="table table-striped">
+    <thead><tr><th>Año</th><th>Periodo</th><th>Desde</th><th>Hasta</th></tr></thead>
+    <tbody>
+        {% for p in periods %}
+        <tr>
+            <td>{{ p.academic_year }}</td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.start_date or '-' }}</td>
+            <td>{{ p.end_date or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted">No hay periodos registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Volver al panel</a>
+{% endblock %}

@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask import jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.models.student import Student
 from app.models.course import Course
 from app.models.representative import Representative
 from app.utils.decorators import role_required
+
+from app.models.teacher import Teacher
 
 students_bp = Blueprint('students', __name__, url_prefix='/students')
 
@@ -12,8 +14,29 @@ students_bp = Blueprint('students', __name__, url_prefix='/students')
 @students_bp.route('/')
 @login_required
 def list_view():
-    students = Student.get_all_with_details()
-    return render_template('students/list.html', students=students)
+    # --- MAESTRO: solo los de su curso ---
+    if current_user.role == 'maestro':
+        teacher = Teacher.get_by_user_id(current_user.id)
+        if not teacher:
+            flash('Tu usuario no está vinculado a un docente.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        students = Student.get_by_teacher_course(teacher['id'])
+        return render_template('students/list.html',
+                               students=students,
+                               view_mode='teacher')
+
+    # --- DIRECTIVO / SECRETARIO: dos modos ---
+    view_mode = request.args.get('view', 'enrolled')  # 'enrolled' o 'all'
+
+    if view_mode == 'all':
+        students = Student.get_all_with_details(status=None)
+    else:
+        # Solo inscritos activos
+        students = Student.get_all_with_details(status='activo')
+
+    return render_template('students/list.html',
+                           students=students,
+                           view_mode=view_mode)
 
 # ---------- CREAR (NUEVO) ----------
 @students_bp.route('/new', methods=['GET', 'POST'])
@@ -87,28 +110,22 @@ def edit_view(student_id):
             'birth_date': request.form.get('birth_date'),
             'course_code': request.form.get('course_code') or None,
             'disability': request.form.get('disability'),
-            'rep_cedula_id': request.form.get('rep_cedula_id'),
+            'representative_cedula': request.form['representative_cedula'],
             'rep_first_name': request.form['rep_first_name'],
             'rep_last_name': request.form['rep_last_name'],
             'rep_email': request.form.get('rep_email'),
             'rep_phone': request.form.get('rep_phone'),
             'rep_address': request.form.get('rep_address'),
-            'rep_relationship': request.form.get('rep_relationship')
+            'rep_relationship': request.form.get('rep_relationship') 
         }
-        
         if Student.update_full(student_id, data):
             flash('Estudiante actualizado exitosamente.', 'success')
             return redirect(url_for('students.detail_view', student_id=student_id))
         else:
             flash('Error al actualizar estudiante.', 'danger')
 
-    # GET: mostrar formulario con datos actuales
     courses = Course.get_all()
-    representatives = Representative.get_all()
-    return render_template('students/edit.html', 
-                           student=student, 
-                           courses=courses,
-                           representatives=representatives)
+    return render_template('students/edit.html', student=student, courses=courses)
 
 # ---------- ELIMINAR ----------
 @students_bp.route('/<int:student_id>/delete')
@@ -121,10 +138,11 @@ def delete_view(student_id):
         flash('Error al eliminar estudiante.', 'danger')
     return redirect(url_for('students.list_view'))
 
-@students_bp.route('/api/representative/<cedula>')
+@students_bp.route('/api/representative/<path:cedula>')
 @login_required
 def api_get_representative(cedula):
+    """Devuelve los datos del representante si existe."""
     rep = Representative.get_by_cedula(cedula)
     if rep:
-        return {'found': True, 'data': rep}
-    return {'found': False}
+        return jsonify({'found': True, 'data': rep})
+    return jsonify({'found': False})

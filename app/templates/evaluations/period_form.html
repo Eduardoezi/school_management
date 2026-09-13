@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Periodo{% endblock %}
+{% block content %}
+<h2>➕ Nuevo Periodo de Evaluación</h2>
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" class="form-control" name="name" required
+                   placeholder="Ej: 1er Lapso, 2do Lapso, 3er Lapso">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Año académico *</label>
+            <input type="text" class="form-control" name="academic_year" required
+                   placeholder="Ej: 2025-2026">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Desde</label>
+            <input type="date" class="form-control" name="start_date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Hasta</label>
+            <input type="date" class="form-control" name="end_date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Orden</label>
+            <input type="number" class="form-control" name="sort_order" value="0">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('evaluations.periods_list') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

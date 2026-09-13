@@ -17,24 +17,47 @@ class Student:
         return f"{multiple_birth_order}{year_two_digits}{cedula_limpia}"
 
     @staticmethod
-    def get_all_with_details():
+    def get_all_with_details(course_code=None, status=None):
+        """
+        Devuelve estudiantes con sus datos vinculados.
+        
+        Parámetros:
+            course_code (str): si se especifica, solo estudiantes de ese curso.
+            status (str): 'activo' para solo inscritos activos, None para todos.
+        """
         conn = get_db_connection()
         if not conn: return []
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT s.*, 
-                   r.first_name as rep_first_name, r.last_name as rep_last_name,
-                   r.phone as rep_phone, r.cedula_id as rep_cedula,
-                   c.name as course_name, c.code as course_code
+
+        sql = """
+            SELECT s.*,
+                r.first_name AS rep_first_name, r.last_name AS rep_last_name,
+                r.phone AS rep_phone, r.cedula_id AS rep_cedula,
+                c.name AS course_name, c.code AS course_code,
+                e.status AS enrollment_status
             FROM students s
             LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
-            LEFT JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
+            LEFT JOIN enrollments e ON s.school_id = e.school_id
             LEFT JOIN courses c ON e.course_code = c.code
-            ORDER BY s.last_name
-        """)
-        students = cursor.fetchall()
-        cursor.close(); conn.close()
-        return students
+            WHERE 1=1
+        """
+        params = []
+
+        if course_code:
+            sql += " AND e.course_code = %s"
+            params.append(course_code)
+
+        if status:
+            sql += " AND e.status = %s"
+            params.append(status)
+
+        sql += " ORDER BY s.last_name, s.first_name"
+
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return rows
 
     @staticmethod
     def get_by_id(student_id):
@@ -42,12 +65,17 @@ class Student:
         if not conn: return None
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT s.*, 
-                   r.cedula_id as rep_cedula_id, r.first_name as rep_first_name,
-                   r.last_name as rep_last_name, r.email as rep_email,
-                   r.phone as rep_phone, r.address as rep_address,
-                   r.relationship as rep_relationship,
-                   c.code as course_code, c.name as course_name
+            SELECT s.*,
+                r.cedula_id     AS rep_cedula_id,
+                r.first_name    AS rep_first_name,
+                r.last_name     AS rep_last_name,
+                r.email         AS rep_email,
+                r.phone         AS rep_phone,
+                r.address       AS rep_address,
+                r.relationship  AS rep_relationship,
+                c.code          AS course_code,
+                c.name          AS course_name,
+                e.status        AS enrollment_status
             FROM students s
             LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
             LEFT JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
@@ -55,7 +83,8 @@ class Student:
             WHERE s.id = %s
         """, (student_id,))
         student = cursor.fetchone()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return student
 
     @staticmethod
@@ -108,35 +137,66 @@ class Student:
         if not conn: return False
         cursor = conn.cursor()
         try:
-            # Actualizar representante
-            if data.get('rep_cedula_id'):
-                sql_rep = """UPDATE representatives SET first_name=%s, last_name=%s,
-                             email=%s, phone=%s, address=%s, relationship=%s WHERE cedula_id=%s"""
-                cursor.execute(sql_rep, (data['rep_first_name'], data['rep_last_name'],
-                                         data.get('rep_email'), data.get('rep_phone'),
-                                         data.get('rep_address'), data.get('rep_relationship'),
-                                         data['rep_cedula_id']))
+            nueva_cedula = data['representative_cedula']
 
-            # Actualizar estudiante (SIN course_code, SIN email)
-            sql_student = """UPDATE students SET 
-                             first_name=%s, last_name=%s, multiple_birth_order=%s,
-                             birth_date=%s, representative_cedula=%s, disability=%s
-                             WHERE id=%s"""
-            cursor.execute(sql_student, (
-                data['first_name'], data['last_name'], data.get('multiple_birth_order', 1),
-                data.get('birth_date'), data.get('rep_cedula_id'),
+            # 1. Verificar si ya existe un representante con esa cédula
+            cursor.execute("SELECT cedula_id FROM representatives WHERE cedula_id = %s", (nueva_cedula,))
+            existe = cursor.fetchone()
+
+            if not existe:
+                # No existe: buscar cuál era la cédula anterior del estudiante
+                cursor.execute("SELECT representative_cedula FROM students WHERE id = %s", (student_id,))
+                row = cursor.fetchone()
+                cedula_anterior = row[0] if row else None
+
+                if cedula_anterior:
+                    # Actualizar el representante actual cambiándole la cédula
+                    cursor.execute("""
+                        UPDATE representatives SET
+                            cedula_id=%s, first_name=%s, last_name=%s,
+                            email=%s, phone=%s, address=%s, relationship=%s
+                        WHERE cedula_id=%s
+                    """, (nueva_cedula, data['rep_first_name'], data['rep_last_name'],
+                        data.get('rep_email'), data.get('rep_phone'),
+                        data.get('rep_address'), data.get('rep_relationship'),
+                        cedula_anterior))
+                else:
+                    # No había representante: crear uno nuevo
+                    cursor.execute("""
+                        INSERT INTO representatives
+                            (cedula_id, first_name, last_name, email, phone, address, relationship)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """, (nueva_cedula, data['rep_first_name'], data['rep_last_name'],
+                        data.get('rep_email'), data.get('rep_phone'),
+                        data.get('rep_address'), data.get('rep_relationship')))
+            else:
+                # Ya existe: actualizamos sus datos por si el usuario los editó
+                cursor.execute("""
+                    UPDATE representatives SET
+                        first_name=%s, last_name=%s, email=%s, phone=%s, address=%s, relationship=%s
+                    WHERE cedula_id=%s
+                """, (data['rep_first_name'], data['rep_last_name'],
+                    data.get('rep_email'), data.get('rep_phone'),
+                    data.get('rep_address'), data.get('rep_relationship'),
+                    nueva_cedula))
+
+            # 2. Actualizar el estudiante
+            cursor.execute("""
+                UPDATE students SET
+                    first_name=%s, last_name=%s, multiple_birth_order=%s,
+                    birth_date=%s, representative_cedula=%s, disability=%s
+                WHERE id=%s
+            """, (data['first_name'], data['last_name'], data.get('multiple_birth_order', 1),
+                data.get('birth_date'), nueva_cedula,
                 data.get('disability'), student_id))
 
-            # Sincronizar curso: comparar curso actual (desde enrollments) con el nuevo
-            cursor.execute("""
-                SELECT school_id FROM students WHERE id = %s
-            """, (student_id,))
+            # 3. Sincronizar curso con enrollments
+            cursor.execute("SELECT school_id FROM students WHERE id = %s", (student_id,))
             row = cursor.fetchone()
             if row:
                 school_id = row[0]
-                # Curso actual activo
                 cursor.execute("""
-                    SELECT course_code FROM enrollments 
+                    SELECT course_code FROM enrollments
                     WHERE school_id = %s AND status = 'activo'
                 """, (school_id,))
                 current = cursor.fetchone()
@@ -144,16 +204,13 @@ class Student:
                 nuevo_curso = data.get('course_code') or None
 
                 if nuevo_curso != curso_actual:
-                    # Cerrar inscripción actual
                     cursor.execute("""
                         UPDATE enrollments SET status='inactivo', egreso_date=CURDATE()
                         WHERE school_id = %s AND status = 'activo'
                     """, (school_id,))
-                    # Crear nueva
                     if nuevo_curso:
                         cursor.execute("""
-                            INSERT INTO enrollments 
-                            (school_id, course_code, enrollment_date, status)
+                            INSERT INTO enrollments (school_id, course_code, enrollment_date, status)
                             VALUES (%s, %s, CURDATE(), 'activo')
                         """, (school_id, nuevo_curso))
 
@@ -164,8 +221,9 @@ class Student:
             conn.rollback()
             return False
         finally:
-            cursor.close(); conn.close()
-
+            cursor.close()
+            conn.close()
+            
     @staticmethod
     def delete(student_id):
         conn = get_db_connection()
@@ -180,3 +238,62 @@ class Student:
             return False
         finally:
             cursor.close(); conn.close()
+
+    @staticmethod
+    def get_by_teacher_course(teacher_id):
+        """Devuelve solo estudiantes inscritos activos en el curso asignado al docente."""
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT s.*,
+                r.first_name AS rep_first_name, r.last_name AS rep_last_name,
+                r.phone AS rep_phone, r.cedula_id AS rep_cedula,
+                c.name AS course_name, c.code AS course_code,
+                e.status AS enrollment_status
+            FROM students s
+            LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
+            JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
+            JOIN courses c ON e.course_code = c.code
+            WHERE c.teacher_id = %s
+            ORDER BY s.last_name, s.first_name
+        """, (teacher_id,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return rows
+
+    #    @staticmethod
+    #    def get_all_with_details():
+    #        conn = get_db_connection()
+    #        if not conn: return []
+    #        cursor = conn.cursor(dictionary=True)
+    #        cursor.execute("""
+    #            SELECT s.*, 
+    #                   r.first_name as rep_first_name, r.last_name as rep_last_name,
+    #                   r.phone as rep_phone, r.cedula_id as rep_cedula,
+    #                   c.name as course_name, c.code as course_code
+    #            FROM students s
+    #            LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
+    #            LEFT JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
+    #            LEFT JOIN courses c ON e.course_code = c.code
+    #            ORDER BY s.last_name
+    #        """)
+    #        students = cursor.fetchall()
+    #        cursor.close(); conn.close()
+    #        return students
+    #### ---
+            #cursor.execute("""
+            #    SELECT s.*, 
+            #           r.cedula_id as rep_cedula_id, r.first_name as rep_first_name,
+            #           r.last_name as rep_last_name, r.email as rep_email,
+            #           r.phone as rep_phone, r.address as rep_address,
+            #           r.relationship as rep_relationship,
+            #           c.code as course_code, c.name as course_name
+            #    FROM students s
+            #    LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
+            #    LEFT JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
+            #    LEFT JOIN courses c ON e.course_code = c.code
+            #    WHERE s.id = %s
+            #""", (student_id,))

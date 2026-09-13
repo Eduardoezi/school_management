@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Histórico de Rendimiento{% endblock %}
+{% block content %}
+<h2>📘 Histórico de Rendimiento</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h4>{{ student.first_name }} {{ student.last_name }}</h4>
+        <p><strong>Cédula escolar:</strong> {{ student.school_id }}</p>
+        <p><strong>Curso actual:</strong> {{ student.course_name or 'Sin curso' }}</p>
+        {% if student.disability %}
+        <p><strong>Discapacidad:</strong> {{ student.disability }}</p>
+        {% endif %}
+    </div>
+</div>
+
+{% for year, periods in grouped.items() %}
+    <h3 class="mt-4">📅 Año escolar {{ year }}</h3>
+
+    {% for period_name, evaluations in periods.items() %}
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <strong>{{ period_name }}</strong>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">Área de desarrollo</th>
+                            <th style="width: 10%;">Literal</th>
+                            <th>Descripción del progreso</th>
+                            <th>Recomendaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in evaluations %}
+                        <tr>
+                            <td><strong>{{ e.area_name }}</strong></td>
+                            <td>
+                                {% if e.literal == 'L' %}<span class="badge bg-success">Logrado</span>
+                                {% elif e.literal == 'EP' %}<span class="badge bg-info">En Proceso</span>
+                                {% elif e.literal == 'EI' %}<span class="badge bg-warning text-dark">En Inicio</span>
+                                {% else %}<span class="badge bg-danger">No Logrado</span>{% endif %}
+                            </td>
+                            <td>{{ e.description }}</td>
+                            <td>{{ e.recommendations or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-muted mb-0">
+                    <small>Docente: {{ evaluations[0].teacher_first_name }} {{ evaluations[0].teacher_last_name }}</small>
+                </p>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        Este estudiante aún no tiene evaluaciones registradas.
+    </div>
+{% endfor %}
+
+<a href="{{ url_for('students.list_view') }}" class="btn btn-secondary mt-3">Volver al listado</a>
+{% endblock %}
