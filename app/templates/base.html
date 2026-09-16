@@ -4,51 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Escolar - {% block title %}{% endblock %}</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { padding-top: 60px; }
-        .navbar-brand { font-weight: bold; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/layout.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">🏫 Escuela</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
-                        {% if current_user.role in ['directivo', 'secretario'] %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Panel de control</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('daily_stats.admin_view') }}">Estadística diaria</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('students.list_view') }}">Estudiantes</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('teachers.list_view') }}">Profesores</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('courses.list_view') }}">Cursos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('enrollment.list_view') }}">Inscripciones</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('attendance.index') }}">Asistencia profesores</a></li>                        {% endif %}
-                        {% if current_user.role == 'maestro' %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('courses.list_view') }}">Mis Cursos</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('students.list_view') }}">Estudiantes</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('daily_stats.my_report') }}">Reportar asistencia</a></li>
-                        {% endif %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a></li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar sesión</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Registrarse</a></li>
-                    {% endif %}
-                </ul>
-                {% if current_user.is_authenticated %}
-                    <span class="navbar-text text-light">
-                        {{ current_user.username }} ({{ current_user.role }})
-                    </span>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
 
-    <div class="container mt-4">
+<!-- ==================== SIDEBAR ==================== -->
+<aside class="sidebar" id="sidebar">
+    <a href="{{ url_for('main.dashboard') }}" class="sidebar-brand">
+        <i class="bi bi-mortarboard-fill"></i>
+        <span>IEE Villa de Cura</span>
+    </a>
+    {# ---------- WIDGET USUARIO ---------- #}
+        {% if current_user.is_authenticated %}
+        <div class="sidebar-user">
+            <a href="{{ url_for('profile.index') }}" class="sidebar-user-link">
+                <div class="avatar-wrapper">
+                    {% if current_user.avatar %}
+                        <img src="{{ current_user.avatar_url }}"
+                            alt="{{ current_user.username }}"
+                            class="avatar-img">
+                    {% else %}
+                        <div class="avatar-circle">{{ current_user.initials }}</div>
+                    {% endif %}
+                    <span class="status-dot {% if current_user.is_online %}online{% endif %}"></span>
+                </div>
+                <div class="user-meta">
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-role">
+                        {% if current_user.is_online %}
+                            <span class="text-success">● En línea</span>
+                        {% else %}
+                            <span class="text-muted">● Desconectado</span>
+                        {% endif %}
+                        · {{ current_user.role }}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+
+
+    {% if current_user.is_authenticated %}
+
+        {# ---------- PRINCIPAL ---------- #}
+        <div class="sidebar-section">Principal</div>
+        <ul class="nav flex-column">
+            <li><a class="nav-link" href="{{ url_for('profile.index') }}">
+                <i class="bi bi-person-circle"></i> Mi perfil
+            </a></li>
+            <li><a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a></li>
+        </ul>
+
+        {# ---------- ACADÉMICO (todos los roles) ---------- #}
+        <div class="sidebar-section">Académico</div>
+        <ul class="nav flex-column">
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
+                    <i class="bi bi-people-fill"></i> Estudiantes
+                </a></li>
+            {% endif %}
+            {% if current_user.role == 'maestro' %}
+                <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
+                    <i class="bi bi-people-fill"></i> Mis estudiantes
+                </a></li>
+            {% endif %}
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <li><a class="nav-link" href="{{ url_for('teachers.list_view') }}">
+                    <i class="bi bi-person-badge-fill"></i> Docentes
+                </a></li>
+            {% endif %}
+            <li><a class="nav-link" href="{{ url_for('courses.list_view') }}">
+                <i class="bi bi-book-fill"></i> Cursos
+            </a></li>
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <li><a class="nav-link" href="{{ url_for('enrollment.list_view') }}">
+                    <i class="bi bi-clipboard-check-fill"></i> Matrículas
+                </a></li>
+                <li><a class="nav-link" href="{{ url_for('schedule.list_view') }}">
+                    <i class="bi bi-calendar-week-fill"></i> Horarios
+                </a></li>
+            {% endif %}
+        </ul>
+
+        {# ---------- ASISTENCIA ---------- #}
+        <div class="sidebar-section">Asistencia</div>
+        <ul class="nav flex-column">
+            <li><a class="nav-link" href="{{ url_for('attendance.clock') }}">
+                <i class="bi bi-clock-fill"></i> Kiosco (entrada/salida)
+            </a></li>
+            {% if current_user.role == 'maestro' %}
+                <li><a class="nav-link" href="{{ url_for('daily_stats.my_report') }}">
+                    <i class="bi bi-journal-text"></i> Reportar asistencia
+                </a></li>
+            {% endif %}
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <li><a class="nav-link" href="{{ url_for('attendance.index') }}">
+                    <i class="bi bi-person-check-fill"></i> Asistencia docente
+                </a></li>
+                <li><a class="nav-link" href="{{ url_for('daily_stats.admin_view') }}">
+                    <i class="bi bi-bar-chart-fill"></i> Estadística diaria
+                </a></li>
+            {% endif %}
+        </ul>
+
+        {# ---------- EVALUACIÓN ---------- #}
+        <div class="sidebar-section">Evaluación</div>
+        <ul class="nav flex-column">
+            <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
+                <i class="bi bi-journal-bookmark-fill"></i> Rendimiento
+            </a></li>
+            {% if current_user.role == 'directivo' %}
+                <li><a class="nav-link" href="{{ url_for('evaluations.areas_list') }}">
+                    <i class="bi bi-gear-fill"></i> Áreas de evaluación
+                </a></li>
+                <li><a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
+                    <i class="bi bi-calendar-range-fill"></i> Periodos
+                </a></li>
+            {% endif %}
+        </ul>
+
+        {# ---------- REPORTES ---------- #}
+        {% if current_user.role in ['directivo', 'secretario'] %}
+        <div class="sidebar-section">Reportes</div>
+        <ul class="nav flex-column">
+            <li><a class="nav-link" href="{{ url_for('attendance.report') }}">
+                <i class="bi bi-file-earmark-bar-graph-fill"></i> Histórico docente
+            </a></li>
+            <li><a class="nav-link" href="{{ url_for('daily_stats.history') }}">
+                <i class="bi bi-graph-up-arrow"></i> Histórico estadísticas
+            </a></li>
+        </ul>
+        {% endif %}
+
+        {# ---------- ADMINISTRACIÓN (solo directivo) ---------- #}
+        
+        {% if current_user.role == 'directivo' %}
+        <div class="sidebar-section">Administración</div>
+        <ul class="nav flex-column">
+            <li><a class="nav-link" href="{{ url_for('admin.users_online') }}">
+                <i class="bi bi-broadcast"></i> Usuarios en línea
+            </a></li>
+            <li><a class="nav-link disabled" href="#" title="Próximamente">
+                <i class="bi bi-people"></i> Usuarios <small class="ms-auto text-muted">(pronto)</small>
+            </a></li>
+            <li><a class="nav-link disabled" href="#" title="Próximamente">
+                <i class="bi bi-cash-coin"></i> Pagos <small class="ms-auto text-muted">(pronto)</small>
+            </a></li>
+        </ul>
+        {% endif %}
+
+    {% endif %}
+        
+
+</aside>
+
+<!-- Overlay para móvil -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+<div class="main-wrapper">
+
+    <header class="topbar">
+        <button class="btn-toggle" id="sidebar-toggle" aria-label="Menú">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <div class="user-info">
+            {% if current_user.is_authenticated %}
+                <span class="d-none d-md-inline">{{ current_user.username }}</span>
+                <span class="role-badge">{{ current_user.role }}</span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary" title="Cerrar sesión">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Iniciar sesión</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main id="app-container">
+        {# Mensajes flash #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
@@ -58,9 +198,14 @@
             {% endfor %}
         {% endwith %}
 
+        {# ============ CONTENIDO DE CADA PÁGINA ============ #}
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/layout.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

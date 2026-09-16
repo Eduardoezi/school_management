@@ -1,150 +1,122 @@
 {% extends "base.html" %}
 {% block title %}Panel de Control{% endblock %}
 {% block content %}
-<h1 class="mb-4">📊 Panel de Control</h1>
+
+<h1 class="page-title">
+    <i class="bi bi-speedometer2 me-2"></i>Panel de Control
+</h1>
 
 <!-- ==================== TARJETAS DE RESUMEN ==================== -->
-<div class="row">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Estudiantes</h5>
-                <p class="card-text display-4">{{ total_students }}</p>
+<div class="row g-3">
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title mb-1">Estudiantes</h6>
+                    <p class="card-text display-6 mb-0">{{ total_students }}</p>
+                </div>
+                <i class="bi bi-people-fill display-5 opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Profesores</h5>
-                <p class="card-text display-4">{{ total_teachers }}</p>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-success">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title mb-1">Profesores</h6>
+                    <p class="card-text display-6 mb-0">{{ total_teachers }}</p>
+                </div>
+                <i class="bi bi-person-badge-fill display-5 opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Grados y Secciones</h5>
-                <p class="card-text display-4">{{ total_courses }}</p>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title mb-1">Grados y Secciones</h6>
+                    <p class="card-text display-6 mb-0">{{ total_courses }}</p>
+                </div>
+                <i class="bi bi-book-fill display-5 opacity-50"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Matrícula Inscrita</h5>
-                <p class="card-text display-4">{{ total_enrollments }}</p>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-info">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title mb-1">Matrícula Inscrita</h6>
+                    <p class="card-text display-6 mb-0">{{ total_enrollments }}</p>
+                </div>
+                <i class="bi bi-clipboard-check-fill display-5 opacity-50"></i>
             </div>
         </div>
     </div>
 </div>
 
 {% if total_presentes_hoy %}
-<div class="row">
-    <div class="col-md-3">
-        <div class="card text-white bg-secondary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Estudiantes Presentes hoy</h5>
-                <p class="card-text display-4">{{ total_presentes_hoy }}</p>
+<div class="row g-3 mt-1">
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title mb-1">Presentes hoy</h6>
+                    <p class="card-text display-6 mb-0">{{ total_presentes_hoy }}</p>
+                </div>
+                <i class="bi bi-check-circle-fill display-5 opacity-50"></i>
             </div>
         </div>
     </div>
 </div>
 {% endif %}
 
-<!-- ==================== ACCESOS RÁPIDOS ==================== -->
-<div class="row mt-4">
+<!-- ==================== ACCIONES RÁPIDAS ==================== -->
+<div class="row mt-4 g-3">
     <div class="col-md-6">
-        <h4>Accesos rápidos</h4>
-        <div class="list-group mb-4">
-
-            {# ---------- DIRECTIVO ---------- #}
-            {% if current_user.role == 'directivo' %}
-                <a href="{{ url_for('students.create_view') }}" class="list-group-item list-group-item-action">➕ Registrar estudiante</a>
-                <a href="{{ url_for('teachers.create_view') }}" class="list-group-item list-group-item-action">➕ Registrar profesor</a>
-                <a href="{{ url_for('courses.create_view') }}" class="list-group-item list-group-item-action">➕ Crear curso</a>
-                <a href="{{ url_for('enrollment.new_enrollment') }}" class="list-group-item list-group-item-action">📝 Nueva inscripción</a>
-                <a href="{{ url_for('schedule.list_view') }}" class="list-group-item list-group-item-action">🗓️ Gestionar horarios</a>
-                <a href="{{ url_for('attendance.clock') }}" class="list-group-item list-group-item-action">🕒 Modo kiosco (asistencia)</a>
-                <hr>
-                <a href="{{ url_for('evaluations.areas_list') }}" class="list-group-item list-group-item-action">⚙️ Configurar áreas de evaluación</a>
-                <a href="{{ url_for('evaluations.periods_list') }}" class="list-group-item list-group-item-action">📅 Configurar periodos de evaluación</a>
-            {% endif %}
-
-            {# ---------- SECRETARIO ---------- #}
-            {% if current_user.role == 'secretario' %}
-                <a href="{{ url_for('students.create_view') }}" class="list-group-item list-group-item-action">➕ Registrar estudiante</a>
-                <a href="{{ url_for('enrollment.new_enrollment') }}" class="list-group-item list-group-item-action">📝 Nueva inscripción</a>
-                <a href="{{ url_for('attendance.clock') }}" class="list-group-item list-group-item-action">🕒 Modo kiosco (asistencia)</a>
-            {% endif %}
-
-            {# ---------- MAESTRO ---------- #}
-            {% if current_user.role == 'maestro' %}
-                <a href="{{ url_for('daily_stats.my_report') }}" class="list-group-item list-group-item-action">📝 Reportar asistencia del día</a>
-                <a href="{{ url_for('attendance.clock') }}" class="list-group-item list-group-item-action">🕒 Marcar mi entrada/salida</a>
-                <a href="{{ url_for('courses.list_view') }}" class="list-group-item list-group-item-action">📚 Ver mis cursos</a>
-                <a href="{{ url_for('students.list_view') }}" class="list-group-item list-group-item-action">👥 Ver estudiantes</a>
-            {% endif %}
-
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Acciones rápidas</h5>
+                <div class="d-grid gap-2 mt-3">
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('students.create_view') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-person-plus-fill me-2"></i>Registrar estudiante
+                        </a>
+                        <a href="{{ url_for('enrollment.new_enrollment') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-clipboard-plus-fill me-2"></i>Nueva inscripción
+                        </a>
+                    {% endif %}
+                    {% if current_user.role == 'directivo' %}
+                        <a href="{{ url_for('teachers.create_view') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-person-badge me-2"></i>Registrar docente
+                        </a>
+                        <a href="{{ url_for('courses.create_view') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-plus-square-fill me-2"></i>Crear curso
+                        </a>
+                    {% endif %}
+                    {% if current_user.role == 'maestro' %}
+                        <a href="{{ url_for('daily_stats.my_report') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-journal-text me-2"></i>Reportar asistencia del día
+                        </a>
+                        <a href="{{ url_for('attendance.clock') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-clock-history me-2"></i>Marcar entrada/salida
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ==================== REPORTES ==================== -->
     <div class="col-md-6">
-        <h4>Reportes</h4>
-        <div class="list-group mb-4">
-
-            {# ---------- DIRECTIVO Y SECRETARIO ---------- #}
-            {% if current_user.role in ['directivo', 'secretario'] %}
-                <a href="{{ url_for('students.list_view') }}" class="list-group-item list-group-item-action">👥 Listado de estudiantes</a>
-                <a href="{{ url_for('teachers.list_view') }}" class="list-group-item list-group-item-action">👨‍🏫 Listado de profesores</a>
-                <a href="{{ url_for('courses.list_view') }}" class="list-group-item list-group-item-action">📚 Listado de cursos</a>
-                <a href="{{ url_for('enrollment.list_view') }}" class="list-group-item list-group-item-action">📋 Listado de inscripciones</a>
-                <hr>
-                <a href="{{ url_for('attendance.index') }}" class="list-group-item list-group-item-action">🕒 Asistencia docente del día</a>
-                <a href="{{ url_for('attendance.report') }}" class="list-group-item list-group-item-action">📊 Histórico de asistencia docente</a>
-                <a href="{{ url_for('daily_stats.admin_view') }}" class="list-group-item list-group-item-action">📈 Estadística diaria de la escuela</a>
-                <a href="{{ url_for('daily_stats.history') }}" class="list-group-item list-group-item-action">📉 Histórico de estadísticas</a>
-            {% endif %}
-
-            {# ---------- MAESTRO ---------- #}
-            {% if current_user.role == 'maestro' %}
-                <a href="{{ url_for('daily_stats.my_report') }}" class="list-group-item list-group-item-action">📝 Mis reportes de asistencia</a>
-                <a href="{{ url_for('students.list_view') }}" class="list-group-item list-group-item-action">📘 Histórico de rendimiento de estudiantes</a>
-            {% endif %}
-
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-clock-history text-primary me-2"></i>Últimas actividades</h5>
+                <ul class="list-group list-group-flush mt-3">
+                    <li class="list-group-item px-0">🔹 Actualización de notas pendiente</li>
+                    <li class="list-group-item px-0">🔹 Inscripciones abiertas</li>
+                    <li class="list-group-item px-0">🔹 Reunión de profesores mañana</li>
+                </ul>
+            </div>
         </div>
-    </div>
-</div>
-
-<!-- ==================== EVALUACIONES ==================== -->
-{% if current_user.role in ['directivo', 'secretario', 'maestro'] %}
-<div class="row mt-2">
-    <div class="col-md-6">
-        <h4>Evaluaciones y rendimiento</h4>
-        <div class="list-group">
-            <a href="{{ url_for('students.list_view') }}" class="list-group-item list-group-item-action">
-                📘 Ver histórico de rendimiento (seleccionar estudiante)
-            </a>
-            {% if current_user.role == 'maestro' %}
-                <a href="{{ url_for('students.list_view') }}" class="list-group-item list-group-item-action">
-                    📝 Registrar evaluación de un estudiante
-                </a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- ==================== ÚLTIMAS ACTIVIDADES ==================== -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <h4>Últimas actividades</h4>
-        <ul class="list-group">
-            <li class="list-group-item">🔹 Actualización de notas pendiente</li>
-            <li class="list-group-item">🔹 Inscripciones abiertas</li>
-            <li class="list-group-item">🔹 Reunión de profesores mañana</li>
-        </ul>
     </div>
 </div>
 

@@ -11,3 +11,10 @@ class Config:
     MYSQL_USER = os.getenv('MYSQL_USER', 'root')
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '')
     MYSQL_DB = os.getenv('MYSQL_DB', 'school_db')
+
+    # ---------- Subida de archivos ----------
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024   # 2 MB máximo por archivo
+    UPLOAD_FOLDER = os.path.join(
+        os.path.dirname(__file__), 'static', 'uploads'
+    )
+    ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}

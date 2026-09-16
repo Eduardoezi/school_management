@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
 from app.models.school_schedule import SchoolSchedule
 from app.utils.decorators import role_required
+from app.utils.db import get_db_connection
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
@@ -59,3 +60,17 @@ def delete_view(schedule_id):
     else:
         flash('Error al eliminar.', 'danger')
     return redirect(url_for('schedule.list_view'))
+
+@staticmethod
+def get_by_day(day_of_week):
+    """Devuelve el horario del día (1=Lunes...7=Domingo)."""
+    conn = get_db_connection()
+    if not conn: return None
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT * FROM school_schedules 
+        WHERE day_of_week = %s ORDER BY start_time LIMIT 1
+    """, (day_of_week,))
+    row = cursor.fetchone()
+    cursor.close(); conn.close()
+    return row

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Editar datos personales{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-person-vcard me-2"></i>Editar datos personales
+</h2>
+<p class="text-muted">
+    Estudiante: <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+    ({{ student.school_id }})
+</p>
+
+<form method="POST">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sexo</label>
+                    <select class="form-select" name="sex">
+                        <option value="">-- Seleccione --</option>
+                        <option value="M" {% if details and details.sex == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if details and details.sex == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lugar de nacimiento</label>
+                    <input type="text" class="form-control" name="birth_place"
+                           value="{{ details.birth_place if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lateralidad</label>
+                    <select class="form-select" name="laterality">
+                        <option value="">-- Seleccione --</option>
+                        <option value="derecho"      {% if details and details.laterality == 'derecho' %}selected{% endif %}>Derecho</option>
+                        <option value="zurdo"        {% if details and details.laterality == 'zurdo' %}selected{% endif %}>Zurdo</option>
+                        <option value="no_definido"  {% if details and details.laterality == 'no_definido' %}selected{% endif %}>No definido</option>
+                        <option value="ambidiestro"  {% if details and details.laterality == 'ambidiestro' %}selected{% endif %}>Ambidiestro</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla camisa</label>
+                    <input type="text" class="form-control" name="shirt_size"
+                           value="{{ details.shirt_size if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla pantalón</label>
+                    <input type="text" class="form-control" name="pants_size"
+                           value="{{ details.pants_size if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla zapatos</label>
+                    <input type="text" class="form-control" name="shoe_size"
+                           value="{{ details.shoe_size if details else '' }}">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Número de contacto</label>
+                    <input type="text" class="form-control" name="contact_phone"
+                           value="{{ details.contact_phone if details else '' }}">
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Dirección actual</label>
+                    <input type="text" class="form-control" name="address"
+                           value="{{ details.address if details else '' }}">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Municipio</label>
+                    <input type="text" class="form-control" name="municipality"
+                           value="{{ details.municipality if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Parroquia</label>
+                    <input type="text" class="form-control" name="parish"
+                           value="{{ details.parish if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Estado</label>
+                    <input type="text" class="form-control" name="state"
+                           value="{{ details.state if details else '' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar
+        </button>
+        <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
+           class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+{% endblock %}

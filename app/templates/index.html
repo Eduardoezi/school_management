@@ -1,20 +1,240 @@
-{% extends "base.html" %}
-{% block title %}Inicio{% endblock %}
+{% extends "base_public.html" %}
+{% block title %}Bienvenido{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-logo {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+    }
+
+    .hero-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 1.05rem;
+        color: #93c5fd;
+        margin-bottom: 2rem;
+        font-weight: 400;
+    }
+
+    .hero-school {
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0.25rem;
+    }
+
+    .hero-location {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin-bottom: 2rem;
+    }
+
+    /* ---------- Grid de info ---------- */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .info-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        padding: 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    .info-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .info-icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.2);
+        color: #93c5fd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #94a3b8;
+        margin-bottom: 0.15rem;
+        font-weight: 600;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+        color: #e2e8f0;
+        font-weight: 500;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    /* ---------- Botones CTA ---------- */
+    .cta-buttons {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+
+    .cta-buttons .btn {
+        padding: 0.85rem 1.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    /* ---------- Divisor ---------- */
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 2.5rem 0 1.5rem;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 576px) {
+        .hero-title {
+            font-size: 1.75rem;
+        }
+        .public-card {
+            padding: 1.75rem 1.25rem;
+        }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="jumbotron bg-light p-5 rounded-lg">
-    <h1 class="display-4">Bienvenidos al Sistema de Gestión Escolar</h1>
-    <h1 class="display-3">{{ escuela.nombre }}</h1>
-    <hr class="my-4">
-    <p><strong>Dirección:</strong> {{ escuela.direccion }}</p>
-    <p><strong>Teléfono:</strong> {{ escuela.telefono }}</p>
-    <p><strong>Email:</strong> {{ escuela.email }}</p>
-    <p>Este sistema permite la administración de estudiantes, profesores y cursos.</p>
+<div class="public-card text-center">
+
+    {# ---------- LOGO ---------- #}
+    <div class="hero-logo">
+        <i class="bi bi-mortarboard-fill"></i>
+    </div>
+
+    {# ---------- TÍTULOS ---------- #}
+    <h1 class="hero-title">Sistema de Gestión Escolar</h1>
+    <p class="hero-subtitle">Plataforma administrativa y académica</p>
+
+    <div class="hero-school">{{ escuela.nombre }}</div>
+    <div class="hero-location">
+        <i class="bi bi-geo-alt-fill me-1"></i>{{ escuela.direccion }}
+    </div>
+
+    {# ---------- GRID DE INFORMACIÓN ---------- #}
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-icon"><i class="bi bi-telephone-fill"></i></div>
+            <div>
+                <div class="info-label">Teléfono</div>
+                <div class="info-value">{{ escuela.telefono }}</div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-icon"><i class="bi bi-envelope-fill"></i></div>
+            <div>
+                <div class="info-label">Correo</div>
+                <div class="info-value">{{ escuela.email }}</div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <div>
+                <div class="info-label">Código DEA</div>
+                <div class="info-value">{{ escuela.codigo_DEA }}</div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-icon"><i class="bi bi-building-fill"></i></div>
+            <div>
+                <div class="info-label">Código dependencia</div>
+                <div class="info-value">{{ escuela.codigo_dependencia }}</div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-icon"><i class="bi bi-shield-check"></i></div>
+            <div>
+                <div class="info-label">RIF</div>
+                <div class="info-value">{{ escuela.Rif }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- BOTONES ---------- #}
     {% if not current_user.is_authenticated %}
-        <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Iniciar sesión</a>
-        <a class="btn btn-secondary btn-lg" href="{{ url_for('auth.register') }}" role="button">Registrarse</a>
-        <a class="btn btn-secondary btn-lg" href="{{ url_for('attendance.clock') }}" role="button">Marcar Asistencia</a>
+        <div class="divider">Acceso al sistema</div>
+        <div class="cta-buttons">
+            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
+            </a>
+            <a class="btn btn-outline-light" href="{{ url_for('attendance.clock') }}">
+                <i class="bi bi-clock-history me-2"></i>Marcar asistencia
+            </a>
+        </div>
     {% else %}
-        <a class="btn btn-success btn-lg" href="{{ url_for('main.dashboard') }}" role="button">Ir al panel de control</a>
+        <div class="divider">Sesión activa</div>
+        <div class="cta-buttons">
+            <a class="btn btn-primary" href="{{ url_for('main.dashboard') }}">
+                <i class="bi bi-speedometer2 me-2"></i>Ir al panel de control
+            </a>
+            <a class="btn btn-outline-light" href="{{ url_for('attendance.clock') }}">
+                <i class="bi bi-clock-history me-2"></i>Marcar asistencia
+            </a>
+        </div>
     {% endif %}
+
+</div>
+
+<div class="text-center mt-4 small" style="color: rgba(255,255,255,0.4);">
+    <i class="bi bi-c-circle me-1"></i>
+    {{ escuela.nombre }} · {{ 2026 }}
 </div>
 {% endblock %}

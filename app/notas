@@ -1,13 +1,1 @@
-- crear modulo para ingreso del padre y diferenciar quien es el representante. pensar
-- crear mensajes de errores:
-  - cedula erronea
-  - error en cedula escolar
-  - año de nacimiento errores
-crear el "boton" de ver clave en el campo de crear contraseña
-vincular la cedula del docente con el usuario al cargar el docente en la base de datos
-   - mensaje de error al crear usuario sin estar registrado en la bse de datos de la escuela
 Modulo d Consulta para los representantes. ver progreso de sus hijos
-ver el totoal de la matricula al reportar la asisitencia, % de asisitencia
-en el modulo edicion de estudiantes boton de actualizar, que actualice el registro y no cree uno nuevo
-cuaro de busqueda por estudiante en editar
-en java escrip hacer que al ingresar la cedula del estudiante se reduzca la busqueda

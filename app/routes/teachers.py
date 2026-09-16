@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models.teacher import Teacher
 from app.utils.decorators import role_required
 
+
 teachers_bp = Blueprint('teachers', __name__, url_prefix='/teachers')
 
 # ---------- LISTAR ----------

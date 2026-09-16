@@ -1,78 +1,258 @@
 {% extends "base.html" %}
 {% block title %}Reporte Diario de Asistencia{% endblock %}
 {% block content %}
-<h2>📝 Reporte Diario de Asistencia</h2>
+<h2 class="page-title"><i class="bi bi-journal-text me-2"></i>Reporte Diario de Asistencia</h2>
 
 {% if not teacher %}
     <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>
         Tu usuario no está vinculado a un docente. Contacta al directivo.
     </div>
 {% elif not courses %}
     <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i>
         No tienes cursos asignados. Contacta al directivo.
     </div>
 {% else %}
     <form method="GET" class="row g-2 mb-3">
         <div class="col-md-3">
-            <input type="date" class="form-control" name="date" value="{{ selected_date }}">
+            <input type="date" class="form-control" name="date"
+                   value="{{ selected_date }}" max="{{ today }}">
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary w-100">Cambiar fecha</button>
+            <button class="btn btn-primary w-100">
+                <i class="bi bi-calendar-event me-1"></i>Cambiar fecha
+            </button>
         </div>
     </form>
 
+    {# ---------- TARJETA DE MATRÍCULA ---------- #}
+    <div class="card mb-3 border-primary">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-1">
+                        <i class="bi bi-book-fill me-2"></i>
+                        {{ courses[0].name }} ({{ courses[0].code }})
+                    </h5>
+                    <p class="text-muted mb-0 small">
+                        Grado: {{ courses[0].grade or '-' }} · Sección: {{ courses[0].section or '-' }}
+                        · Año: {{ courses[0].academic_year or '-' }}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-around text-center">
+                        <div>
+                            <div class="text-muted small">Matrícula total</div>
+                            <div class="fs-4 fw-bold text-primary">{{ matricula.total }}</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Niñas</div>
+                            <div class="fs-4 fw-bold" style="color:#ec4899;">{{ matricula.girls }}</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Niños</div>
+                            <div class="fs-4 fw-bold" style="color:#3b82f6;">{{ matricula.boys }}</div>
+                        </div>
+                        {% if matricula.unknown > 0 %}
+                        <div>
+                            <div class="text-muted small">Sin clasificar</div>
+                            <div class="fs-4 fw-bold text-secondary">{{ matricula.unknown }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- FORMULARIO DE REPORTE ---------- #}
     <div class="card mb-4">
         <div class="card-body">
-            <h5>Curso: {{ courses[0].name }} ({{ courses[0].code }})</h5>
-            <form method="POST">
+            <h5 class="mb-3">
+                <i class="bi bi-pencil-square me-2"></i>Reporte del día: {{ selected_date }}
+            </h5>
+
+            <form method="POST" id="report-form">
                 <input type="hidden" name="course_code" value="{{ courses[0].code }}">
                 <input type="hidden" name="stat_date" value="{{ selected_date }}">
+                <input type="hidden" id="matricula-total" value="{{ matricula.total }}">
 
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Niñas presentes</label>
-                        <input type="number" class="form-control" name="girls_present" min="0" required>
+                        <input type="number" class="form-control" name="girls_present"
+                               id="girls_present" min="0" max="{{ matricula.girls }}" value="0" required>
+                        <small class="text-muted">Máx: {{ matricula.girls }}</small>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Niños presentes</label>
-                        <input type="number" class="form-control" name="boys_present" min="0" required>
+                        <input type="number" class="form-control" name="boys_present"
+                               id="boys_present" min="0" max="{{ matricula.boys }}" value="0" required>
+                        <small class="text-muted">Máx: {{ matricula.boys }}</small>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Niñas ausentes</label>
-                        <input type="number" class="form-control" name="girls_absent" min="0" value="0">
+                        <input type="number" class="form-control" name="girls_absent"
+                               id="girls_absent" min="0" max="{{ matricula.girls }}" value="0">
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Niños ausentes</label>
-                        <input type="number" class="form-control" name="boys_absent" min="0" value="0">
+                        <input type="number" class="form-control" name="boys_absent"
+                               id="boys_absent" min="0" max="{{ matricula.boys }}" value="0">
                     </div>
-                    <div class="col-md-12 mb-3">
+
+                    {# ---------- PANEL EN VIVO CON % ---------- #}
+                    <div class="col-12 mb-3">
+                        <div class="alert alert-light border mb-0" id="live-panel">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="text-muted small">Presentes</div>
+                                    <div class="fs-4 fw-bold text-success" id="live-present">0</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-muted small">Ausentes</div>
+                                    <div class="fs-4 fw-bold text-danger" id="live-absent">0</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-muted small">% Asistencia</div>
+                                    <div class="fs-4 fw-bold text-primary" id="live-percent">0%</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-muted small">Estado</div>
+                                    <div id="live-status" class="fs-6 pt-2">
+                                        <span class="badge bg-secondary">Sin datos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3">
                         <label class="form-label">Observaciones</label>
                         <input type="text" class="form-control" name="notes" maxlength="255">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-success">Guardar reporte</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-1"></i>Guardar reporte
+                </button>
             </form>
         </div>
     </div>
 
+    {# ---------- REPORTES YA CARGADOS ---------- #}
     {% if my_stats %}
-    <h5>Reportes ya cargados en esta fecha</h5>
-    <table class="table table-striped">
-        <thead>
-            <tr><th>Curso</th><th>Niñas</th><th>Niños</th><th>Total</th><th>Observaciones</th></tr>
-        </thead>
-        <tbody>
-            {% for s in my_stats %}
-            <tr>
-                <td>{{ s.course_code }}</td>
-                <td>{{ s.girls_present }}</td>
-                <td>{{ s.boys_present }}</td>
-                <td>{{ s.total_present }}</td>
-                <td>{{ s.notes or '-' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <h5 class="mt-4">
+        <i class="bi bi-clock-history me-2"></i>Reportes ya cargados en esta fecha
+    </h5>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Curso</th>
+                    <th>Niñas</th>
+                    <th>Niños</th>
+                    <th>Presentes</th>
+                    <th>Ausentes</th>
+                    <th>% Asistencia</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in my_stats %}
+                {% set total_mat = s.girls_present + s.girls_absent + s.boys_present + s.boys_absent %}
+                {% if total_mat > 0 %}
+                    {% set pct = (s.total_present / total_mat * 100)|round(1) %}
+                {% else %}
+                    {% set pct = 0 %}
+                {% endif %}
+                <tr>
+                    <td><strong>{{ s.course_code }}</strong></td>
+                    <td>{{ s.girls_present }}</td>
+                    <td>{{ s.boys_present }}</td>
+                    <td><span class="badge bg-success">{{ s.total_present }}</span></td>
+                    <td><span class="badge bg-danger">{{ s.total_absent }}</span></td>
+                    <td>
+                        <div class="progress" style="height: 20px; min-width: 100px;">
+                            <div class="progress-bar
+                                {% if pct >= 90 %}bg-success
+                                {% elif pct >= 75 %}bg-warning
+                                {% else %}bg-danger{% endif %}"
+                                 style="width: {{ pct }}%;">
+                                {{ pct }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ s.notes or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% endif %}
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ---------- Validación de fecha futura ----------
+    const dateInput = document.querySelector('input[name="date"]');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('max', today);
+
+        dateInput.addEventListener('change', function () {
+            if (this.value > today) {
+                alert('No puedes seleccionar una fecha futura. Volviendo a hoy.');
+                this.value = today;
+            }
+        });
+    }
+
+    // ---------- Panel en vivo ----------
+    const inputs = {
+        girls_present: document.getElementById('girls_present'),
+        boys_present: document.getElementById('boys_present'),
+        girls_absent: document.getElementById('girls_absent'),
+        boys_absent: document.getElementById('boys_absent')
+    };
+    const totalMatricula = parseInt(document.getElementById('matricula-total')?.value || 0);
+
+    function updateLive() {
+        const gp = parseInt(inputs.girls_present.value || 0);
+        const bp = parseInt(inputs.boys_present.value || 0);
+        const ga = parseInt(inputs.girls_absent.value || 0);
+        const ba = parseInt(inputs.boys_absent.value || 0);
+
+        const present = gp + bp;
+        const absent = ga + ba;
+        const loaded = present + absent;
+
+        document.getElementById('live-present').textContent = present;
+        document.getElementById('live-absent').textContent = absent;
+
+        let pct = 0;
+        if (totalMatricula > 0) {
+            pct = Math.round((present / totalMatricula) * 1000) / 10;
+        }
+        document.getElementById('live-percent').textContent = pct + '%';
+
+        const statusEl = document.getElementById('live-status');
+        if (loaded === 0) {
+            statusEl.innerHTML = '<span class="badge bg-secondary">Sin datos</span>';
+        } else if (loaded === totalMatricula) {
+            statusEl.innerHTML = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Completo</span>';
+        } else if (loaded < totalMatricula) {
+            statusEl.innerHTML = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Faltan ' + (totalMatricula - loaded) + '</span>';
+        } else {
+            statusEl.innerHTML = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Excede por ' + (loaded - totalMatricula) + '</span>';
+        }
+    }
+
+    Object.values(inputs).forEach(inp => {
+        if (inp) inp.addEventListener('input', updateLive);
+    });
+
+    updateLive();
+});
+</script>
 {% endblock %}

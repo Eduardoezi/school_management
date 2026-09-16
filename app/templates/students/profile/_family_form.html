@@ -1,0 +1,87 @@
+{# Parcial reutilizable. Usa 'member_data' si está definido, si no, campos vacíos. #}
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Rol *</label>
+        <select class="form-select" name="role" required>
+            <option value="madre" {% if member_data and member_data.role == 'madre' %}selected{% endif %}>Madre</option>
+            <option value="padre" {% if member_data and member_data.role == 'padre' %}selected{% endif %}>Padre</option>
+            <option value="tutor" {% if member_data and member_data.role == 'tutor' %}selected{% endif %}>Tutor</option>
+            <option value="otro" {% if member_data and member_data.role == 'otro' %}selected{% endif %}>Otro</option>
+        </select>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-control" name="first_name"
+               value="{{ member_data.first_name if member_data else '' }}" required>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Apellido *</label>
+        <input type="text" class="form-control" name="last_name"
+               value="{{ member_data.last_name if member_data else '' }}" required>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Cédula</label>
+        <input type="text" class="form-control" name="cedula_id"
+               value="{{ member_data.cedula_id if member_data else '' }}">
+    </div>
+    <div class="col-md-2 mb-3">
+        <label class="form-label">Edad</label>
+        <input type="number" class="form-control" name="age" min="0" max="120"
+               value="{{ member_data.age if member_data else '' }}">
+    </div>
+    <div class="col-md-3 mb-3">
+        <label class="form-label">Estado civil</label>
+        <input type="text" class="form-control" name="marital_status"
+               value="{{ member_data.marital_status if member_data else '' }}">
+    </div>
+    <div class="col-md-3 mb-3">
+        <label class="form-label">Fecha de nacimiento</label>
+        <input type="date" class="form-control" name="birth_date"
+               value="{{ member_data.birth_date if member_data else '' }}">
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Lugar de nacimiento</label>
+        <input type="text" class="form-control" name="birth_place"
+               value="{{ member_data.birth_place if member_data else '' }}">
+    </div>
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Grado de instrucción</label>
+        <input type="text" class="form-control" name="education_level"
+               value="{{ member_data.education_level if member_data else '' }}">
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Profesión</label>
+        <input type="text" class="form-control" name="profession"
+               value="{{ member_data.profession if member_data else '' }}">
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Cargo</label>
+        <input type="text" class="form-control" name="position"
+               value="{{ member_data.position if member_data else '' }}">
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Ocupación</label>
+        <input type="text" class="form-control" name="occupation"
+               value="{{ member_data.occupation if member_data else '' }}">
+    </div>
+
+    <div class="col-md-12 mb-3">
+        <label class="form-label">Dirección de habitación</label>
+        <input type="text" class="form-control" name="address"
+               value="{{ member_data.address if member_data else '' }}">
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-control" name="phone"
+               value="{{ member_data.phone if member_data else '' }}">
+    </div>
+    <div class="col-md-8 mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-control" name="email"
+               value="{{ member_data.email if member_data else '' }}">
+    </div>
+</div>

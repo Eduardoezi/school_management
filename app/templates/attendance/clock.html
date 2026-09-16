@@ -1,39 +1,381 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% block title %}Marcar Asistencia{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-body">
-                <h2 class="text-center mb-4">🕒 Registro de Asistencia</h2>
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="teacher_id" class="form-label">Cédula</label>
-                        <input type="text" class="form-control form-control-lg text-center"
-                               id="teacher_id" name="teacher_id" required autofocus
-                               placeholder="Ingrese su cédula">
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" name="action" value="in" class="btn btn-success btn-lg">
-                            ➡️ Marcar ENTRADA
-                        </button>
-                        <button type="submit" name="action" value="out" class="btn btn-danger btn-lg">
-                            ⬅️ Marcar SALIDA
-                        </button>
-                    </div>
-                </form>
 
-                {% if record %}
-                <hr>
-                <h5>Estado de hoy:</h5>
-                <ul class="list-group">
-                    <li class="list-group-item"><strong>Entrada:</strong> {{ record.check_in or '-' }}</li>
-                    <li class="list-group-item"><strong>Salida:</strong> {{ record.check_out or '-' }}</li>
-                    <li class="list-group-item"><strong>Estado:</strong> {{ record.status }}</li>
-                </ul>
-                {% endif %}
+<style>
+    /* ---------- Fondo y contenedor ---------- */
+    .clock-page {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .clock-card {
+        width: 100%;
+        max-width: 520px;
+        border-radius: 24px;
+        border: none;
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    /* ---------- Encabezado con reloj ---------- */
+    .clock-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: #fff;
+        padding: 1.75rem 1.5rem 1.25rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .clock-time {
+        font-size: 3rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        margin-bottom: 0.35rem;
+    }
+
+    .clock-date {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        text-transform: capitalize;
+    }
+
+    .clock-title {
+        font-size: 1rem;
+        margin-top: 1rem;
+        opacity: 0.9;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+
+    /* ---------- Cuerpo ---------- */
+    .clock-body {
+        padding: 2rem 1.75rem;
+    }
+
+    .teacher-preview {
+        display: none;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        margin-bottom: 1rem;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .teacher-preview.show {
+        display: block;
+    }
+
+    .teacher-preview.error {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- Input grande ---------- */
+    .cedula-input {
+        font-size: 1.75rem;
+        text-align: center;
+        letter-spacing: 3px;
+        font-weight: 600;
+        padding: 1rem;
+        border-radius: 14px;
+        border: 2px solid #e2e8f0;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .cedula-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        outline: none;
+    }
+
+    /* ---------- Botones de acción ---------- */
+    .action-btn {
+        border-radius: 14px;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        transition: transform 0.15s, box-shadow 0.2s;
+        border: none;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-in {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+    }
+
+    .btn-out {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: #fff;
+    }
+
+    /* ---------- Estado del día ---------- */
+    .status-card {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 1rem;
+        margin-top: 1.25rem;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .status-item:last-child {
+        border-bottom: none;
+    }
+
+    .status-label {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .status-value {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    /* ---------- Botón volver ---------- */
+    .back-btn {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: #fff;
+    }
+
+    /* ---------- Horario del día ---------- */
+    .schedule-badge {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-top: 0.75rem;
+    }
+</style>
+
+<div class="clock-page">
+    <div class="clock-card">
+
+        {# ---------- ENCABEZADO ---------- #}
+        <div class="clock-header">
+            {# Botón volver: contextual según sesión #}
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="back-btn" title="Volver al panel">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+            {% else %}
+                <a href="{{ url_for('main.index') }}" class="back-btn" title="Volver al inicio">
+                    <i class="bi bi-house"></i>
+                </a>
+            {% endif %}
+
+            <div class="clock-time" id="live-clock">--:--:--</div>
+            <div class="clock-date" id="live-date">Cargando fecha...</div>
+
+            {% if schedule %}
+                <div class="schedule-badge">
+                    <i class="bi bi-clock me-1"></i>
+                    Horario: {{ schedule.start_time }} - {{ schedule.end_time }}
+                </div>
+            {% endif %}
+
+            <div class="clock-title">
+                <i class="bi bi-fingerprint me-1"></i>
+                Registro de Asistencia
             </div>
+        </div>
+
+        {# ---------- CUERPO ---------- #}
+        <div class="clock-body">
+
+            <form method="POST" id="clock-form" autocomplete="off">
+                <div class="mb-3">
+                    <label for="teacher_id" class="form-label fw-semibold text-secondary small">
+                        Ingrese su número de cédula
+                    </label>
+                    <input type="text"
+                           class="form-control cedula-input"
+                           id="teacher_id"
+                           name="teacher_id"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="10"
+                           required
+                           autofocus
+                           placeholder="00000000">
+                    <div class="form-text text-center mt-2">
+                        Presione una opción para registrar
+                    </div>
+                </div>
+
+                {# Previsualización del docente #}
+                <div class="teacher-preview" id="teacher-preview"></div>
+
+                <div class="d-grid gap-3">
+                    <button type="submit" name="action" value="in" class="action-btn btn-in">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>MARCAR ENTRADA
+                    </button>
+                    <button type="submit" name="action" value="out" class="action-btn btn-out">
+                        <i class="bi bi-box-arrow-right me-2"></i>MARCAR SALIDA
+                    </button>
+                </div>
+            </form>
+
+            {# ---------- ESTADO DEL DÍA ---------- #}
+            {% if record %}
+            <div class="status-card">
+                <h6 class="text-uppercase text-muted small mb-3">
+                    <i class="bi bi-clipboard-check me-1"></i>Estado de hoy
+                </h6>
+                <div class="status-item">
+                    <span class="status-label"><i class="bi bi-box-arrow-in-right me-1"></i>Entrada</span>
+                    <span class="status-value">{{ record.check_in or '—' }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label"><i class="bi bi-box-arrow-right me-1"></i>Salida</span>
+                    <span class="status-value">{{ record.check_out or '—' }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label"><i class="bi bi-info-circle me-1"></i>Estado</span>
+                    <span class="status-value">
+                        {% if record.status == 'present' %}
+                            <span class="badge bg-success">Presente</span>
+                        {% elif record.status == 'late' %}
+                            <span class="badge bg-warning text-dark">Tarde</span>
+                        {% elif record.status == 'absent' %}
+                            <span class="badge bg-danger">Ausente</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Justificado</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </div>
+
+<script>
+// ---------- Reloj en vivo ----------
+function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('es-VE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    const date = now.toLocaleDateString('es-VE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    document.getElementById('live-clock').textContent = time;
+    document.getElementById('live-date').textContent = date;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ---------- Previsualización del docente (AJAX) ----------
+const cedulaInput = document.getElementById('teacher_id');
+const preview = document.getElementById('teacher-preview');
+let lastCedula = '';
+
+cedulaInput.addEventListener('input', function () {
+    const cedula = this.value.trim();
+    if (cedula === lastCedula) return;
+    lastCedula = cedula;
+
+    if (cedula.length < 5) {
+        preview.classList.remove('show');
+        return;
+    }
+
+    fetch(`/attendance/api/teacher/${encodeURIComponent(cedula)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.found) {
+                preview.className = 'teacher-preview show';
+                preview.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-check-fill text-success fs-3 me-3"></i>
+                        <div>
+                            <div class="fw-bold">${data.first_name} ${data.last_name}</div>
+                            <small class="text-muted">Cédula ${data.id}</small>
+                        </div>
+                    </div>`;
+            } else if (cedula.length >= 6) {
+                preview.className = 'teacher-preview show error';
+                preview.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-3 me-3"></i>
+                        <div>
+                            <div class="fw-bold">Cédula no encontrada</div>
+                            <small class="text-muted">Verifique con el directivo</small>
+                        </div>
+                    </div>`;
+            } else {
+                preview.classList.remove('show');
+            }
+        })
+        .catch(() => {
+            preview.classList.remove('show');
+        });
+});
+
+// ---------- Auto-submit al presionar Enter ----------
+cedulaInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        this.closest('form').querySelector('button[value="in"]').click();
+    }
+});
+</script>
+
 {% endblock %}

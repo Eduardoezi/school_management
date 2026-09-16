@@ -1,96 +1,368 @@
 {% extends "base.html" %}
 {% block title %}Lista de Estudiantes{% endblock %}
 {% block content %}
-<h2>📋 Estudiantes</h2>
+
+<h2 class="page-title">
+    <i class="bi bi-people-fill me-2"></i>Estudiantes
+</h2>
 
 {# ---------- Botones de vista solo para directivo/secretario ---------- #}
 {% if current_user.role in ['directivo', 'secretario'] %}
 <div class="btn-group mb-3" role="group">
     <a href="{{ url_for('students.list_view', view='enrolled') }}"
        class="btn {% if view_mode == 'enrolled' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-        📘 Solo inscritos
+        <i class="bi bi-check2-circle me-1"></i>Solo inscritos
     </a>
     <a href="{{ url_for('students.list_view', view='all') }}"
        class="btn {% if view_mode == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-        📚 Todos (histórico)
+        <i class="bi bi-archive me-1"></i>Todos (histórico)
     </a>
+</div>
+
+<a href="{{ url_for('students.create_view') }}" class="btn btn-success mb-3">
+    <i class="bi bi-person-plus-fill me-1"></i>Nuevo estudiante
+</a>
+{% endif %}
+
+{# ---------- Aviso según vista ---------- #}
+{% if view_mode == 'teacher' %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i>Mostrando solo los estudiantes de tu curso.
+    </div>
+{% elif view_mode == 'enrolled' %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i>Mostrando solo estudiantes con inscripción activa.
+    </div>
+{% elif view_mode == 'all' %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>Mostrando TODOS los estudiantes (incluye inactivos, egresados y retirados).
+    </div>
+{% endif %}
+
+{# ---------- Panel de filtros ---------- #}
+{% if students %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text"
+                           id="search-input"
+                           class="form-control"
+                           placeholder="Buscar por cédula, nombre, apellido, curso, representante..."
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select id="course-filter" class="form-select">
+                    <option value="">📚 Todos los cursos</option>
+                    {# Opciones se cargan dinámicamente con JS #}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="status-filter" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="activo">Solo activos</option>
+                    <option value="inactivo">Solo inactivos</option>
+                    <option value="egresado">Solo egresados</option>
+                    <option value="retirado">Solo retirados</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" id="clear-filters" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                </button>
+            </div>
+        </div>
+        <div class="mt-2 small text-muted" id="counter">
+            Mostrando {{ students|length }} de {{ students|length }} estudiantes
+        </div>
+    </div>
 </div>
 {% endif %}
 
-{% if current_user.role in ['directivo', 'secretario'] %}
-<a href="{{ url_for('students.create_view') }}" class="btn btn-success mb-3">+ Nuevo estudiante</a>
-{% endif %}
+{# ---------- Tabla ---------- #}
+<div class="table-responsive">
+    <table class="table table-hover align-middle" id="students-table">
+        <thead class="table-light">
+            <tr>
+                <th data-sort="0" class="sortable">Cédula escolar</th>
+                <th data-sort="1" class="sortable">Nombre</th>
+                <th data-sort="2" class="sortable">Apellido</th>
+                <th data-sort="3" class="sortable">Curso</th>
+                <th data-sort="4" class="sortable">Estado</th>
+                <th data-sort="5" class="sortable">Representante</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr class="student-row"
+                data-course="{{ student.course_name or '' }}"
+                data-status="{{ student.enrollment_status or '' }}">
 
-{# ---------- Título dinámico ---------- #}
-{% if view_mode == 'teacher' %}
-    <div class="alert alert-info">Mostrando solo los estudiantes de tu curso.</div>
-{% elif view_mode == 'enrolled' %}
-    <div class="alert alert-info">Mostrando solo estudiantes con inscripción activa.</div>
-{% elif view_mode == 'all' %}
-    <div class="alert alert-warning">Mostrando TODOS los estudiantes (incluye inactivos, egresados y retirados).</div>
-{% endif %}
+                <td>{{ student.school_id or 'Sin asignar' }}</td>
+                <td>{{ student.first_name }}</td>
+                <td>{{ student.last_name }}</td>
+                <td>{{ student.course_name or '-' }}</td>
+                <td>
+                    {% if student.enrollment_status == 'activo' %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif student.enrollment_status == 'inactivo' %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% elif student.enrollment_status == 'egresado' %}
+                        <span class="badge bg-primary">Egresado</span>
+                    {% elif student.enrollment_status == 'retirado' %}
+                        <span class="badge bg-danger">Retirado</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark">Sin inscripción</span>
+                    {% endif %}
+                </td>
+                <td>{{ student.rep_first_name }} {{ student.rep_last_name or '-' }}</td>
+                <td>
+                    <!--<div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('students.detail_view', student_id=student.id) }}"
+                           class="btn btn-outline-info" title="Ver / Editar">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Cédula escolar</th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Curso</th>
-            <th>Estado</th>
-            <th>Representante</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for student in students %}
-        <tr>
-            <td>{{ student.school_id or 'Sin asignar' }}</td>
-            <td>{{ student.first_name }}</td>
-            <td>{{ student.last_name }}</td>
-            <td>{{ student.course_name or '-' }}</td>
-            <td>
-                {% if student.enrollment_status == 'activo' %}
-                    <span class="badge bg-success">Activo</span>
-                {% elif student.enrollment_status == 'inactivo' %}
-                    <span class="badge bg-secondary">Inactivo</span>
-                {% elif student.enrollment_status == 'egresado' %}
-                    <span class="badge bg-primary">Egresado</span>
-                {% elif student.enrollment_status == 'retirado' %}
-                    <span class="badge bg-danger">Retirado</span>
-                {% else %}
-                    <span class="badge bg-light text-dark">Sin inscripción</span>
-                {% endif %}
-            </td>
-            <td>{{ student.rep_first_name }} {{ student.rep_last_name or '-' }}</td>
-            <td>
-                <a href="{{ url_for('students.detail_view', student_id=student.id) }}"
-                   class="btn btn-sm btn-info">Ver/Editar</a>
+                        {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
+                            <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
+                               class="btn btn-outline-secondary" title="Histórico de rendimiento">
+                                <i class="bi bi-journal-bookmark"></i>
+                            </a>
+                        {% endif %}
 
-                {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
-                    <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
-                       class="btn btn-sm btn-secondary">Histórico</a>
-                {% endif %}
+                        {% if current_user.role == 'maestro' %}
+                            <a href="{{ url_for('evaluations.record', student_id=student.id) }}"
+                               class="btn btn-outline-primary" title="Registrar evaluación">
+                                <i class="bi bi-journal-plus"></i>
+                            </a>
+                        {% endif %}
 
-                {% if current_user.role == 'maestro' %}
-                    <a href="{{ url_for('evaluations.record', student_id=student.id) }}"
-                       class="btn btn-sm btn-primary">Evaluar</a>
-                {% endif %}
+                        {% if current_user.role == 'directivo' %}
+                            <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
+                               class="btn btn-outline-danger"
+                               title="Eliminar"
+                               onclick="return confirm('¿Eliminar definitivamente a {{ student.first_name }} {{ student.last_name }}?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {% endif %}
+                    </div>-->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
+                        class="btn btn-outline-primary" title="Perfil completo">
+                            <i class="bi bi-person-badge"></i>
+                        </a>
+                        <a href="{{ url_for('students.detail_view', student_id=student.id) }}"
+                        class="btn btn-outline-info" title="Editar datos básicos">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
 
-                {% if current_user.role == 'directivo' %}
-                    <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
-                       class="btn btn-sm btn-danger"
-                       onclick="return confirm('¿Eliminar?')">Eliminar</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7" class="text-center text-muted">
-                No hay estudiantes para mostrar en esta vista.
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                        {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
+                            <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
+                            class="btn btn-outline-secondary" title="Histórico de rendimiento">
+                                <i class="bi bi-journal-bookmark"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if current_user.role == 'maestro' %}
+                            <a href="{{ url_for('evaluations.record', student_id=student.id) }}"
+                            class="btn btn-outline-primary" title="Registrar evaluación">
+                                <i class="bi bi-journal-plus"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if current_user.role == 'directivo' %}
+                            <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
+                            class="btn btn-outline-danger"
+                            title="Eliminar"
+                            onclick="return confirm('¿Eliminar definitivamente a {{ student.first_name }} {{ student.last_name }}?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+
+            {# Fila para "sin resultados" (oculta por defecto) #}
+            <tr id="no-results" style="display:none;">
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-search display-6 d-block mb-2 opacity-50"></i>
+                    No se encontraron estudiantes con esos criterios.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if not students %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-inbox display-4 d-block mb-2 opacity-50"></i>
+        No hay estudiantes para mostrar en esta vista.
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    th.sortable:hover {
+        background-color: #e2e8f0;
+    }
+    th.sortable::after {
+        content: '\F282';  /* bootstrap-icons: chevron-expand */
+        font-family: 'bootstrap-icons';
+        font-size: 0.75rem;
+        margin-left: 0.35rem;
+        opacity: 0.35;
+    }
+    th.sortable.sort-asc::after {
+        content: '\F235';  /* chevron-up */
+        opacity: 1;
+    }
+    th.sortable.sort-desc::after {
+        content: '\F229';  /* chevron-down */
+        opacity: 1;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('students-table');
+    if (!table) return;
+
+    const rows = Array.from(table.querySelectorAll('tbody tr.student-row'));
+    if (rows.length === 0) return;
+
+    const searchInput = document.getElementById('search-input');
+    const courseFilter = document.getElementById('course-filter');
+    const statusFilter = document.getElementById('status-filter');
+    const clearBtn = document.getElementById('clear-filters');
+    const counter = document.getElementById('counter');
+    const noResults = document.getElementById('no-results');
+
+    // ---------- 1. Normalizador (sin acentos, sin guiones, minúsculas) ----------
+    function normalize(text) {
+        return (text || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')   // quita acentos
+            .replace(/[-\s]/g, '');            // quita guiones y espacios
+    }
+
+    // ---------- 2. Precargar índice de búsqueda por fila ----------
+    rows.forEach(row => {
+        row.dataset.searchText = normalize(row.textContent);
+    });
+
+    // ---------- 3. Poblar dropdown de cursos ----------
+    const cursos = new Set();
+    rows.forEach(row => {
+        const c = (row.dataset.course || '').trim();
+        if (c && c !== '-') cursos.add(c);
+    });
+    Array.from(cursos).sort((a, b) => a.localeCompare(b, 'es')).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        courseFilter.appendChild(opt);
+    });
+
+    // ---------- 4. Aplicar filtros ----------
+    function applyFilters() {
+        const q = normalize(searchInput.value);
+        const course = courseFilter.value;
+        const status = statusFilter.value;
+
+        let visibles = 0;
+
+        rows.forEach(row => {
+            const matchText   = !q       || row.dataset.searchText.includes(q);
+            const matchCourse = !course  || row.dataset.course === course;
+            const matchStatus = !status  || row.dataset.status === status;
+
+            const show = matchText && matchCourse && matchStatus;
+            row.style.display = show ? '' : 'none';
+            if (show) visibles++;
+        });
+
+        counter.textContent = `Mostrando ${visibles} de ${rows.length} estudiantes`;
+        noResults.style.display = visibles === 0 ? '' : 'none';
+    }
+
+    // ---------- 5. Eventos de filtros ----------
+    searchInput.addEventListener('input', applyFilters);
+    courseFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+
+    clearBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        courseFilter.value = '';
+        statusFilter.value = '';
+        applyFilters();
+        searchInput.focus();
+    });
+
+    // ---------- 6. Ordenamiento por columnas ----------
+    const tbody = table.querySelector('tbody');
+    let currentSort = { idx: null, dir: 'asc' };
+
+    table.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', function () {
+            const idx = parseInt(th.dataset.sort, 10);
+            const dir = (currentSort.idx === idx && currentSort.dir === 'asc') ? 'desc' : 'asc';
+
+            // Actualizar clases visuales
+            table.querySelectorAll('th.sortable').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+            // Ordenar filas
+            rows.sort((a, b) => {
+                const aCell = (a.cells[idx]?.textContent || '').trim();
+                const bCell = (b.cells[idx]?.textContent || '').trim();
+                return dir === 'asc'
+                    ? aCell.localeCompare(bCell, 'es', { sensitivity: 'base', numeric: true })
+                    : bCell.localeCompare(aCell, 'es', { sensitivity: 'base', numeric: true });
+            });
+
+            // Reinsertar en el DOM
+            rows.forEach(r => tbody.appendChild(r));
+
+            // Mantener "no results" al final
+            if (noResults) tbody.appendChild(noResults);
+
+            currentSort = { idx, dir };
+        });
+    });
+
+    // ---------- 7. Atajos de teclado ----------
+    // Escape limpia la búsqueda
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            applyFilters();
+        }
+        // Ctrl+K enfoca la búsqueda
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+    });
+
+    // ---------- 8. Ejecutar filtros iniciales ----------
+    applyFilters();
+});
+</script>
+
 {% endblock %}

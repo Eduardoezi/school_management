@@ -1,0 +1,653 @@
+{% extends "base.html" %}
+{% block title %}Perfil del Estudiante{% endblock %}
+{% block content %}
+
+{# ==================== ENCABEZADO ==================== #}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center g-3">
+
+            {# Foto #}
+            <div class="col-md-3 text-center">
+                <div class="avatar-wrapper avatar-xl mx-auto">
+                    {% if student.photo %}
+                        <img src="/static/{{ student.photo }}" alt="{{ student.first_name }}" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-circle avatar-circle-xl">
+                            {{ (student.first_name[:1] ~ student.last_name[:1])|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Datos principales #}
+            <div class="col-md-9">
+                <h2 class="mb-1">{{ student.first_name }} {{ student.last_name }}</h2>
+                <p class="text-muted mb-2">
+                    <i class="bi bi-card-text me-1"></i>
+                    Cédula escolar: <strong>{{ student.school_id or 'Sin asignar' }}</strong>
+                </p>
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                    <span class="badge bg-primary">
+                        <i class="bi bi-book me-1"></i>{{ student.course_name or 'Sin curso' }}
+                    </span>
+                    {% if student.enrollment_status == 'activo' %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif student.enrollment_status == 'inactivo' %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% elif student.enrollment_status == 'egresado' %}
+                        <span class="badge bg-primary">Egresado</span>
+                    {% elif student.enrollment_status == 'retirado' %}
+                        <span class="badge bg-danger">Retirado</span>
+                    {% endif %}
+                    {% if student.disability %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-heart-pulse me-1"></i>{{ student.disability }}
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="mb-0 small text-muted">
+                    <i class="bi bi-calendar me-1"></i>
+                    Nacimiento: {{ student.birth_date or '-' }}
+                </p>
+            </div>
+        </div>
+
+        {# Botones de acción #}
+        <hr>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <a href="{{ url_for('students.edit_view', student_id=student.id) }}"
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Editar datos básicos
+                </a>
+            {% endif %}
+            <a href="{{ url_for('students.list_view') }}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver al listado
+            </a>
+            {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
+                <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-journal-bookmark me-1"></i>Histórico de rendimiento
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ==================== PESTAÑAS ==================== #}
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button">
+            <i class="bi bi-person-vcard me-1"></i>Datos personales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-family" type="button">
+            <i class="bi bi-people me-1"></i>Familia
+            {% if family %}<span class="badge bg-secondary ms-1">{{ family|length }}</span>{% endif %}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-medical" type="button">
+            <i class="bi bi-heart-pulse me-1"></i>Ficha médica
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-socio" type="button">
+            <i class="bi bi-house-heart me-1"></i>Socioeconómico
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-history" type="button">
+            <i class="bi bi-clock-history me-1"></i>Historial académico
+            {% if enrollments %}<span class="badge bg-secondary ms-1">{{ enrollments|length }}</span>{% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    {# ==================== TAB: DATOS PERSONALES ==================== #}
+    <div class="tab-pane fade show active" id="tab-personal">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-person-vcard me-2"></i>Datos personales</h5>
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('student_profile.edit_personal', student_id=student.id) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if details %}
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Sexo</label>
+                        <p class="mb-0 fw-semibold">
+                            {% if details.sex == 'M' %}Masculino
+                            {% elif details.sex == 'F' %}Femenino
+                            {% else %}-{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Lugar de nacimiento</label>
+                        <p class="mb-0 fw-semibold">{{ details.birth_place or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Lateralidad</label>
+                        <p class="mb-0 fw-semibold text-capitalize">
+                            {{ details.laterality|replace('_', ' ') if details.laterality else '-' }}
+                        </p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Camisa</label>
+                        <p class="mb-0 fw-semibold">{{ details.shirt_size or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Pantalón</label>
+                        <p class="mb-0 fw-semibold">{{ details.pants_size or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Zapatos</label>
+                        <p class="mb-0 fw-semibold">{{ details.shoe_size or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Teléfono</label>
+                        <p class="mb-0 fw-semibold">{{ details.contact_phone or '-' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Dirección</label>
+                        <p class="mb-0 fw-semibold">{{ details.address or '-' }}</p>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="text-muted small">Municipio</label>
+                        <p class="mb-0 fw-semibold">{{ details.municipality or '-' }}</p>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="text-muted small">Parroquia</label>
+                        <p class="mb-0 fw-semibold">{{ details.parish or '-' }}</p>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="text-muted small">Estado</label>
+                        <p class="mb-0 fw-semibold">{{ details.state or '-' }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Aún no hay datos personales extendidos. 
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('student_profile.edit_personal', student_id=student.id) }}">Completar ahora</a>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ==================== TAB: FAMILIA ==================== #}
+<div class="tab-pane fade" id="tab-family">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Grupo familiar</h5>
+                {% if current_user.role in ['directivo', 'secretario'] %}
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-family-add">
+                        <i class="bi bi-person-plus me-1"></i>Agregar familiar
+                    </button>
+                {% endif %}
+            </div>
+
+            {# ---------- REPRESENTANTE (destacado) ---------- #}
+            {% if representative %}
+            <div class="card border-primary mb-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-shield-check me-2"></i>
+                        <strong>Representante legal</strong>
+                    </span>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-light text-primary text-capitalize">
+                            {{ representative.relationship or 'Representante' }}
+                        </span>
+                        {% if current_user.role in ['directivo', 'secretario'] %}
+                            <a href="{{ url_for('students.edit_view', student_id=student.id) }}"
+                               class="btn btn-sm btn-light"
+                               title="Editar representante">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">
+                                {{ representative.first_name }} {{ representative.last_name }}
+                            </h5>
+                            <p class="small text-muted mb-2">
+                                CI: {{ representative.cedula_id or '-' }}
+                                {% if representative.age %}· {{ representative.age }} años{% endif %}
+                            </p>
+
+                            <ul class="list-unstyled small mb-0">
+                                {% if representative.marital_status %}
+                                    <li><strong>Estado civil:</strong> {{ representative.marital_status }}</li>
+                                {% endif %}
+                                {% if representative.birth_date %}
+                                    <li><strong>Nacimiento:</strong> {{ representative.birth_date }}</li>
+                                {% endif %}
+                                {% if representative.birth_place %}
+                                    <li><strong>Lugar nac.:</strong> {{ representative.birth_place }}</li>
+                                {% endif %}
+                                {% if representative.education_level %}
+                                    <li><strong>Instrucción:</strong> {{ representative.education_level }}</li>
+                                {% endif %}
+                                {% if representative.profession %}
+                                    <li><strong>Profesión:</strong> {{ representative.profession }}</li>
+                                {% endif %}
+                                {% if representative.occupation %}
+                                    <li><strong>Ocupación:</strong> {{ representative.occupation }}</li>
+                                {% endif %}
+                                {% if representative.position %}
+                                    <li><strong>Cargo:</strong> {{ representative.position }}</li>
+                                {% endif %}
+                                {% if representative.phone %}
+                                    <li><i class="bi bi-telephone me-1"></i>{{ representative.phone }}</li>
+                                {% endif %}
+                                {% if representative.email %}
+                                    <li><i class="bi bi-envelope me-1"></i>{{ representative.email }}</li>
+                                {% endif %}
+                                {% if representative.address %}
+                                    <li><i class="bi bi-geo-alt me-1"></i>{{ representative.address }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="avatar-wrapper avatar-lg mx-auto">
+                                {% if representative.photo %}
+                                    <img src="/static/{{ representative.photo }}"
+                                         alt="{{ representative.first_name }}" class="avatar-img">
+                                {% else %}
+                                    <div class="avatar-circle avatar-circle-lg">
+                                        {{ (representative.first_name[:1] ~ representative.last_name[:1])|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block mt-2">Representante</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Este estudiante no tiene un representante registrado.
+                {% if current_user.role in ['directivo', 'secretario'] %}
+                    <a href="{{ url_for('students.edit_view', student_id=student.id) }}">
+                        Asignar representante
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {# ---------- OTROS MIEMBROS DE LA FAMILIA ---------- #}
+            {% if family %}
+            <h6 class="text-muted mt-4 mb-3">
+                <i class="bi bi-people-fill me-1"></i>Otros miembros del grupo familiar
+            </h6>
+            <div class="row g-3">
+                {% for member in family %}
+                <div class="col-md-6">
+                    <div class="card border h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-secondary text-capitalize">
+                                    {{ member.role }}
+                                </span>
+                                {% if current_user.role in ['directivo', 'secretario'] %}
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modal-family-edit-{{ member.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="POST"
+                                          action="{{ url_for('student_profile.family_delete',
+                                                             student_id=student.id, member_id=member.id) }}"
+                                          onsubmit="return confirm('¿Eliminar este familiar?');"
+                                          style="display:inline;">
+                                        <button class="btn btn-outline-danger" type="submit">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <h6 class="mb-1">{{ member.first_name }} {{ member.last_name }}</h6>
+                            <p class="small text-muted mb-2">
+                                CI: {{ member.cedula_id or '-' }}
+                                {% if member.age %}· {{ member.age }} años{% endif %}
+                            </p>
+                            <ul class="list-unstyled small mb-0">
+                                {% if member.marital_status %}<li><strong>Estado civil:</strong> {{ member.marital_status }}</li>{% endif %}
+                                {% if member.birth_date %}<li><strong>Nacimiento:</strong> {{ member.birth_date }}</li>{% endif %}
+                                {% if member.birth_place %}<li><strong>Lugar nac.:</strong> {{ member.birth_place }}</li>{% endif %}
+                                {% if member.education_level %}<li><strong>Instrucción:</strong> {{ member.education_level }}</li>{% endif %}
+                                {% if member.profession %}<li><strong>Profesión:</strong> {{ member.profession }}</li>{% endif %}
+                                {% if member.occupation %}<li><strong>Ocupación:</strong> {{ member.occupation }}</li>{% endif %}
+                                {% if member.position %}<li><strong>Cargo:</strong> {{ member.position }}</li>{% endif %}
+                                {% if member.phone %}<li><strong>Teléfono:</strong> {{ member.phone }}</li>{% endif %}
+                                {% if member.email %}<li><strong>Email:</strong> {{ member.email }}</li>{% endif %}
+                                {% if member.address %}<li><strong>Dirección:</strong> {{ member.address }}</li>{% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif not representative %}
+            <p class="text-muted text-center py-4 mb-0">
+                <i class="bi bi-info-circle me-1"></i>No hay familiares registrados.
+            </p>
+            {% else %}
+            <p class="text-muted text-center py-4 mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                No hay otros familiares registrados (solo el representante).
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+    {# ==================== TAB: MÉDICA ==================== #}
+    <div class="tab-pane fade" id="tab-medical">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>Ficha médica</h5>
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('student_profile.medical_edit', student_id=student.id) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if medical %}
+                <h6 class="text-primary"><i class="bi bi-shield-check me-1"></i>Vacunas</h6>
+                <div class="row mb-4">
+                    {% set vacunas = [
+                        ('BCG', medical.vaccine_bcg),
+                        ('Polio', medical.vaccine_polio),
+                        ('Triple', medical.vaccine_triple),
+                        ('Sarampión', medical.vaccine_measles),
+                        ('Rubéola', medical.vaccine_rubella),
+                        ('Fiebre Amarilla', medical.vaccine_yellow_fever),
+                        ('Toxoide', medical.vaccine_toxoid),
+                        ('COVID 1ra', medical.vaccine_covid_1),
+                        ('COVID 2da', medical.vaccine_covid_2),
+                        ('COVID 3ra', medical.vaccine_covid_3)
+                    ] %}
+                    {% for nombre, fecha in vacunas %}
+                    <div class="col-md-3 mb-2">
+                        <span class="small text-muted d-block">{{ nombre }}</span>
+                        {% if fecha %}
+                            <span class="badge bg-success">{{ fecha }}</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">No registrada</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if medical.vaccine_others %}
+                    <div class="col-12 mt-2">
+                        <strong class="small">Otras vacunas:</strong> {{ medical.vaccine_others }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h6 class="text-primary"><i class="bi bi-clipboard2-pulse me-1"></i>Condiciones</h6>
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Alergias</label>
+                        <p class="mb-0">{{ medical.allergies or 'Ninguna' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Enfermedades crónicas</label>
+                        <p class="mb-0">{{ medical.chronic_conditions or 'Ninguna' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Convulsiones</label>
+                        <p class="mb-0">{{ medical.convulsions or 'No' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Medicación actual</label>
+                        <p class="mb-0">{{ medical.current_medication or 'Ninguna' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Atención médica</label>
+                        <p class="mb-0">{{ medical.medical_attention or '-' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Atención UPEN</label>
+                        <p class="mb-0">{{ medical.upen_attention or '-' }}</p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="text-muted small">Protocolo en caso de fiebre</label>
+                        <p class="mb-0">{{ medical.fever_protocol or '-' }}</p>
+                    </div>
+                </div>
+
+                <h6 class="text-primary"><i class="bi bi-file-medical me-1"></i>Informes</h6>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Informe Médico</label>
+                        <p class="mb-0">{{ medical.report_medical or 'Sin informe' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Informe Psicológico</label>
+                        <p class="mb-0">{{ medical.report_psychological or 'Sin informe' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Informe Neurológico</label>
+                        <p class="mb-0">{{ medical.report_neurological or 'Sin informe' }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>No hay información médica registrada.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ==================== TAB: SOCIOECONÓMICO ==================== #}
+    <div class="tab-pane fade" id="tab-socio">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-house-heart me-2"></i>Estudio socioeconómico</h5>
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('student_profile.socioeconomic_edit', student_id=student.id) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if socioeconomic %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Vive con</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.lives_with or '-' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Otros miembros del grupo familiar</label>
+                        <p class="mb-0">{{ socioeconomic.other_family_members or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Miembros que trabajan</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.working_members or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Ingreso familiar mensual</label>
+                        <p class="mb-0 fw-semibold">
+                            {% if socioeconomic.monthly_income %}
+                                Bs. {{ socioeconomic.monthly_income }}
+                            {% else %}-{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Miembros en el hogar</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.household_members or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Nº de habitaciones</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.rooms_count or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Tipo de vivienda</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.housing_type or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Condición de la vivienda</label>
+                        <p class="mb-0 fw-semibold">{{ socioeconomic.housing_condition or '-' }}</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="text-muted small">Infraestructura</label>
+                        <p class="mb-0">{{ socioeconomic.housing_infrastructure or '-' }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>No hay estudio socioeconómico registrado.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ==================== TAB: HISTORIAL ACADÉMICO ==================== #}
+    <div class="tab-pane fade" id="tab-history">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>Historial académico</h5>
+
+                {% if enrollments %}
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Año escolar</th>
+                                <th>Curso</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Docente</th>
+                                <th>Fecha inscripción</th>
+                                <th>Estado</th>
+                                <th>Fecha egreso</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in enrollments %}
+                            <tr>
+                                <td>{{ e.academic_year or '-' }}</td>
+                                <td>{{ e.course_name or '-' }}</td>
+                                <td>{{ e.grade or '-' }}</td>
+                                <td>{{ e.section or '-' }}</td>
+                                <td>
+                                    {% if e.teacher_first_name %}
+                                        {{ e.teacher_first_name }} {{ e.teacher_last_name }}
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ e.enrollment_date or '-' }}</td>
+                                <td>
+                                    {% if e.status == 'activo' %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% elif e.status == 'inactivo' %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% elif e.status == 'egresado' %}
+                                        <span class="badge bg-primary">Egresado</span>
+                                    {% elif e.status == 'retirado' %}
+                                        <span class="badge bg-danger">Retirado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ e.egreso_date or '-' }}</td>
+                                <td class="text-truncate" style="max-width: 200px;">
+                                    {{ e.observations or '-' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>No hay inscripciones registradas.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# ==================== MODALES ==================== #}
+{% if current_user.role in ['directivo', 'secretario'] %}
+
+{# --- Modal: Agregar familiar --- #}
+<div class="modal fade" id="modal-family-add" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('student_profile.family_add', student_id=student.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Agregar familiar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% include 'students/profile/_family_form.html' %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# --- Modales: Editar cada familiar --- #}
+{% for member in family %}
+<div class="modal fade" id="modal-family-edit-{{ member.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST"
+                  action="{{ url_for('student_profile.family_edit', student_id=student.id, member_id=member.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar {{ member.role }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% with member_data = member %}
+                        {% include 'students/profile/_family_form.html' %}
+                    {% endwith %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endif %}
+
+{% endblock %}

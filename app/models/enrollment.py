@@ -101,3 +101,58 @@ class Enrollment:
         total = cursor.fetchone()[0]
         cursor.close(); conn.close()
         return total
+
+    @staticmethod
+    def get_by_student(student_id):
+        """Devuelve todas las inscripciones (activas e históricas) de un estudiante."""
+        conn = get_db_connection()
+        if not conn: return []
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT e.*, c.name AS course_name, c.grade, c.section,
+                c.academic_year, t.first_name AS teacher_first_name,
+                t.last_name AS teacher_last_name
+            FROM enrollments e
+            JOIN students s ON e.school_id = s.school_id
+            LEFT JOIN courses c ON e.course_code = c.code
+            LEFT JOIN teachers t ON c.teacher_id = t.id
+            WHERE s.id = %s
+            ORDER BY e.enrollment_date DESC
+        """, (student_id,))
+        rows = cursor.fetchall()
+        cursor.close(); conn.close()
+        return rows
+    @staticmethod
+    def get_matricula(course_code, on_date):
+        """
+        Devuelve cuántos estudiantes están matriculados en un curso en una fecha.
+        
+        Considera:
+        - Inscripciones con enrollment_date <= on_date
+        - Sin egreso o con egreso_date >= on_date
+        - Sin importar el status actual (activo, egresado, retirado) porque
+            se calcula la matrícula al momento de esa fecha.
+        
+        Retorna dict con: total, girls, boys, unknown
+        """
+        conn = get_db_connection()
+        if not conn:
+            return {'total': 0, 'girls': 0, 'boys': 0, 'unknown': 0}
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN sd.sex = 'F' THEN 1 ELSE 0 END), 0) AS girls,
+                COALESCE(SUM(CASE WHEN sd.sex = 'M' THEN 1 ELSE 0 END), 0) AS boys,
+                COALESCE(SUM(CASE WHEN sd.sex IS NULL OR sd.sex NOT IN ('M','F') THEN 1 ELSE 0 END), 0) AS unknown
+            FROM enrollments e
+            JOIN students s ON e.school_id = s.school_id
+            LEFT JOIN student_details sd ON sd.student_id = s.id
+            WHERE e.course_code = %s
+            AND e.enrollment_date <= %s
+            AND (e.egreso_date IS NULL OR e.egreso_date >= %s)
+        """, (course_code, on_date, on_date))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return row or {'total': 0, 'girls': 0, 'boys': 0, 'unknown': 0}

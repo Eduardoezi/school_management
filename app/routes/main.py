@@ -17,9 +17,12 @@ main_bp = Blueprint('main', __name__)
 def index():
     escuela = {
         'nombre': 'IEE Villa de Cura',
-        'direccion': 'Calle Principal #123, Ciudad',
-        'telefono': '+58 212-555-1234',
-        'email': 'info@colegio.edu.ve'
+        'direccion': 'Calle Principal #123, Villa de Cura, Estado Aragua, Venezuela',
+        'telefono': '+58 244-386-1234',
+        'email': 'ieevilladecura@gmail.com',
+        'codigo_DEA': 'OD-0459-05-16',
+        'codigo_dependencia': '006417140',
+        'Rif': 'j-30508137-9'
     }
     return render_template('index.html', escuela=escuela)
 
