@@ -69,6 +69,12 @@
                     <i class="bi bi-pencil me-1"></i>Editar perfil
                 </a>
             {% endif %}
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <a href="{{ url_for('documents.certificacion_funciones', teacher_id=teacher.id) }}"
+                class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-text me-1"></i>Certificación de funciones
+                </a>
+            {% endif %}
             <a href="{{ url_for('teachers.list_view') }}"
                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i>Volver al listado
@@ -224,6 +230,22 @@
             <div class="col-md-4 mb-3">
                 <label class="text-muted small">Tipo de personal</label>
                 <p class="mb-0 fw-semibold text-capitalize">{{ details.staff_type or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Condición nominal</label>
+                <p class="mb-0 fw-semibold">
+                    {% if details.nominal_condition == 'directivo_encargado' %}Directivo Encargado
+                    {% elif details.nominal_condition == 'directivo_titular' %}Directivo Titular
+                    {% elif details.nominal_condition == 'docente_titular' %}Docente Titular
+                    {% elif details.nominal_condition == 'docente_interino' %}Docente Interino
+                    {% elif details.nominal_condition == 'docente_contratado' %}Docente Suplente
+                    {% elif details.nominal_condition == 'obrero_titular' %}Obrero Titular
+                    {% elif details.nominal_condition == 'obrero_interino' %}Obrero Interino
+                    {% elif details.nominal_condition == 'administrativo_titular' %}Administrativo Titular
+                    {% elif details.nominal_condition == 'administrativo_interino' %}Administrativo Interino
+                    {% elif details.nominal_condition == 'otro' %}Otro
+                    {% else %}-{% endif %}
+                </p>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="text-muted small">Horas académicas</label>

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Datos Institucionales{% endblock %}
+{% block content %}
+
+<h1 class="page-title">
+    <i class="bi bi-building me-2"></i>Datos Institucionales
+</h1>
+<p class="text-muted">
+    Estos datos aparecen en los documentos oficiales (constancias y certificaciones).
+</p>
+
+{# ---------- Información sobre el firmante ---------- #}
+{% if director %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-1"></i>
+    <strong>Firmante actual de los documentos:</strong>
+    {{ director.first_name }} {{ director.last_name }}
+    (C.I. {{ director.id }})
+    · {{ director.cargo or director.nominal_condition }}
+    <br>
+    <small>Para cambiar el firmante, asigna la condición nominal "Directivo Encargado" o "Directivo Titular" a otro docente desde su perfil.</small>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    <strong>No hay firmante configurado.</strong>
+    Asigna la condición nominal "Directivo Encargado" a un docente desde
+    <a href="{{ url_for('teachers.list_view') }}">Docentes</a>.
+</div>
+{% endif %}
+
+<form method="POST">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-building me-2 text-primary"></i>Datos de la institución
+            </h5>
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Nombre completo *</label>
+                    <input type="text" class="form-control" name="nombre"
+                           value="{{ institution.nombre or '' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Nombre corto</label>
+                    <input type="text" class="form-control" name="nombre_corto"
+                           value="{{ institution.nombre_corto or '' }}">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Código DEA</label>
+                    <input type="text" class="form-control" name="codigo_dea"
+                           value="{{ institution.codigo_dea or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Código de Dependencia</label>
+                    <input type="text" class="form-control" name="codigo_dependencia"
+                           value="{{ institution.codigo_dependencia or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Código Administrativo</label>
+                    <input type="text" class="form-control" name="codigo_administrativo"
+                           value="{{ institution.codigo_administrativo or '' }}">
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" class="form-control" name="direccion"
+                           value="{{ institution.direccion or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Municipio</label>
+                    <input type="text" class="form-control" name="municipio"
+                           value="{{ institution.municipio or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Estado</label>
+                    <input type="text" class="form-control" name="estado"
+                           value="{{ institution.estado or '' }}">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" name="telefono"
+                           value="{{ institution.telefono or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" name="email"
+                           value="{{ institution.email or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">RIF</label>
+                    <input type="text" class="form-control" name="rif"
+                           value="{{ institution.rif or '' }}">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Ruta del logo</label>
+                    <input type="text" class="form-control" name="logo_path"
+                           value="{{ institution.logo_path or 'img/logo_institucional.png' }}">
+                    <small class="text-muted">
+                        Archivo dentro de <code>app/static/</code>. Por defecto: <code>img/logo_institucional.png</code>
+                    </small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Vista previa del logo</label>
+                    <div>
+                        <img src="{{ url_for('static', filename=institution.logo_path or 'img/logo_institucional.png') }}"
+                             alt="Logo" style="max-height: 80px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle me-1"></i>Guardar cambios
+    </button>
+</form>
+
+{% endblock %}

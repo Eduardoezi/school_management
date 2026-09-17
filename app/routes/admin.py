@@ -3,6 +3,8 @@ from flask_login import login_required, current_user
 from app.models.user import User
 from app.models.user_session import UserSession
 from app.utils.decorators import role_required
+from app.models.institution_data import InstitutionData
+from app.models.teacher import Teacher
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -183,3 +185,39 @@ def reactivate_user(user_id):
         flash('Error al reactivar el usuario.', 'danger')
 
     return redirect(url_for('admin.users_list'))
+
+# ============================================================
+# DATOS INSTITUCIONALES
+# ============================================================
+
+
+@admin_bp.route('/institution', methods=['GET', 'POST'])
+@login_required
+@role_required('directivo')
+def institution():
+    if request.method == 'POST':
+        data = {
+            'nombre':                request.form.get('nombre'),
+            'nombre_corto':          request.form.get('nombre_corto'),
+            'codigo_dea':            request.form.get('codigo_dea'),
+            'codigo_dependencia':    request.form.get('codigo_dependencia'),
+            'codigo_administrativo': request.form.get('codigo_administrativo'),
+            'direccion':             request.form.get('direccion'),
+            'municipio':             request.form.get('municipio'),
+            'estado':                request.form.get('estado'),
+            'telefono':              request.form.get('telefono'),
+            'email':                 request.form.get('email'),
+            'rif':                   request.form.get('rif'),
+            'logo_path':             request.form.get('logo_path') or 'img/logo_institucional.png'
+        }
+        if InstitutionData.save(data):
+            flash('Datos institucionales actualizados.', 'success')
+        else:
+            flash('Error al guardar.', 'danger')
+        return redirect(url_for('admin.institution'))
+
+    institution = InstitutionData.get()
+    director = Teacher.get_director()
+    return render_template('admin/institution.html',
+                           institution=institution,
+                           director=director)

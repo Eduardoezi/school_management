@@ -58,6 +58,7 @@ def edit(teacher_id):
             'cargo':           request.form.get('cargo'),
             'staff_type':      request.form.get('staff_type') or None,
             'specialist_type': request.form.get('specialist_type') or 'ninguno',
+            'nominal_condition': request.form.get('nominal_condition') or None,
             'sex':             request.form.get('sex') or None,
             'shirt_size':      request.form.get('shirt_size'),
             'pants_size':      request.form.get('pants_size'),

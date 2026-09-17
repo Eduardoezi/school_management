@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ log.doc_number }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm 2.2cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2.2cm;
+                margin-right: 2.2cm;
+                height: 1cm;
+            }
+        }
+        body {
+            font-family: "Helvetica", "Arial", sans-serif;
+            font-size: 12pt;
+            color: #000;
+            line-height: 1.5;
+        }
+        .header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: middle;
+            line-height: 1.1;
+        }
+
+        .header-text {
+            text-align: center;
+            padding-right: 10px;
+            line-height: 1.1;
+        }
+
+        .header-logo {
+            text-align: right;
+            width: 100px;
+            line-height: 1;
+        }
+
+        .header-logo img {
+            width: 90px;
+            height: 90px;
+        }
+
+        .header .republica {
+            font-size: 10pt;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+        }
+
+        .header .ministerio {
+            font-size: 9pt;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+        }
+
+        .header .comuna {
+            font-size: 8pt;
+            color: #555;
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+        }
+
+        .header .institucion {
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 4px 0 0 0;
+            padding: 0;
+            line-height: 1.1;
+        }        
+        .titulo {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            margin: 30px 0 25px 0;
+            letter-spacing: 2px;
+            text-decoration: underline;
+        }
+        .numero-doc {
+            text-align: right;
+            font-size: 10pt;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .cuerpo {
+            text-align: justify;
+            font-size: 12pt;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        .cuerpo .resaltado {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .fecha {
+            text-align: right;
+            margin-top: 40px;
+            font-size: 11pt;
+        }
+        .firma {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .firma .linea {
+            width: 280px;
+            border-top: 1px solid #000;
+            margin: 0 auto 6px auto;
+        }
+        .firma .nombre {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        .firma .cargo {
+            font-size: 11pt;
+        }
+        .firma .cedula {
+            font-size: 10pt;
+        }
+        .footer {
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    {# ---------- ENCABEZADO ---------- #}
+    <div class="header">
+    <table class="header-table">
+        <tr>
+            <td class="header-text">
+        <div class="republica">REPÚBLICA BOLIVARIANA DE VENEZUELA</div>
+        <div class="ministerio">MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN</div>
+        <div class="institucion">{{ institution.nombre|upper }}</div>        
+        <div class="comuna">{{ institution.direccion|upper }}</div>
+        <div class="comuna">COMUNA JUAN DE BOLÍVAR Y MARTÍNEZ DE VILLEGAS</div>
+        <div class="comuna">CONSEJO COMUNAL FUNDA VILLA I</div>
+            </td>
+            <td class="header-logo">
+                {% if logo_b64 %}
+                    <img src="{{ logo_b64 }}" alt="Logo" width="90" height="90">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+    {# ---------- TÍTULO ---------- #}
+    <div class="titulo">CONSTANCIA DE ESTUDIOS</div>
+
+    {# ---------- NÚMERO ---------- #}
+    <div class="numero-doc">
+        <strong>Nº:</strong> {{ log.doc_number }}
+    </div>
+
+    {# ---------- CUERPO ---------- #}
+    <div class="cuerpo">
+        Quien suscribe, <strong>{{ director.first_name }} {{ director.last_name }}</strong>,
+        titular de la Cédula de Identidad Nº
+        <strong>{{ director.id }}</strong>,
+        en su condición de {{ director.cargo or 'Directora (E)' }}
+        del <strong>{{ institution.nombre }}</strong>,
+        Código de Dependencia: <strong>{{ institution.codigo_dependencia or '-' }}</strong>,
+        Código Administrativo: <strong>{{ institution.codigo_administrativo or '-' }}</strong>,
+        Código DEA: <strong>{{ institution.codigo_dea or '-' }}</strong>,
+        por medio de la presente hace constar que el/la estudiante
+        <span class="resaltado">{{ student.first_name }} {{ student.last_name }}</span>
+        {% if student.school_id %}
+            , cédula escolar Nº <strong>{{ student.school_id }}</strong>
+        {% endif %}
+        {% if edad %}
+            , de <strong>{{ edad }} años</strong> de edad cronológica
+        {% endif %}
+        ,
+        {% if course_info %}
+            cursa estudios en esta institución, en <strong>{{ course_info.name }}</strong>,
+        {% else %}
+            cursa estudios en esta institución,
+        {% endif %}
+        {% if student.disability %}
+            caracterizado(a) por presentar <strong>{{ student.disability }}</strong>,
+        {% endif %}
+        durante el año escolar <strong>{{ year }}-{{ year + 1 }}</strong>.
+    </div>
+
+    <div class="cuerpo">
+        Constancia que se expide a solicitud de parte interesada, a los
+        <strong>{{ fecha_letras }}</strong>.
+    </div>
+
+    {# ---------- FIRMA ---------- #}
+    <div class="firma">
+        <div class="linea"></div>
+        <div class="nombre">{{ director.first_name }} {{ director.last_name }}</div>
+        <div class="cargo">{{ director.cargo or 'Directora (E)' }}</div>
+        <div class="cedula">C.I. V-{{ director.id }}</div>
+    </div>
+
+    {# ---------- PIE DE PÁGINA ---------- #}
+    <pdf:footer>
+        <div class="footer">
+            {{ institution.nombre }} · {{ institution.direccion }}
+            {% if institution.telefono %} · Tel: {{ institution.telefono }}{% endif %}
+            {% if institution.email %} · {{ institution.email }}{% endif %}
+        </div>
+    </pdf:footer>
+
+</body>
+</html>

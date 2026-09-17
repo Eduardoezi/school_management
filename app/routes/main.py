@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template
 from flask_login import login_required
 from datetime import date
-
+from app.models.institution_data import InstitutionData
 from app.models.student import Student
 from app.models.teacher import Teacher
 from app.models.course import Course
@@ -15,14 +15,15 @@ main_bp = Blueprint('main', __name__)
 # ---------- Página principal pública ----------
 @main_bp.route('/')
 def index():
-    escuela = {
-        'nombre': 'IEE Villa de Cura',
-        'direccion': 'Calle Principal #123, Villa de Cura, Estado Aragua, Venezuela',
-        'telefono': '+58 244-386-1234',
-        'email': 'ieevilladecura@gmail.com',
-        'codigo_DEA': 'OD-0459-05-16',
-        'codigo_dependencia': '006417140',
-        'Rif': 'J-30508137-9'
+    escuela = InstitutionData.get() or {
+        'nombre': 'Institución Educativa',
+        'direccion': '-',
+        'telefono': '-',
+        'email': '-',
+        'codigo_dea': '-',
+        'codigo_dependencia': '-',
+        'codigo_administrativo': '-',
+        'rif': '-'
     }
     return render_template('index.html', escuela=escuela)
 

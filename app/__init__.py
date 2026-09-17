@@ -38,7 +38,10 @@ def create_app():
     from app.routes.profile import profile_bp
     from app.routes.student_profile import student_profile_bp
     from app.routes.staff_profile import staff_profile_bp
+    from app.routes.documents import documents_bp
 
+
+    app.register_blueprint(documents_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(students_bp)

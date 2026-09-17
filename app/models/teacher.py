@@ -162,3 +162,26 @@ class Teacher:
         finally:
             cursor.close()
             conn.close()
+    @staticmethod
+    def get_director():
+        """
+        Devuelve el directivo actual (encargado o titular) para firmar documentos.
+        Prioriza 'directivo_encargado' sobre 'directivo_titular'.
+        """
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT t.*, sd.nominal_condition, sd.cargo
+            FROM teachers t
+            JOIN staff_details sd ON sd.teacher_id = t.id
+            WHERE t.active = 1
+              AND sd.nominal_condition IN ('directivo_encargado', 'directivo_titular')
+            ORDER BY FIELD(sd.nominal_condition, 'directivo_encargado', 'directivo_titular')
+            LIMIT 1
+        """)
+        teacher = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return teacher

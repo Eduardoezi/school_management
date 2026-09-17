@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Documento existente{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-file-earmark-check me-2"></i>Documento ya emitido
+</h2>
+
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Ya existe un documento emitido</strong> para esta persona.
+            Elige qué hacer:
+        </div>
+
+        <div class="mb-3">
+            <p class="mb-1">
+                <strong>Nº de documento:</strong>
+                <span class="badge bg-primary">{{ log.doc_number }}</span>
+            </p>
+            <p class="mb-1">
+                <strong>Fecha de emisión:</strong> {{ log.issued_at }}
+            </p>
+            <p class="mb-1">
+                <strong>Emitido por:</strong> {{ log.issued_by_username or '-' }}
+            </p>
+            <p class="mb-0">
+                <strong>Veces impreso:</strong> {{ log.printed_count }}
+            </p>
+        </div>
+
+        <hr>
+
+        <div class="d-flex gap-2 flex-wrap">
+            {# Reimprimir el mismo número #}
+            {% if type == 'constancia_estudio' %}
+                <a href="{{ url_for('documents.constancia_estudio_pdf', log_id=log.id) }}"
+                   class="btn btn-primary">
+                    <i class="bi bi-printer me-1"></i>Reimprimir el mismo
+                </a>
+            {% else %}
+                <a href="{{ url_for('documents.certificacion_funciones_pdf', log_id=log.id) }}"
+                   class="btn btn-primary">
+                    <i class="bi bi-printer me-1"></i>Reimprimir el mismo
+                </a>
+            {% endif %}
+
+            {# Emitir uno nuevo #}
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                {% if type == 'constancia_estudio' %}
+                    <form method="POST"
+                          action="{{ url_for('documents.constancia_estudio_new', student_id=student.id) }}"
+                          onsubmit="return confirm('¿Emitir una nueva constancia con un número nuevo?');">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-file-plus me-1"></i>Emitir nueva (nuevo número)
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST"
+                          action="{{ url_for('documents.certificacion_funciones_new', teacher_id=teacher.id) }}"
+                          onsubmit="return confirm('¿Emitir una nueva certificación con un número nuevo?');">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-file-plus me-1"></i>Emitir nueva (nuevo número)
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+
+            {# Cancelar #}
+            {% if type == 'constancia_estudio' %}
+                <a href="{{ url_for('students.list_view') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </a>
+            {% else %}
+                <a href="{{ url_for('teachers.list_view') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

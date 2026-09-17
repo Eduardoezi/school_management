@@ -52,6 +52,23 @@
                     </small>
                 </div>
                 <div class="col-md-3 mb-3">
+                    <label class="form-label">Condición nominal</label>
+                    <select class="form-select" name="nominal_condition">
+                        <option value="">-- Seleccione --</option>
+                        <option value="directivo_encargado"       {% if details and details.nominal_condition == 'directivo_encargado' %}selected{% endif %}>Directivo Encargado</option>
+                        <option value="directivo_titular"         {% if details and details.nominal_condition == 'directivo_titular' %}selected{% endif %}>Directivo Titular</option>
+                        <option value="docente_titular"           {% if details and details.nominal_condition == 'docente_titular' %}selected{% endif %}>Docente Titular</option>
+                        <option value="docente_interino"          {% if details and details.nominal_condition == 'docente_interino' %}selected{% endif %}>Docente Interino</option>
+                        <option value="docente_contratado"        {% if details and details.nominal_condition == 'docente_contratado' %}selected{% endif %}>Docente Suplente</option>
+                        <option value="obrero_titular"            {% if details and details.nominal_condition == 'obrero_titular' %}selected{% endif %}>Obrero Titular</option>
+                        <option value="obrero_interino"           {% if details and details.nominal_condition == 'obrero_interino' %}selected{% endif %}>Obrero Interino</option>
+                        <option value="administrativo_titular"    {% if details and details.nominal_condition == 'administrativo_titular' %}selected{% endif %}>Administrativo Titular</option>
+                        <option value="administrativo_interino"   {% if details and details.nominal_condition == 'administrativo_interino' %}selected{% endif %}>Administrativo Interino</option>
+                        <option value="otro"                      {% if details and details.nominal_condition == 'otro' %}selected{% endif %}>Otro</option>
+                    </select>
+                    <small class="text-muted">Quién firma los documentos: Directivo Encargado.</small>
+                </div>
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Situación del trabajador</label>
                     <input type="text" class="form-control" name="worker_status"
                            value="{{ details.worker_status if details else '' }}"

@@ -80,6 +80,24 @@
                     </select>
                     <small class="text-muted">Los especialistas ven toda la matrícula.</small>
                 </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="nominal_condition" class="form-label">Condición nominal</label>
+                    <select class="form-select" id="nominal_condition" name="nominal_condition">
+                        <option value="">-- Seleccione --</option>
+                        <option value="directivo_encargado">Directivo Encargado</option>
+                        <option value="directivo_titular">Directivo Titular</option>
+                        <option value="docente_titular">Docente Titular</option>
+                        <option value="docente_interino">Docente Interino</option>
+                        <option value="docente_contratado">Docente Suplente</option>
+                        <option value="obrero_titular">Obrero Titular</option>
+                        <option value="obrero_interino">Obrero Interino</option>
+                        <option value="administrativo_titular">Administrativo Titular</option>
+                        <option value="administrativo_interino">Administrativo Interino</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
                 <div class="col-md-3 mb-3">
                     <label for="cargo" class="form-label">Cargo</label>
                     <input type="text" class="form-control" id="cargo" name="cargo" maxlength="100">

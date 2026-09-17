@@ -180,6 +180,12 @@
                                 <i class="bi bi-journal-plus"></i>
                             </a>
                         {% endif %}
+                        {% if current_user.role in ['directivo', 'secretario', 'maestro'] %}
+                            <a href="{{ url_for('documents.constancia_estudio', student_id=student.id) }}"
+                            class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-file-earmark-text me-1"></i>Constancia de estudios
+                            </a>
+                        {% endif %}
 
                         {% if current_user.role == 'directivo' %}
                             <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
