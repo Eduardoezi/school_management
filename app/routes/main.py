@@ -22,7 +22,7 @@ def index():
         'email': 'ieevilladecura@gmail.com',
         'codigo_DEA': 'OD-0459-05-16',
         'codigo_dependencia': '006417140',
-        'Rif': 'j-30508137-9'
+        'Rif': 'J-30508137-9'
     }
     return render_template('index.html', escuela=escuela)
 
