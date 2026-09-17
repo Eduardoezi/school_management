@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Usuarios{% endblock %}
+{% block content %}
+
+<h1 class="page-title">
+    <i class="bi bi-people-fill me-2"></i>Gestión de Usuarios
+    <span class="badge bg-primary ms-2">{{ users|length }}</span>
+</h1>
+
+<p class="text-muted">
+    Aquí puedes cambiar el rol, resetear la contraseña o desactivar usuarios.
+    <strong>Solo el directivo puede hacerlo.</strong>
+</p>
+
+{# ---------- Leyenda de roles ---------- #}
+<div class="card mb-3">
+    <div class="card-body">
+        <h6 class="mb-3"><i class="bi bi-info-circle me-1"></i>Descripción de roles</h6>
+        <div class="row small">
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-danger">Directivo</span>
+                Acceso total: gestión de usuarios, roles, todo el sistema.
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-warning text-dark">Secretario</span>
+                Gestión administrativa: estudiantes, matrículas, asistencia.
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-primary">Maestro</span>
+                Solo ve sus cursos y estudiantes asignados (o toda la matrícula si es especialista).
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ---------- Tabla de usuarios ---------- #}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Personal vinculado</th>
+                <th>Rol actual</th>
+                <th>Estado</th>
+                <th class="text-center" style="min-width: 340px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr {% if u.id == current_user.id %}class="table-info"{% endif %}
+                {% if not u.active %}style="opacity: 0.6;"{% endif %}>
+
+                {# ---------- Usuario ---------- #}
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-wrapper" style="width:36px; height:36px;">
+                            {% if u.avatar %}
+                                <img src="{{ url_for('static', filename=u.avatar) }}"
+                                     alt="{{ u.username }}" class="avatar-img">
+                            {% else %}
+                                <div class="avatar-circle" style="font-size:0.75rem;">
+                                    {{ u.username[:2]|upper }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="fw-semibold">
+                                {{ u.username }}
+                                {% if u.id == current_user.id %}
+                                    <span class="badge bg-info text-dark ms-1">Tú</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">ID: {{ u.id }}</small>
+                        </div>
+                    </div>
+                </td>
+
+                {# ---------- Correo ---------- #}
+                <td><span class="small">{{ u.email or '-' }}</span></td>
+
+                {# ---------- Personal vinculado ---------- #}
+                <td>
+                    {% if u.teacher_first_name %}
+                        <div class="small">
+                            <strong>{{ u.teacher_first_name }} {{ u.teacher_last_name }}</strong><br>
+                            <span class="text-muted">CI: {{ u.teacher_id }}</span>
+                            {% if u.specialist_type and u.specialist_type != 'ninguno' %}
+                                <br><span class="badge bg-warning text-dark">
+                                    {% if u.specialist_type == 'educacion_fisica' %}Ed. Física
+                                    {% elif u.specialist_type == 'psicologo' %}Psicólogo
+                                    {% elif u.specialist_type == 'trabajador_social' %}Trab. Social
+                                    {% else %}Especialista{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <span class="text-muted small">Sin vínculo</span>
+                    {% endif %}
+                </td>
+
+                {# ---------- Rol actual ---------- #}
+                <td>
+                    {% if u.role == 'directivo' %}
+                        <span class="badge bg-danger text-capitalize">
+                            <i class="bi bi-shield-fill me-1"></i>Directivo
+                        </span>
+                    {% elif u.role == 'secretario' %}
+                        <span class="badge bg-warning text-dark text-capitalize">
+                            <i class="bi bi-clipboard-fill me-1"></i>Secretario
+                        </span>
+                    {% elif u.role == 'maestro' %}
+                        <span class="badge bg-primary text-capitalize">
+                            <i class="bi bi-book-fill me-1"></i>Maestro
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ u.role }}</span>
+                    {% endif %}
+                </td>
+
+                {# ---------- Estado ---------- #}
+                <td>
+                    {% if not u.active %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-slash-circle me-1"></i>Desactivado
+                        </span>
+                    {% elif u.last_seen %}
+                        {% set diff = (now - u.last_seen).total_seconds() %}
+                        {% if diff < 300 %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-circle-fill me-1"></i>En línea
+                            </span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">
+                                Hace {{ (diff // 60)|int }} min
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-light text-dark">Nunca</span>
+                    {% endif %}
+                </td>
+
+                {# ---------- Acciones ---------- #}
+                <td class="text-center">
+                    {% if u.id == current_user.id %}
+                        <span class="text-muted small">Tu propia cuenta</span>
+                    {% else %}
+                        <div class="d-flex gap-1 justify-content-center flex-wrap">
+
+                            {# Cambiar rol #}
+                            <form method="POST"
+                                  action="{{ url_for('admin.change_role', user_id=u.id) }}"
+                                  class="d-flex gap-1"
+                                  onsubmit="return confirm('¿Cambiar el rol de &quot;{{ u.username }}&quot;?');">
+                                <select name="new_role" class="form-select form-select-sm" style="max-width: 120px;">
+                                    <option value="directivo"  {% if u.role == 'directivo'  %}selected{% endif %}>Directivo</option>
+                                    <option value="secretario" {% if u.role == 'secretario' %}selected{% endif %}>Secretario</option>
+                                    <option value="maestro"    {% if u.role == 'maestro'    %}selected{% endif %}>Maestro</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary" title="Guardar cambio de rol">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </form>
+
+                            {# Resetear contraseña #}
+                            <button type="button" class="btn btn-sm btn-warning"
+                                    title="Resetear contraseña"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#resetModal"
+                                    data-user-id="{{ u.id }}"
+                                    data-username="{{ u.username }}">
+                                <i class="bi bi-key"></i>
+                            </button>
+
+                            {# Desactivar / Reactivar #}
+                            {% if u.active %}
+                                <form method="POST"
+                                      action="{{ url_for('admin.deactivate_user', user_id=u.id) }}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('¿Desactivar a &quot;{{ u.username }}&quot;?\n\nNo podrá iniciar sesión pero se conserva su historial.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            title="Desactivar usuario">
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="POST"
+                                      action="{{ url_for('admin.reactivate_user', user_id=u.id) }}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('¿Reactivar a &quot;{{ u.username }}&quot;?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-success"
+                                            title="Reactivar usuario">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No hay usuarios registrados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ==================== MODAL: RESETEAR CONTRASEÑA ==================== #}
+<div class="modal fade" id="resetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="resetForm">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key-fill me-2"></i>Resetear contraseña
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Vas a cambiar la contraseña del usuario
+                        <strong id="resetUsername">—</strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">Nueva contraseña temporal *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="new_password" name="new_password"
+                                   required minlength="6" placeholder="Mínimo 6 caracteres">
+                            <button type="button" class="btn btn-outline-secondary"
+                                    id="generate-password" title="Generar contraseña aleatoria">
+                                <i class="bi bi-shuffle"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            Comunica esta contraseña al usuario. Podrá cambiarla desde su perfil al iniciar sesión.
+                        </small>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Importante:</strong> se cerrarán todas las sesiones activas de este usuario.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-key me-1"></i>Resetear contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('resetModal');
+    if (!modal) return;
+
+    modal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const userId = button.getAttribute('data-user-id');
+        const username = button.getAttribute('data-username');
+
+        document.getElementById('resetUsername').textContent = username;
+        document.getElementById('resetForm').action = '/admin/users/' + userId + '/reset-password';
+        document.getElementById('new_password').value = '';
+    });
+
+    // Generar contraseña aleatoria simple
+    document.getElementById('generate-password').addEventListener('click', function () {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        let pass = '';
+        for (let i = 0; i < 8; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('new_password').value = pass;
+    });
+});
+</script>
+
+{% endblock %}

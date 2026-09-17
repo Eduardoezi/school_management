@@ -6,93 +6,358 @@
     <i class="bi bi-person-circle me-2"></i>Mi Perfil
 </h1>
 
-<div class="row g-4">
-    <!-- ---------- COLUMNA IZQUIERDA: AVATAR ACTUAL ---------- -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
+{# ==================== PESTAÑAS ==================== #}
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-account" type="button">
+            <i class="bi bi-person-badge me-1"></i>Mi cuenta
+        </button>
+    </li>
+    {% if teacher %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-info" type="button">
+            <i class="bi bi-briefcase me-1"></i>Mi información
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-courses" type="button">
+            <i class="bi bi-book me-1"></i>Mis cursos
+            {% if courses_taught %}<span class="badge bg-primary ms-1">{{ courses_taught|length }}</span>{% endif %}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-attendance" type="button">
+            <i class="bi bi-clock-history me-1"></i>Mi asistencia
+        </button>
+    </li>
+    {% endif %}
+</ul>
 
-                <div class="avatar-wrapper avatar-xl mx-auto mb-3">
-                    {% if current_user.avatar %}
-                        <img src="{{ current_user.avatar_url }}"
-                             alt="{{ current_user.username }}"
-                             class="avatar-img">
-                    {% else %}
-                        <div class="avatar-circle avatar-circle-xl">
-                            {{ current_user.initials }}
+<div class="tab-content">
+
+    {# ==================== TAB: MI CUENTA ==================== #}
+    <div class="tab-pane fade show active" id="tab-account">
+        <div class="row g-4">
+            {# ---------- COLUMNA IZQUIERDA: AVATAR ---------- #}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="avatar-wrapper avatar-xl mx-auto mb-3">
+                            {% if current_user.avatar %}
+                                <img src="{{ current_user.avatar_url }}"
+                                     alt="{{ current_user.username }}"
+                                     class="avatar-img">
+                            {% else %}
+                                <div class="avatar-circle avatar-circle-xl">
+                                    {{ current_user.initials }}
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endif %}
+
+                        <h5 class="mb-1">{{ current_user.username }}</h5>
+                        <p class="text-muted small mb-2">{{ current_user.email }}</p>
+                        <span class="badge bg-primary text-capitalize">{{ current_user.role }}</span>
+
+                        {% if current_user.avatar %}
+                        <form method="POST" action="{{ url_for('profile.delete_avatar') }}" class="mt-3"
+                              onsubmit="return confirm('¿Eliminar tu foto de perfil?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar foto
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ---------- COLUMNA DERECHA: SUBIR Y CAMBIAR PASSWORD ---------- #}
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-cloud-arrow-up me-2"></i>Subir nueva imagen
+                        </h5>
+
+                        <form method="POST"
+                              action="{{ url_for('profile.upload_avatar') }}"
+                              enctype="multipart/form-data"
+                              id="avatar-form">
+
+                            <div class="mb-3">
+                                <label for="avatar" class="form-label">Selecciona una imagen</label>
+                                <input class="form-control" type="file" id="avatar" name="avatar"
+                                       accept="image/jpeg,image/png,image/webp" required>
+                                <small class="form-text text-muted">
+                                    Formatos: <strong>JPG, PNG, WEBP</strong>.
+                                    Máximo: <strong>2 MB</strong>.
+                                    Se redimensiona a 400×400 px.
+                                </small>
+                            </div>
+
+                            <div id="preview-wrapper" class="mb-3 d-none">
+                                <label class="form-label">Vista previa:</label>
+                                <div>
+                                    <img id="preview-img" class="avatar-preview" alt="Vista previa">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-1"></i>Subir avatar
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                <h5 class="mb-1">{{ current_user.username }}</h5>
-                <p class="text-muted small mb-2">{{ current_user.email }}</p>
-                <span class="badge bg-primary text-capitalize">{{ current_user.role }}</span>
+                {# ---------- CAMBIAR CONTRASEÑA ---------- #}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-shield-lock me-2"></i>Cambiar contraseña
+                        </h5>
 
-                {% if current_user.avatar %}
-                <form method="POST" action="{{ url_for('profile.delete_avatar') }}" class="mt-3"
-                      onsubmit="return confirm('¿Eliminar tu foto de perfil?');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i> Eliminar foto
-                    </button>
-                </form>
+                        <form method="POST" action="{{ url_for('profile.change_password') }}">
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña actual</label>
+                                <input type="password" class="form-control" name="current_password" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nueva contraseña</label>
+                                    <input type="password" class="form-control" name="new_password"
+                                           minlength="6" required>
+                                    <small class="text-muted">Mínimo 6 caracteres</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirmar contraseña</label>
+                                    <input type="password" class="form-control" name="confirm_password"
+                                           minlength="6" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-key me-1"></i>Cambiar contraseña
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ==================== TAB: MI INFORMACIÓN ==================== #}
+    {% if teacher %}
+    <div class="tab-pane fade" id="tab-info">
+
+        {# Encabezado del docente #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="mb-1">{{ teacher.first_name }} {{ teacher.last_name }}</h5>
+                <p class="text-muted small mb-2">
+                    <i class="bi bi-card-text me-1"></i>Cédula: <strong>{{ teacher.id }}</strong>
+                    {% if details and details.codigo_rac %}
+                        · RAC: <strong>{{ details.codigo_rac }}</strong>
+                    {% endif %}
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if details and details.staff_type %}
+                        <span class="badge bg-primary text-capitalize">{{ details.staff_type }}</span>
+                    {% endif %}
+                    {% if details and details.specialist_type and details.specialist_type != 'ninguno' %}
+                        <span class="badge bg-warning text-dark">
+                            {% if details.specialist_type == 'educacion_fisica' %}Ed. Física
+                            {% elif details.specialist_type == 'psicologo' %}Psicólogo
+                            {% elif details.specialist_type == 'trabajador_social' %}Trab. Social
+                            {% else %}Especialista{% endif %}
+                        </span>
+                    {% endif %}
+                    {% if details and details.cargo %}
+                        <span class="badge bg-info text-dark">{{ details.cargo }}</span>
+                    {% endif %}
+                    {% if details and details.worker_status %}
+                        <span class="badge bg-success">{{ details.worker_status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Datos laborales #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-briefcase-fill me-2 text-primary"></i>Datos laborales
+                </h5>
+                {% if details %}
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Cargo</label>
+                        <p class="mb-0 fw-semibold">{{ details.cargo or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Tipo de personal</label>
+                        <p class="mb-0 fw-semibold text-capitalize">{{ details.staff_type or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Situación</label>
+                        <p class="mb-0 fw-semibold">{{ details.worker_status or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Horas académicas</label>
+                        <p class="mb-0 fw-semibold">{{ details.academic_hours or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Horas administrativas</label>
+                        <p class="mb-0 fw-semibold">{{ details.admin_hours or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Turno</label>
+                        <p class="mb-0 fw-semibold">{{ details.shift or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Especialidad</label>
+                        <p class="mb-0 fw-semibold">{{ details.specialty or '-' }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="text-muted small">Sexo</label>
+                        <p class="mb-0 fw-semibold">
+                            {% if details.sex == 'M' %}Masculino
+                            {% elif details.sex == 'F' %}Femenino
+                            {% else %}-{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label class="text-muted small">Ciudad de nacimiento</label>
+                        <p class="mb-0 fw-semibold">{{ details.birth_city or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Entidad federal</label>
+                        <p class="mb-0 fw-semibold">{{ details.birth_state or '-' }}</p>
+                    </div>
+                    {% if details.shirt_size or details.pants_size or details.shoe_size %}
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Talla camisa</label>
+                        <p class="mb-0 fw-semibold">{{ details.shirt_size or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Talla pantalón</label>
+                        <p class="mb-0 fw-semibold">{{ details.pants_size or '-' }}</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="text-muted small">Talla calzado</label>
+                        <p class="mb-0 fw-semibold">{{ details.shoe_size or '-' }}</p>
+                    </div>
+                    {% endif %}
+                    {% if details.observations %}
+                    <div class="col-12 mb-3">
+                        <label class="text-muted small">Observaciones</label>
+                        <p class="mb-0">{{ details.observations }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Aún no hay información laboral completa. Contacta al directivo para que la complete.
+                </p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- ---------- COLUMNA DERECHA: SUBIR NUEVA ---------- -->
-    <div class="col-md-8">
+    {# ==================== TAB: MIS CURSOS ==================== #}
+    <div class="tab-pane fade" id="tab-courses">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title mb-3">
-                    <i class="bi bi-cloud-arrow-up me-2"></i>Subir nueva imagen
+                    <i class="bi bi-book-fill me-2 text-primary"></i>Mis cursos asignados
                 </h5>
 
-                <form method="POST"
-                      action="{{ url_for('profile.upload_avatar') }}"
-                      enctype="multipart/form-data"
-                      id="avatar-form">
-
-                    <div class="mb-3">
-                        <label for="avatar" class="form-label">Selecciona una imagen</label>
-                        <input class="form-control" type="file" id="avatar" name="avatar"
-                               accept="image/jpeg,image/png,image/webp" required>
-                        <small class="form-text text-muted">
-                            Formatos permitidos: <strong>JPG, PNG, WEBP</strong>.
-                            Tamaño máximo: <strong>2 MB</strong>.
-                            Se redimensionará automáticamente a 400×400 px.
-                        </small>
-                    </div>
-
-                    <!-- Vista previa -->
-                    <div id="preview-wrapper" class="mb-3 d-none">
-                        <label class="form-label">Vista previa:</label>
-                        <div>
-                            <img id="preview-img" class="avatar-preview" alt="Vista previa">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-upload me-1"></i> Subir avatar
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title">
-                    <i class="bi bi-info-circle me-2"></i>Recomendaciones
-                </h6>
-                <ul class="small mb-0 text-muted">
-                    <li>Usa una foto cuadrada para mejores resultados.</li>
-                    <li>Rostro claro y bien iluminado.</li>
-                    <li>Evita imágenes borrosas o muy oscuras.</li>
-                    <li>La imagen se guardará como JPEG, incluso si subes un PNG o WEBP.</li>
-                </ul>
+                {% if courses_taught %}
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Año académico</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in courses_taught %}
+                            <tr>
+                                <td><strong>{{ c.code }}</strong></td>
+                                <td>{{ c.name }}</td>
+                                <td>{{ c.grade or '-' }}</td>
+                                <td>{{ c.section or '-' }}</td>
+                                <td>{{ c.academic_year or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {% if details and details.specialist_type and details.specialist_type != 'ninguno' %}
+                        Eres <strong>especialista</strong> y ves toda la matrícula sin necesidad de tener cursos asignados.
+                    {% else %}
+                        No tienes cursos asignados actualmente.
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {# ==================== TAB: MI ASISTENCIA ==================== #}
+    <div class="tab-pane fade" id="tab-attendance">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Mi asistencia (últimos 30 días)
+                </h5>
+
+                {% if attendance_history %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in attendance_history %}
+                            <tr>
+                                <td>{{ a.attendance_date }}</td>
+                                <td>{{ a.check_in or '-' }}</td>
+                                <td>{{ a.check_out or '-' }}</td>
+                                <td>
+                                    {% if a.status == 'present' %}<span class="badge bg-success">Presente</span>
+                                    {% elif a.status == 'late' %}<span class="badge bg-warning text-dark">Tarde</span>
+                                    {% elif a.status == 'absent' %}<span class="badge bg-danger">Ausente</span>
+                                    {% else %}<span class="badge bg-secondary">Justificado</span>{% endif %}
+                                </td>
+                                <td>{{ a.remarks or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    No hay registros de asistencia en los últimos 30 días.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 
 <script>
@@ -107,7 +372,6 @@ document.getElementById('avatar').addEventListener('change', function (e) {
         return;
     }
 
-    // Validación cliente (rápida)
     const maxBytes = 2 * 1024 * 1024;
     if (file.size > maxBytes) {
         alert('La imagen supera los 2 MB. Elige otra más pequeña.');

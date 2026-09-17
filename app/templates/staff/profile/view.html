@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Perfil del Personal{% endblock %}
+{% block content %}
+
+{# ==================== ENCABEZADO ==================== #}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center g-3">
+            <div class="col-md-3 text-center">
+                <div class="avatar-wrapper avatar-xl mx-auto">
+                    {% if teacher.photo %}
+                        <img src="/static/{{ teacher.photo }}" alt="{{ teacher.first_name }}" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-circle avatar-circle-xl">
+                            {{ (teacher.first_name[:1] ~ teacher.last_name[:1])|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <h2 class="mb-1">{{ teacher.first_name }} {{ teacher.last_name }}</h2>
+                <p class="text-muted mb-2">
+                    <i class="bi bi-card-text me-1"></i>
+                    Cédula: <strong>{{ teacher.id }}</strong>
+                    {% if details and details.codigo_rac %}
+                        · RAC: <strong>{{ details.codigo_rac }}</strong>
+                    {% endif %}
+                </p>
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                    {% if details and details.staff_type %}
+                        <span class="badge bg-primary text-capitalize">
+                            <i class="bi bi-briefcase me-1"></i>{{ details.staff_type }}
+                        </span>
+                    {% endif %}
+                    {% if details and details.specialist_type and details.specialist_type != 'ninguno' %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-star-fill me-1"></i>
+                            {% if details.specialist_type == 'educacion_fisica' %}Especialista en Educación Física
+                            {% elif details.specialist_type == 'psicologo' %}Psicólogo(a)
+                            {% elif details.specialist_type == 'trabajador_social' %}Trabajador(a) Social
+                            {% else %}Especialista{% endif %}
+                        </span>
+                    {% endif %}
+                    {% if details and details.cargo %}
+                        <span class="badge bg-info text-dark">
+                            <i class="bi bi-award me-1"></i>{{ details.cargo }}
+                        </span>
+                    {% endif %}
+                    {% if details and details.worker_status %}
+                        <span class="badge bg-success">{{ details.worker_status }}</span>
+                    {% endif %}
+                </div>
+                <p class="mb-0 small text-muted">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Ingreso: {{ teacher.hire_date or '-' }}
+                    {% if teacher.email %}
+                        · <i class="bi bi-envelope me-1"></i>{{ teacher.email }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <hr>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <a href="{{ url_for('staff_profile.edit', teacher_id=teacher.id) }}"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Editar perfil
+                </a>
+            {% endif %}
+            <a href="{{ url_for('teachers.list_view') }}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver al listado
+            </a>
+        </div>
+    </div>
+</div>
+
+{# ==================== CURSOS ASIGNADOS ==================== #}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-book-fill me-2 text-primary"></i>Cursos asignados
+                <span class="badge bg-primary ms-2">{{ courses_taught|length }}</span>
+            </h5>
+        </div>
+
+        {% if is_specialist %}
+        <div class="alert alert-warning">
+            <i class="bi bi-star-fill me-1"></i>
+            <strong>Docente especialista:</strong> ve toda la matrícula activa del plantel,
+            sin necesidad de tener cursos asignados. Puedes asignarle cursos adicionales si imparte alguna materia específica.
+        </div>
+        {% endif %}
+
+        {# ---------- Cursos actuales ---------- #}
+        {% if courses_taught %}
+        <div class="table-responsive mb-3">
+            <table class="table table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        <th>Año</th>
+                        <th class="text-center">Rol</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in courses_taught %}
+                    <tr>
+                        <td><strong>{{ c.code }}</strong></td>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.grade or '-' }}</td>
+                        <td>{{ c.section or '-' }}</td>
+                        <td>{{ c.academic_year or '-' }}</td>
+                        <td class="text-center">
+                            {% if c.teacher_id == teacher.id %}
+                                <span class="badge bg-primary">Titular</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">Especialista</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if current_user.role in ['directivo', 'secretario'] %}
+                            <form method="POST"
+                                  action="{{ url_for('staff_profile.unassign_course', teacher_id=teacher.id, course_code=c.code) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('¿Quitar este curso a {{ teacher.first_name }}?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desasignar">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            {% if is_specialist %}
+                Este docente es <strong>especialista</strong> y ve toda la matrícula sin necesidad de tener cursos asignados.
+            {% else %}
+                Este docente no tiene cursos asignados actualmente.
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# ---------- Asignar nuevo curso ---------- #}
+        {% if current_user.role in ['directivo', 'secretario'] and available_courses %}
+        <hr>
+        <h6 class="mb-3">
+            <i class="bi bi-plus-circle me-1 text-success"></i>Asignar nuevo curso
+        </h6>
+        <form method="POST"
+              action="{{ url_for('staff_profile.assign_course', teacher_id=teacher.id) }}"
+              class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Curso</label>
+                <select name="course_code" class="form-select" required>
+                    <option value="">-- Selecciona un curso --</option>
+                    {% for c in available_courses %}
+                    <option value="{{ c.code }}">
+                        {{ c.name }} ({{ c.code }})
+                        {% if c.grade %}· {{ c.grade }}{% endif %}
+                        {% if c.section %} - {{ c.section }}{% endif %}
+                        {% if c.teacher_first_name %}· Titular: {{ c.teacher_first_name }} {{ c.teacher_last_name }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1">Rol</label>
+                <select name="role" class="form-select">
+                    <option value="especialista" {% if is_specialist %}selected{% endif %}>Especialista</option>
+                    <option value="titular" {% if not is_specialist %}selected{% endif %}>Titular</option>
+                    <option value="auxiliar">Auxiliar</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-plus-lg me-1"></i>Asignar
+                </button>
+            </div>
+        </form>
+        <small class="text-muted d-block mt-2">
+            Si el curso ya tiene titular, asígnalo como <strong>especialista</strong>.
+            Un curso puede tener varios docentes (titular + especialistas + auxiliares).
+        </small>
+        {% elif current_user.role in ['directivo', 'secretario'] %}
+        <hr>
+        <div class="alert alert-secondary mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Este docente ya está asignado a todos los cursos existentes.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ==================== DATOS LABORALES ==================== #}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-briefcase-fill me-2 text-primary"></i>Datos laborales
+        </h5>
+
+        {% if details %}
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Código RAC</label>
+                <p class="mb-0 fw-semibold">{{ details.codigo_rac or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Cargo</label>
+                <p class="mb-0 fw-semibold">{{ details.cargo or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Tipo de personal</label>
+                <p class="mb-0 fw-semibold text-capitalize">{{ details.staff_type or '-' }}</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="text-muted small">Horas académicas</label>
+                <p class="mb-0 fw-semibold">{{ details.academic_hours or '-' }}</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="text-muted small">Horas administrativas</label>
+                <p class="mb-0 fw-semibold">{{ details.admin_hours or '-' }}</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="text-muted small">Turno que atiende</label>
+                <p class="mb-0 fw-semibold">{{ details.shift or '-' }}</p>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="text-muted small">Situación del trabajador</label>
+                <p class="mb-0 fw-semibold">{{ details.worker_status or '-' }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Especialidad</label>
+                <p class="mb-0 fw-semibold">{{ details.specialty or '-' }}</p>
+            </div>
+            <div class="col-12 mb-3">
+                <label class="text-muted small">Observaciones</label>
+                <p class="mb-0">{{ details.observations or '-' }}</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">
+            <i class="bi bi-info-circle me-1"></i>Aún no hay datos laborales extendidos.
+            {% if current_user.role in ['directivo', 'secretario'] %}
+                <a href="{{ url_for('staff_profile.edit', teacher_id=teacher.id) }}">Completar ahora</a>
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+{# ==================== DATOS PERSONALES ==================== #}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-person-fill me-2 text-primary"></i>Datos personales
+        </h5>
+
+        {% if details %}
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="text-muted small">Sexo</label>
+                <p class="mb-0 fw-semibold">
+                    {% if details.sex == 'M' %}Masculino
+                    {% elif details.sex == 'F' %}Femenino
+                    {% else %}-{% endif %}
+                </p>
+            </div>
+            <div class="col-md-5 mb-3">
+                <label class="text-muted small">Ciudad de nacimiento</label>
+                <p class="mb-0 fw-semibold">{{ details.birth_city or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Entidad federal</label>
+                <p class="mb-0 fw-semibold">{{ details.birth_state or '-' }}</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Sin datos personales extendidos.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# ==================== TALLAS ==================== #}
+{% if details and (details.shirt_size or details.pants_size or details.shoe_size) %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-rulers me-2 text-primary"></i>Tallas
+        </h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Camisa</label>
+                <p class="mb-0 fw-semibold">{{ details.shirt_size or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Pantalón</label>
+                <p class="mb-0 fw-semibold">{{ details.pants_size or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Calzado</label>
+                <p class="mb-0 fw-semibold">{{ details.shoe_size or '-' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

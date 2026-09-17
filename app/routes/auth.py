@@ -16,10 +16,15 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.get_by_username(username)
+
         if user and user.check_password(password):
+            # Verificar que la cuenta esté activa
+            if not user.active:
+                flash('Tu cuenta está desactivada. Contacta al directivo.', 'danger')
+                return render_template('login.html')
+
             login_user(user)
 
-            # Crear registro de sesión activa
             session['session_id'] = str(uuid.uuid4())
             UserSession.create(
                 user_id=user.id,
@@ -30,9 +35,9 @@ def login():
 
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.dashboard'))
-        flash('Usuario o contraseña incorrectos', 'danger')
-    return render_template('login.html')
 
+        flash('Usuario o contraseña incorrectos.', 'danger')
+    return render_template('login.html')
 
 @auth_bp.route('/logout')
 @login_required

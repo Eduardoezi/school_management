@@ -1,18 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Lista de Docentes{% endblock %}
 {% block content %}
-<h2>👨‍🏫 Docentes</h2>
+<h2 class="page-title"><i class="bi bi-person-badge-fill me-2"></i>Docentes</h2>
 
-<a href="{{ url_for('teachers.create_view') }}" class="btn btn-primary mb-3">+ Nuevo docente</a>
+{# ---------- Botones de vista (solo directivo/secretario) ---------- #}
+{% if current_user.role in ['directivo', 'secretario'] %}
+<div class="btn-group mb-3" role="group">
+    <a href="{{ url_for('teachers.list_view') }}"
+       class="btn {% if not show_inactive %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <i class="bi bi-check-circle me-1"></i>Solo activos
+    </a>
+    <a href="{{ url_for('teachers.list_view', inactive=1) }}"
+       class="btn {% if show_inactive %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <i class="bi bi-archive me-1"></i>Ver inactivos
+    </a>
+</div>
 
-<table class="table table-striped">
+<a href="{{ url_for('teachers.create_view') }}" class="btn btn-success mb-3">
+    <i class="bi bi-person-plus-fill me-1"></i>Nuevo docente
+</a>
+{% endif %}
+
+{% if show_inactive %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    Mostrando docentes <strong>desactivados</strong>. Puedes reactivarlos si fue un error.
+</div>
+{% endif %}
+
+<table class="table table-striped align-middle">
     <thead>
         <tr>
             <th>Cédula</th>
             <th>Nombre</th>
             <th>Apellido</th>
             <th>Email</th>
+            <th>Tipo</th>
             <th>Fecha de contratación</th>
+            <th>Estado</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -23,13 +48,72 @@
             <td>{{ teacher.first_name }}</td>
             <td>{{ teacher.last_name }}</td>
             <td>{{ teacher.email or '-' }}</td>
-            <td>{{ teacher.hire_date or '-' }}</td>
             <td>
-                <a href="{{ url_for('teachers.edit_view', teacher_id=teacher.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                <a href="{{ url_for('teachers.delete_view', teacher_id=teacher.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este docente?')">Eliminar</a>
+                {% if teacher.staff_type %}
+                    <span class="badge bg-secondary text-capitalize">{{ teacher.staff_type }}</span>
+                {% else %}
+                    <span class="text-muted small">-</span>
+                {% endif %}
+                {% if teacher.specialist_type and teacher.specialist_type != 'ninguno' %}
+                    <br><span class="badge bg-warning text-dark small mt-1">
+                        {% if teacher.specialist_type == 'educacion_fisica' %}Ed. Física
+                        {% elif teacher.specialist_type == 'psicologo' %}Psicólogo
+                        {% elif teacher.specialist_type == 'trabajador_social' %}Trab. Social
+                        {% else %}Especialista{% endif %}
+                    </span>
+                {% endif %}
+            </td>
+                        <td>{{ teacher.hire_date or '-' }}</td>
+            <td>
+                {% if teacher.active %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="{{ url_for('staff_profile.view', teacher_id=teacher.id) }}"
+                       class="btn btn-outline-primary" title="Ver perfil completo">
+                        <i class="bi bi-person-badge"></i>
+                    </a>
+                    <a href="{{ url_for('teachers.edit_view', teacher_id=teacher.id) }}"
+                       class="btn btn-outline-warning" title="Editar datos básicos">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+
+                    {% if current_user.role == 'directivo' %}
+                        {% if teacher.active %}
+                            <form method="POST"
+                                  action="{{ url_for('teachers.deactivate_view', teacher_id=teacher.id) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('¿Desactivar a {{ teacher.first_name }} {{ teacher.last_name }}?\n\nEl docente quedará oculto pero sus datos históricos se conservan.');">
+                                <button type="submit" class="btn btn-outline-danger" title="Desactivar">
+                                    <i class="bi bi-person-dash"></i>
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="POST"
+                                  action="{{ url_for('teachers.reactivate_view', teacher_id=teacher.id) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('¿Reactivar a {{ teacher.first_name }} {{ teacher.last_name }}?');">
+                                <button type="submit" class="btn btn-outline-success" title="Reactivar">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+                No hay docentes {% if show_inactive %}inactivos{% else %}activos{% endif %}.
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
 {% endblock %}

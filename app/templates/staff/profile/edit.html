@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Editar Perfil del Personal{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-person-badge me-2"></i>Editar perfil del personal
+</h2>
+<p class="text-muted">
+    <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong> ({{ teacher.id }})
+</p>
+
+<form method="POST">
+
+    {# ---------- DATOS LABORALES ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-briefcase-fill me-2 text-primary"></i>Datos laborales
+            </h5>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Código RAC</label>
+                    <input type="text" class="form-control" name="codigo_rac"
+                           value="{{ details.codigo_rac if details else '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cargo</label>
+                    <input type="text" class="form-control" name="cargo"
+                           value="{{ details.cargo if details else '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Tipo de personal</label>
+                    <select class="form-select" name="staff_type">
+                        <option value="">-- Seleccione --</option>
+                        <option value="docente"        {% if details and details.staff_type == 'docente' %}selected{% endif %}>Docente</option>
+                        <option value="administrativo" {% if details and details.staff_type == 'administrativo' %}selected{% endif %}>Administrativo</option>
+                        <option value="obrero"         {% if details and details.staff_type == 'obrero' %}selected{% endif %}>Obrero</option>
+                        <option value="directivo"      {% if details and details.staff_type == 'directivo' %}selected{% endif %}>Directivo</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Tipo de especialista</label>
+                    <select class="form-select" name="specialist_type">
+                        <option value="ninguno" {% if not details or details.specialist_type == 'ninguno' %}selected{% endif %}>No aplica</option>
+                        <option value="educacion_fisica"   {% if details and details.specialist_type == 'educacion_fisica' %}selected{% endif %}>Educación Física</option>
+                        <option value="psicologo"          {% if details and details.specialist_type == 'psicologo' %}selected{% endif %}>Psicólogo</option>
+                        <option value="trabajador_social"  {% if details and details.specialist_type == 'trabajador_social' %}selected{% endif %}>Trabajador Social</option>
+                        <option value="otro"               {% if details and details.specialist_type == 'otro' %}selected{% endif %}>Otro</option>
+                    </select>
+                    <small class="text-muted">
+                        Los especialistas ven toda la matrícula, no solo un curso.
+                    </small>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Situación del trabajador</label>
+                    <input type="text" class="form-control" name="worker_status"
+                           value="{{ details.worker_status if details else '' }}"
+                           placeholder="Ej: Activo, Reposo, Comisión">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Horas académicas</label>
+                    <input type="number" class="form-control" name="academic_hours" min="0" max="60"
+                           value="{{ details.academic_hours if details else '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Horas administrativas</label>
+                    <input type="number" class="form-control" name="admin_hours" min="0" max="60"
+                           value="{{ details.admin_hours if details else '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Turno que atiende</label>
+                    <input type="text" class="form-control" name="shift"
+                           value="{{ details.shift if details else '' }}"
+                           placeholder="Ej: Mañana, Tarde, Completo">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Especialidad</label>
+                    <input type="text" class="form-control" name="specialty"
+                           value="{{ details.specialty if details else '' }}"
+                           placeholder="Ej: Educación Especial, Matemáticas, etc.">
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea class="form-control" name="observations" rows="2">{{ details.observations if details else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- DATOS PERSONALES ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-person-fill me-2 text-primary"></i>Datos personales
+            </h5>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Sexo</label>
+                    <select class="form-select" name="sex">
+                        <option value="">-- Seleccione --</option>
+                        <option value="M" {% if details and details.sex == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if details and details.sex == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                </div>
+                <div class="col-md-5 mb-3">
+                    <label class="form-label">Ciudad de nacimiento</label>
+                    <input type="text" class="form-control" name="birth_city"
+                           value="{{ details.birth_city if details else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Entidad federal</label>
+                    <input type="text" class="form-control" name="birth_state"
+                           value="{{ details.birth_state if details else '' }}"
+                           placeholder="Ej: Aragua, Carabobo...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- TALLAS ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-rulers me-2 text-primary"></i>Tallas
+            </h5>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla camisa</label>
+                    <input type="text" class="form-control" name="shirt_size" maxlength="10"
+                           value="{{ details.shirt_size if details else '' }}"
+                           placeholder="Ej: S, M, L, XL, 14, 16">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla pantalón</label>
+                    <input type="text" class="form-control" name="pants_size" maxlength="10"
+                           value="{{ details.pants_size if details else '' }}"
+                           placeholder="Ej: 30, 32, 34">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talla calzado</label>
+                    <input type="text" class="form-control" name="shoe_size" maxlength="10"
+                           value="{{ details.shoe_size if details else '' }}"
+                           placeholder="Ej: 38, 40, 42">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar cambios
+        </button>
+        <a href="{{ url_for('staff_profile.view', teacher_id=teacher.id) }}"
+           class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+{% endblock %}

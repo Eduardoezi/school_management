@@ -241,13 +241,13 @@ class Student:
 
     @staticmethod
     def get_by_teacher_course(teacher_id):
-        """Devuelve solo estudiantes inscritos activos en el curso asignado al docente."""
+        """Estudiantes de los cursos donde el docente es titular O está asignado en M2M."""
         conn = get_db_connection()
         if not conn:
             return []
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT s.*,
+            SELECT DISTINCT s.*,
                 r.first_name AS rep_first_name, r.last_name AS rep_last_name,
                 r.phone AS rep_phone, r.cedula_id AS rep_cedula,
                 c.name AS course_name, c.code AS course_code,
@@ -256,15 +256,16 @@ class Student:
             LEFT JOIN representatives r ON s.representative_cedula = r.cedula_id
             JOIN enrollments e ON s.school_id = e.school_id AND e.status = 'activo'
             JOIN courses c ON e.course_code = c.code
-            WHERE c.teacher_id = %s
+            LEFT JOIN course_teachers ct ON ct.course_code = c.code
+            WHERE c.teacher_id = %s OR ct.teacher_id = %s
             ORDER BY s.last_name, s.first_name
-        """, (teacher_id,))
+        """, (teacher_id, teacher_id))
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
         return rows
-
-    #    @staticmethod
+    
+        #    @staticmethod
     #    def get_all_with_details():
     #        conn = get_db_connection()
     #        if not conn: return []

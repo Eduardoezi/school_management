@@ -79,7 +79,8 @@
                 </a></li>
             {% endif %}
             <li><a class="nav-link" href="{{ url_for('courses.list_view') }}">
-                <i class="bi bi-book-fill"></i> Cursos
+                <i class="bi bi-book-fill"></i>
+                {% if current_user.role == 'maestro' %}Mis cursos{% else %}Cursos{% endif %}
             </a></li>
             {% if current_user.role in ['directivo', 'secretario'] %}
                 <li><a class="nav-link" href="{{ url_for('enrollment.list_view') }}">
@@ -144,11 +145,14 @@
         {# ---------- ADMINISTRACIÓN (solo directivo) ---------- #}
         
         {% if current_user.role == 'directivo' %}
-        <div class="sidebar-section">Administración</div>
-        <ul class="nav flex-column">
-            <li><a class="nav-link" href="{{ url_for('admin.users_online') }}">
-                <i class="bi bi-broadcast"></i> Usuarios en línea
-            </a></li>
+            <div class="sidebar-section">Administración</div>
+            <ul class="nav flex-column">
+                <li><a class="nav-link" href="{{ url_for('admin.users_list') }}">
+                    <i class="bi bi-people-fill"></i> Gestión de usuarios
+                </a></li>
+                <li><a class="nav-link" href="{{ url_for('admin.users_online') }}">
+                    <i class="bi bi-broadcast"></i> Usuarios en línea
+                </a></li>
             <li><a class="nav-link disabled" href="#" title="Próximamente">
                 <i class="bi bi-people"></i> Usuarios <small class="ms-auto text-muted">(pronto)</small>
             </a></li>

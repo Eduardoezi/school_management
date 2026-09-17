@@ -1,32 +1,169 @@
 {% extends "base.html" %}
 {% block title %}Registro de Docente{% endblock %}
 {% block content %}
-<h2>➕ Registrar Nuevo Docente</h2>
+
+<h2 class="page-title">
+    <i class="bi bi-person-plus-fill me-2"></i>Registrar Nuevo Personal
+</h2>
+
 <form method="POST">
-    <h4>Datos del Docente</h4>
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="id" class="form-label">Cédula de Identidad *</label>
-            <input type="number" class="form-control" id="id" name="id" required placeholder="Ej: 12345678">
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="first_name" class="form-label">Nombre *</label>
-            <input type="text" class="form-control" id="first_name" name="first_name" required>
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="last_name" class="form-label">Apellido *</label>
-            <input type="text" class="form-control" id="last_name" name="last_name" required>
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="email" class="form-label">Correo electrónico</label>
-            <input type="email" class="form-control" id="email" name="email">
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="hire_date" class="form-label">Fecha de contratación</label>
-            <input type="date" class="form-control" id="hire_date" name="hire_date">
+
+    {# ---------- DATOS BÁSICOS ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-person-fill me-2 text-primary"></i>Datos personales básicos
+            </h5>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="id" class="form-label">Cédula de Identidad *</label>
+                    <input type="number" class="form-control" id="id" name="id"
+                           required placeholder="Ej: 12345678" min="1000000" max="99999999">
+                    <small class="text-muted">Sin puntos ni guiones</small>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="first_name" class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name"
+                           required maxlength="50">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="last_name" class="form-label">Apellido *</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name"
+                           required maxlength="50">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="email" class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" id="email" name="email" maxlength="100">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="sex" class="form-label">Sexo</label>
+                    <select class="form-select" id="sex" name="sex">
+                        <option value="">-- Seleccione --</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="hire_date" class="form-label">Fecha de ingreso</label>
+                    <input type="date" class="form-control" id="hire_date" name="hire_date">
+                </div>
+            </div>
         </div>
     </div>
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a href="{{ url_for('teachers.list_view') }}" class="btn btn-secondary">Cancelar</a>
+
+    {# ---------- DATOS LABORALES ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-briefcase-fill me-2 text-primary"></i>Datos laborales
+            </h5>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="staff_type" class="form-label">Tipo de personal *</label>
+                    <select class="form-select" id="staff_type" name="staff_type" required>
+                        <option value="">-- Seleccione --</option>
+                        <option value="docente">Docente</option>
+                        <option value="administrativo">Administrativo</option>
+                        <option value="obrero">Obrero</option>
+                        <option value="directivo">Directivo</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="specialist_type" class="form-label">Tipo de especialista</label>
+                    <select class="form-select" id="specialist_type" name="specialist_type">
+                        <option value="ninguno">No aplica</option>
+                        <option value="educacion_fisica">Educación Física</option>
+                        <option value="psicologo">Psicólogo(a)</option>
+                        <option value="trabajador_social">Trabajador(a) Social</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                    <small class="text-muted">Los especialistas ven toda la matrícula.</small>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="cargo" class="form-label">Cargo</label>
+                    <input type="text" class="form-control" id="cargo" name="cargo" maxlength="100">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="codigo_rac" class="form-label">Código RAC</label>
+                    <input type="text" class="form-control" id="codigo_rac" name="codigo_rac" maxlength="30">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="academic_hours" class="form-label">Horas académicas</label>
+                    <input type="number" class="form-control" id="academic_hours" name="academic_hours"
+                           min="0" max="60">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="admin_hours" class="form-label">Horas administrativas</label>
+                    <input type="number" class="form-control" id="admin_hours" name="admin_hours"
+                           min="0" max="60">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="shift" class="form-label">Turno que atiende</label>
+                    <input type="text" class="form-control" id="shift" name="shift"
+                           placeholder="Ej: Mañana, Tarde, Completo" maxlength="50">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="worker_status" class="form-label">Situación del trabajador</label>
+                    <input type="text" class="form-control" id="worker_status" name="worker_status"
+                           placeholder="Ej: Activo, Reposo, Comisión" maxlength="100">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="specialty" class="form-label">Especialidad</label>
+                    <input type="text" class="form-control" id="specialty" name="specialty"
+                           placeholder="Ej: Educación Especial, Matemáticas..." maxlength="150">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="birth_city" class="form-label">Ciudad de nacimiento</label>
+                    <input type="text" class="form-control" id="birth_city" name="birth_city" maxlength="100">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="birth_state" class="form-label">Entidad federal</label>
+                    <input type="text" class="form-control" id="birth_state" name="birth_state"
+                           placeholder="Ej: Aragua, Carabobo..." maxlength="100">
+                </div>
+                <div class="col-12 mb-3">
+                    <label for="observations" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="observations" name="observations" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- TALLAS ---------- #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-rulers me-2 text-primary"></i>Tallas (opcional)
+            </h5>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="shirt_size" class="form-label">Talla camisa</label>
+                    <input type="text" class="form-control" id="shirt_size" name="shirt_size"
+                           maxlength="10" placeholder="Ej: S, M, L, XL, 14">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="pants_size" class="form-label">Talla pantalón</label>
+                    <input type="text" class="form-control" id="pants_size" name="pants_size"
+                           maxlength="10" placeholder="Ej: 30, 32, 34">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="shoe_size" class="form-label">Talla calzado</label>
+                    <input type="text" class="form-control" id="shoe_size" name="shoe_size"
+                           maxlength="10" placeholder="Ej: 38, 40, 42">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Registrar personal
+        </button>
+        <a href="{{ url_for('teachers.list_view') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
 </form>
+
 {% endblock %}

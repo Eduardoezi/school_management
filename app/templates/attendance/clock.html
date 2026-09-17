@@ -94,13 +94,20 @@
         border-radius: 14px;
         border: 2px solid #e2e8f0;
         transition: border-color 0.2s, box-shadow 0.2s;
+        color: #0f172a;           /* ← NUEVO: texto oscuro */
+        background: #ffffff;      /* ← NUEVO: fondo blanco explícito */
     }
 
     .cedula-input:focus {
         border-color: #3b82f6;
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
         outline: none;
+        color: #94a3b8; 
     }
+
+    .cedula-input::placeholder {
+    color: #94a3b8;           /* ← NUEVO: placeholder gris visible */
+}
 
     /* ---------- Botones de acción ---------- */
     .action-btn {

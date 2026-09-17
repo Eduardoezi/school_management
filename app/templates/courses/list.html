@@ -1,39 +1,100 @@
 {% extends "base.html" %}
 {% block title %}Lista de Cursos{% endblock %}
 {% block content %}
-<h2>📚 Cursos</h2>
 
-<a href="{{ url_for('courses.create_view') }}" class="btn btn-primary mb-3">+ Nuevo curso</a>
+<h2 class="page-title">
+    <i class="bi bi-book-fill me-2"></i>
+    {% if view_mode == 'teacher' %}Mis cursos
+    {% elif view_mode == 'specialist' %}Cursos de la escuela
+    {% else %}Cursos{% endif %}
+    {% if courses %}<span class="badge bg-primary ms-2">{{ courses|length }}</span>{% endif %}
+</h2>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Código</th>
-            <th>Profesor</th>
-            <th>Grado</th>
-            <th>Sección</th>
-            <th>Año académico</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for course in courses %}
-        <tr>
-            <td>{{ course.id }}</td>
-            <td>{{ course.name }}</td>
-            <td>{{ course.code }}</td>
-            <td>{{ course.teacher_first_name }} {{ course.teacher_last_name or '-' }}</td>
-            <td>{{ course.grade or '-' }}</td>
-            <td>{{ course.section or '-' }}</td>
-            <td>{{ course.academic_year or '-' }}</td>
-            <td>
-                <a href="{{ url_for('courses.edit_view', course_code=course.code) }}" class="btn btn-sm btn-warning">Editar</a>
-                <a href="{{ url_for('courses.delete_view', course_code=course.code) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este curso?')">Eliminar</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{# ---------- Aviso según vista ---------- #}
+{% if view_mode == 'teacher' %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-1"></i>
+        Mostrando solo los cursos que tienes asignados.
+    </div>
+{% elif view_mode == 'specialist' %}
+    <div class="alert alert-warning">
+        <i class="bi bi-star-fill me-1"></i>
+        <strong>Perfil de especialista:</strong> estás viendo todos los cursos de la escuela.
+    </div>
+{% endif %}
+
+{% if view_mode == 'admin' %}
+<a href="{{ url_for('courses.create_view') }}" class="btn btn-primary mb-3">
+    <i class="bi bi-plus-circle me-1"></i>Nuevo curso
+</a>
+{% endif %}
+
+{# ---------- Tabla ---------- #}
+{% if courses %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                {% if view_mode != 'teacher' %}
+                <th>Docente</th>
+                {% endif %}
+                <th>Grado</th>
+                <th>Sección</th>
+                <th>Año académico</th>
+                {% if view_mode == 'admin' %}
+                <th class="text-center">Acciones</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr>
+                <td><strong>{{ course.code }}</strong></td>
+                <td>{{ course.name }}</td>
+                {% if view_mode != 'teacher' %}
+                <td>
+                    {% if course.teacher_first_name %}
+                        {{ course.teacher_first_name }} {{ course.teacher_last_name }}
+                    {% else %}
+                        <span class="text-muted small">Sin asignar</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                <td>{{ course.grade or '-' }}</td>
+                <td>{{ course.section or '-' }}</td>
+                <td>{{ course.academic_year or '-' }}</td>
+                {% if view_mode == 'admin' %}
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('courses.edit_view', course_code=course.code) }}"
+                           class="btn btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{{ url_for('courses.delete_view', course_code=course.code) }}"
+                           class="btn btn-outline-danger" title="Eliminar"
+                           onclick="return confirm('¿Eliminar este curso?');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-inbox display-4 d-block mb-2 opacity-50"></i>
+        {% if view_mode == 'teacher' %}
+            No tienes cursos asignados actualmente.<br>
+            <small>Contacta al directivo para que te asigne uno.</small>
+        {% else %}
+            No hay cursos registrados.
+        {% endif %}
+    </div>
+{% endif %}
+
 {% endblock %}

@@ -1,17 +1,49 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.models.course import Course
 from app.models.teacher import Teacher
 from app.utils.decorators import role_required
 
 courses_bp = Blueprint('courses', __name__, url_prefix='/courses')
 
+
+# ============================================================
+# LISTAR
+# ============================================================
 @courses_bp.route('/')
 @login_required
 def list_view():
-    courses = Course.get_all()
-    return render_template('courses/list.html', courses=courses)
+    # --- MAESTRO / ESPECIALISTA ---
+    if current_user.role == 'maestro':
+        teacher = Teacher.get_by_user_id(current_user.id)
+        if not teacher:
+            flash('Tu usuario no está vinculado a un docente.', 'danger')
+            return redirect(url_for('main.dashboard'))
 
+        # Si es especialista, ve TODOS los cursos (necesita contexto de la escuela)
+        spec = teacher.get('specialist_type')
+        if spec and spec != 'ninguno':
+            courses = Course.get_all()
+            return render_template('courses/list.html',
+                                   courses=courses,
+                                   view_mode='specialist')
+
+        # Docente normal: solo sus cursos
+        courses = Course.get_by_teacher(teacher['id'])
+        return render_template('courses/list.html',
+                               courses=courses,
+                               view_mode='teacher')
+
+    # --- DIRECTIVO / SECRETARIO ---
+    courses = Course.get_all()
+    return render_template('courses/list.html',
+                           courses=courses,
+                           view_mode='admin')
+
+
+# ============================================================
+# CREAR
+# ============================================================
 @courses_bp.route('/new', methods=['GET', 'POST'])
 @login_required
 @role_required('directivo', 'secretario')
@@ -35,6 +67,10 @@ def create_view():
     teachers = Teacher.get_all()
     return render_template('courses/create.html', teachers=teachers)
 
+
+# ============================================================
+# EDITAR
+# ============================================================
 @courses_bp.route('/<string:course_code>/edit', methods=['GET', 'POST'])
 @login_required
 @role_required('directivo', 'secretario')
@@ -60,6 +96,10 @@ def edit_view(course_code):
     teachers = Teacher.get_all()
     return render_template('courses/edit.html', course=course, teachers=teachers)
 
+
+# ============================================================
+# ELIMINAR
+# ============================================================
 @courses_bp.route('/<string:course_code>/delete')
 @login_required
 @role_required('directivo')

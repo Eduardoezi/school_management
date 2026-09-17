@@ -29,6 +29,11 @@
     <div class="alert alert-info">
         <i class="bi bi-info-circle me-1"></i>Mostrando solo los estudiantes de tu curso.
     </div>
+{% elif view_mode == 'specialist' %}
+    <div class="alert alert-warning">
+        <i class="bi bi-star-fill me-1"></i>
+        <strong>Perfil de especialista:</strong> estás viendo toda la matrícula activa.
+    </div>
 {% elif view_mode == 'enrolled' %}
     <div class="alert alert-info">
         <i class="bi bi-info-circle me-1"></i>Mostrando solo estudiantes con inscripción activa.
