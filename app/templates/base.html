@@ -58,15 +58,14 @@
             <li><a class="nav-link" href="{{ url_for('main.dashboard') }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a></li>
-        
-            <li><a class="nav-link" href="{{ url_for('admin.institution') }}">
-                <i class="bi bi-building"></i> Datos institucionales
-            </a></li>
         </ul>
         {# ---------- ACADÉMICO (todos los roles) ---------- #}
         <div class="sidebar-section">Académico</div>
         <ul class="nav flex-column">
             {% if current_user.role in ['directivo', 'secretario'] %}
+                <li><a class="nav-link" href="{{ url_for('admin.institution') }}">
+                    <i class="bi bi-building"></i> Datos institucionales
+                </a></li>
                 <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
                     <i class="bi bi-people-fill"></i> Estudiantes
                 </a></li>

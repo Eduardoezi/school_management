@@ -2,7 +2,7 @@ Modulo d Consulta para los representantes. solo deben ver el progreso de sus hij
 revisar el año de nacimientoERRORES DE INGRESO un niño nacido en una fecha muy lejana, error al ingresar, y otros errores ligados a esto
 moudlo CALENDARIO ESCOLAR un calendario anual del sitema escolar venezolano con inicio y fin, periodos de vacaciones y control de dias feriados, control sobre suspenciones internas.
 modulo de trabajador social y sus procesos de informacion
-modulo de reportes y constancias: certificacion de funciones, constancias de estudio, constancia de asistencia para representantes por si tienen que justificar en sus trabajos que feuron a la escuela
+modulo de reportes y constancias
 modulo de psicologo para los reportes y sus ayasgos en sus evaluaciones a cada estudiante
 modulo de reporte de planificacion de cada docente y sus actividades respondiendo al formato ministerial de planificacion
 modulo de reporte rac y cuadratura formatos del ministerio para el reporte de la actuacion docente
@@ -11,3 +11,6 @@ modulo para el registro anecdotico de la actuacion estudiantil hecho por del doc
 modulo de manejo de la informacion de planes academicos ministeriales: manos a la siembra, etc
 modulo de registro del PEIC
 modulo de bienes nacionales: registro, movimientos (si hay o no), desincorporacion e incorporacion
+modulo  La integración más realista y útil no es una conexión automática, sino la exportación de datos. Tu sistema puede generar reportes en formatos que el ministerio solicite (como Excel o CSV) con los datos de matrícula, asistencia, etc., listos para que un directivo los cargue en SIGUES.
+Respaldo automático en la nube
+Requisitos descargables: el sistema genera un PDF con la lista de requisitos personalizado.
