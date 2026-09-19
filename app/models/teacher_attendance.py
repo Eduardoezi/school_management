@@ -226,3 +226,83 @@ class TeacherAttendance:
             print(e); return False
         finally:
             cursor.close(); conn.close()
+    # ============================================================
+    # CARGA MANUAL POR EL DIRECTIVO
+    # ============================================================
+    @staticmethod
+    def get_all_teachers_for_date(attendance_date):
+        """
+        Devuelve la lista de todos los docentes activos con su registro
+        actual (si existe) para una fecha específica.
+        """
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT 
+                t.id AS teacher_id,
+                t.first_name,
+                t.last_name,
+                t.email,
+                ta.id AS attendance_id,
+                ta.check_in,
+                ta.check_out,
+                ta.status,
+                ta.remarks,
+                ta.original_source,
+                ta.batch_id,
+                abl.batch_number,
+                u.username AS loaded_by_username,
+                abl.created_at AS batch_created_at
+            FROM teachers t
+            LEFT JOIN teacher_attendance ta 
+                ON ta.teacher_id = t.id AND ta.attendance_date = %s
+            LEFT JOIN attendance_batch_loads abl ON ta.batch_id = abl.id
+            LEFT JOIN users u ON abl.loaded_by = u.id
+            WHERE t.active = 1
+            ORDER BY t.last_name, t.first_name
+        """, (attendance_date,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return rows
+
+    @staticmethod
+    def save_manual(teacher_id, attendance_date, data, batch_id, source='manual_director'):
+        """
+        Crea o actualiza un registro de asistencia cargado manualmente.
+        Devuelve el ID del registro o None si falla.
+        """
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor()
+        try:
+            # ON DUPLICATE actualiza si ya existía uno (por la unique teacher_id + date)
+            cursor.execute("""
+                INSERT INTO teacher_attendance
+                    (teacher_id, attendance_date, check_in, check_out,
+                     status, remarks, batch_id, original_source)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    check_in = VALUES(check_in),
+                    check_out = VALUES(check_out),
+                    status = VALUES(status),
+                    remarks = VALUES(remarks),
+                    batch_id = VALUES(batch_id),
+                    original_source = VALUES(original_source)
+            """, (teacher_id, attendance_date,
+                  data.get('check_in') or None,
+                  data.get('check_out') or None,
+                  data.get('status') or 'present',
+                  data.get('remarks') or None,
+                  batch_id, source))
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            print(f"[TeacherAttendance.save_manual] {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()

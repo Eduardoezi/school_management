@@ -1,388 +1,195 @@
-{% extends "base_public.html" %}
+﻿{% extends "base_public.html" %}
 {% block title %}Marcar Asistencia{% endblock %}
+
 {% block content %}
+<div class="container py-4" style="max-width: 520px;">
 
-<style>
-    /* ---------- Fondo y contenedor ---------- */
-    .clock-page {
-        min-height: 80vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
+    <div class="text-center mb-4">
+        <div id="live-clock" style="font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;">--:--:--</div>
+        <div id="live-date" class="text-muted">Cargando fecha...</div>
+        <h4 class="mt-3"><i class="bi bi-fingerprint me-2"></i>Registro de Asistencia</h4>
+    </div>
 
-    .clock-card {
-        width: 100%;
-        max-width: 520px;
-        border-radius: 24px;
-        border: none;
-        background: #ffffff;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
-    }
+    <div id="status-message" class="alert d-none" role="alert"></div>
 
-    /* ---------- Encabezado con reloj ---------- */
-    .clock-header {
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        color: #fff;
-        padding: 1.75rem 1.5rem 1.25rem;
-        text-align: center;
-        position: relative;
-    }
+    <div class="card">
+        <div class="card-body p-4">
 
-    .clock-time {
-        font-size: 3rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        font-variant-numeric: tabular-nums;
-        line-height: 1;
-        margin-bottom: 0.35rem;
-    }
-
-    .clock-date {
-        font-size: 0.9rem;
-        opacity: 0.85;
-        text-transform: capitalize;
-    }
-
-    .clock-title {
-        font-size: 1rem;
-        margin-top: 1rem;
-        opacity: 0.9;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-weight: 500;
-    }
-
-    /* ---------- Cuerpo ---------- */
-    .clock-body {
-        padding: 2rem 1.75rem;
-    }
-
-    .teacher-preview {
-        display: none;
-        background: #f0fdf4;
-        border: 1px solid #86efac;
-        border-radius: 12px;
-        padding: 0.9rem 1rem;
-        margin-bottom: 1rem;
-        animation: fadeIn 0.3s ease;
-    }
-
-    .teacher-preview.show {
-        display: block;
-    }
-
-    .teacher-preview.error {
-        background: #fef2f2;
-        border-color: #fca5a5;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ---------- Input grande ---------- */
-    .cedula-input {
-        font-size: 1.75rem;
-        text-align: center;
-        letter-spacing: 3px;
-        font-weight: 600;
-        padding: 1rem;
-        border-radius: 14px;
-        border: 2px solid #e2e8f0;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        color: #0f172a;           /* ← NUEVO: texto oscuro */
-        background: #ffffff;      /* ← NUEVO: fondo blanco explícito */
-    }
-
-    .cedula-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-        outline: none;
-        color: #94a3b8; 
-    }
-
-    .cedula-input::placeholder {
-    color: #94a3b8;           /* ← NUEVO: placeholder gris visible */
-}
-
-    /* ---------- Botones de acción ---------- */
-    .action-btn {
-        border-radius: 14px;
-        padding: 1rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        letter-spacing: 1px;
-        transition: transform 0.15s, box-shadow 0.2s;
-        border: none;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .action-btn:active {
-        transform: translateY(0);
-    }
-
-    .btn-in {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: #fff;
-    }
-
-    .btn-out {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: #fff;
-    }
-
-    /* ---------- Estado del día ---------- */
-    .status-card {
-        background: #f8fafc;
-        border-radius: 14px;
-        padding: 1rem;
-        margin-top: 1.25rem;
-    }
-
-    .status-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .status-item:last-child {
-        border-bottom: none;
-    }
-
-    .status-label {
-        color: #64748b;
-        font-size: 0.9rem;
-    }
-
-    .status-value {
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    /* ---------- Botón volver ---------- */
-    .back-btn {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.15);
-        border: none;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        transition: background 0.2s;
-        text-decoration: none;
-    }
-
-    .back-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-        color: #fff;
-    }
-
-    /* ---------- Horario del día ---------- */
-    .schedule-badge {
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        padding: 0.35rem 0.75rem;
-        font-size: 0.85rem;
-        display: inline-block;
-        margin-top: 0.75rem;
-    }
-</style>
-
-<div class="clock-page">
-    <div class="clock-card">
-
-        {# ---------- ENCABEZADO ---------- #}
-        <div class="clock-header">
-            {# Botón volver: contextual según sesión #}
-            {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.dashboard') }}" class="back-btn" title="Volver al panel">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-            {% else %}
-                <a href="{{ url_for('main.index') }}" class="back-btn" title="Volver al inicio">
-                    <i class="bi bi-house"></i>
-                </a>
-            {% endif %}
-
-            <div class="clock-time" id="live-clock">--:--:--</div>
-            <div class="clock-date" id="live-date">Cargando fecha...</div>
-
-            {% if schedule %}
-                <div class="schedule-badge">
-                    <i class="bi bi-clock me-1"></i>
-                    Horario: {{ schedule.start_time }} - {{ schedule.end_time }}
-                </div>
-            {% endif %}
-
-            <div class="clock-title">
-                <i class="bi bi-fingerprint me-1"></i>
-                Registro de Asistencia
+            <div id="step-cedula">
+                <label for="cedula" class="form-label fw-semibold">Ingresa tu cédula</label>
+                <input type="text" inputmode="numeric" pattern="[0-9]*"
+                       class="form-control form-control-lg text-center mb-3"
+                       id="cedula" placeholder="00000000" maxlength="10"
+                       style="font-size: 1.5rem; letter-spacing: 2px;">
+                <button type="button" class="btn btn-primary w-100 btn-lg"
+                        id="btn-validar"
+                        onclick="iniciarBiometria()">
+                    <i class="bi bi-fingerprint me-2"></i>Validar con biometría
+                </button>
+                <small class="text-muted d-block text-center mt-2">
+                    Usa tu huella o Face ID para confirmar tu identidad.
+                </small>
             </div>
-        </div>
 
-        {# ---------- CUERPO ---------- #}
-        <div class="clock-body">
-
-            <form method="POST" id="clock-form" autocomplete="off">
-                <div class="mb-3">
-                    <label for="teacher_id" class="form-label fw-semibold text-secondary small">
-                        Ingrese su número de cédula
-                    </label>
-                    <input type="text"
-                           class="form-control cedula-input"
-                           id="teacher_id"
-                           name="teacher_id"
-                           inputmode="numeric"
-                           pattern="[0-9]*"
-                           maxlength="10"
-                           required
-                           autofocus
-                           placeholder="00000000">
-                    <div class="form-text text-center mt-2">
-                        Presione una opción para registrar
-                    </div>
+            <div id="step-bio" class="d-none text-center py-3">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Esperando biometría...</span>
                 </div>
-
-                {# Previsualización del docente #}
-                <div class="teacher-preview" id="teacher-preview"></div>
-
-                <div class="d-grid gap-3">
-                    <button type="submit" name="action" value="in" class="action-btn btn-in">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>MARCAR ENTRADA
-                    </button>
-                    <button type="submit" name="action" value="out" class="action-btn btn-out">
-                        <i class="bi bi-box-arrow-right me-2"></i>MARCAR SALIDA
-                    </button>
-                </div>
-            </form>
-
-            {# ---------- ESTADO DEL DÍA ---------- #}
-            {% if record %}
-            <div class="status-card">
-                <h6 class="text-uppercase text-muted small mb-3">
-                    <i class="bi bi-clipboard-check me-1"></i>Estado de hoy
-                </h6>
-                <div class="status-item">
-                    <span class="status-label"><i class="bi bi-box-arrow-in-right me-1"></i>Entrada</span>
-                    <span class="status-value">{{ record.check_in or '—' }}</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label"><i class="bi bi-box-arrow-right me-1"></i>Salida</span>
-                    <span class="status-value">{{ record.check_out or '—' }}</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label"><i class="bi bi-info-circle me-1"></i>Estado</span>
-                    <span class="status-value">
-                        {% if record.status == 'present' %}
-                            <span class="badge bg-success">Presente</span>
-                        {% elif record.status == 'late' %}
-                            <span class="badge bg-warning text-dark">Tarde</span>
-                        {% elif record.status == 'absent' %}
-                            <span class="badge bg-danger">Ausente</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Justificado</span>
-                        {% endif %}
-                    </span>
-                </div>
+                <p class="mb-0">Confirma tu identidad en tu teléfono...</p>
             </div>
-            {% endif %}
 
         </div>
     </div>
 </div>
 
 <script>
-// ---------- Reloj en vivo ----------
+// ------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
+
+function b64urlToBuf(b64url) {
+    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob(b64 + pad);
+    const buf = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
+    return buf;
+}
+
+function bufToB64url(buf) {
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function showMessage(msg, type = 'info') {
+    const el = document.getElementById('status-message');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.classList.remove('d-none');
+}
+
+// ------------------------------------------------------------
+// Reloj en vivo
+// ------------------------------------------------------------
 function updateClock() {
     const now = new Date();
-    const time = now.toLocaleTimeString('es-VE', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-    const date = now.toLocaleDateString('es-VE', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    document.getElementById('live-clock').textContent = time;
-    document.getElementById('live-date').textContent = date;
+    document.getElementById('live-clock').textContent =
+        now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    document.getElementById('live-date').textContent =
+        now.toLocaleDateString('es-VE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 updateClock();
 setInterval(updateClock, 1000);
 
-// ---------- Previsualización del docente (AJAX) ----------
-const cedulaInput = document.getElementById('teacher_id');
-const preview = document.getElementById('teacher-preview');
-let lastCedula = '';
+// ------------------------------------------------------------
+// Flujo biométrico
+// ------------------------------------------------------------
+async function iniciarBiometria() {
+    const cedula = document.getElementById('cedula').value.trim();
+    const csrfToken = getCsrfToken();
+    const btn = document.getElementById('btn-validar');
 
-cedulaInput.addEventListener('input', function () {
-    const cedula = this.value.trim();
-    if (cedula === lastCedula) return;
-    lastCedula = cedula;
-
-    if (cedula.length < 5) {
-        preview.classList.remove('show');
+    if (!cedula || !/^\d{5,10}$/.test(cedula)) {
+        showMessage('Ingresa una cédula válida.', 'warning');
         return;
     }
 
-    fetch(`/attendance/api/teacher/${encodeURIComponent(cedula)}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.found) {
-                preview.className = 'teacher-preview show';
-                preview.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-person-check-fill text-success fs-3 me-3"></i>
-                        <div>
-                            <div class="fw-bold">${data.first_name} ${data.last_name}</div>
-                            <small class="text-muted">Cédula ${data.id}</small>
-                        </div>
-                    </div>`;
-            } else if (cedula.length >= 6) {
-                preview.className = 'teacher-preview show error';
-                preview.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-exclamation-triangle-fill text-danger fs-3 me-3"></i>
-                        <div>
-                            <div class="fw-bold">Cédula no encontrada</div>
-                            <small class="text-muted">Verifique con el directivo</small>
-                        </div>
-                    </div>`;
-            } else {
-                preview.classList.remove('show');
-            }
-        })
-        .catch(() => {
-            preview.classList.remove('show');
-        });
-});
+    if (!csrfToken) {
+        showMessage('Error: token de seguridad no encontrado. Recarga la página.', 'danger');
+        return;
+    }
 
-// ---------- Auto-submit al presionar Enter ----------
-cedulaInput.addEventListener('keydown', function (e) {
+    document.getElementById('step-cedula').classList.add('d-none');
+    document.getElementById('step-bio').classList.remove('d-none');
+    btn.disabled = true;
+
+    try {
+        // 1. Pedir opciones al servidor
+        const res = await fetch('/webauthn/authenticate/begin', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ cedula })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Error al iniciar biometría.');
+        }
+
+        const options = await res.json();
+        options.challenge = b64urlToBuf(options.challenge);
+        if (options.allowCredentials) {
+            options.allowCredentials = options.allowCredentials.map(c => ({
+                ...c,
+                id: b64urlToBuf(c.id)
+            }));
+        }
+
+        // 2. Pedir biometría al navegador
+        const assertion = await navigator.credentials.get({ publicKey: options });
+
+        // 3. Enviar firma al servidor
+        const payload = {
+            id: assertion.id,
+            rawId: bufToB64url(assertion.rawId),
+            type: assertion.type,
+            response: {
+                clientDataJSON: bufToB64url(assertion.response.clientDataJSON),
+                authenticatorData: bufToB64url(assertion.response.authenticatorData),
+                signature: bufToB64url(assertion.response.signature),
+                userHandle: assertion.response.userHandle
+                    ? bufToB64url(assertion.response.userHandle) : null
+            },
+            action: 'in'
+        };
+
+        const verifyRes = await fetch('/webauthn/authenticate/complete', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await verifyRes.json();
+
+        if (verifyRes.ok) {
+            showMessage(result.message || 'Asistencia registrada.', 'success');
+            document.getElementById('cedula').value = '';
+        } else {
+            showMessage(result.error || 'Error al verificar.', 'danger');
+        }
+    } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Error en la validación biométrica.', 'danger');
+    } finally {
+        document.getElementById('step-bio').classList.add('d-none');
+        document.getElementById('step-cedula').classList.remove('d-none');
+        btn.disabled = false;
+        document.getElementById('cedula').focus();
+    }
+}
+
+// Enter para enviar
+document.getElementById('cedula').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
         e.preventDefault();
-        this.closest('form').querySelector('button[value="in"]').click();
+        iniciarBiometria();
     }
 });
 </script>
-
 {% endblock %}

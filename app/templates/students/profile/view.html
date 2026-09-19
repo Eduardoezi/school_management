@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Perfil del Estudiante{% endblock %}
 {% block content %}
 
@@ -321,6 +321,7 @@
                                                              student_id=student.id, member_id=member.id) }}"
                                           onsubmit="return confirm('¿Eliminar este familiar?');"
                                           style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button class="btn btn-outline-danger" type="submit">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -606,6 +607,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('student_profile.family_add', student_id=student.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Agregar familiar</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -629,6 +631,7 @@
         <div class="modal-content">
             <form method="POST"
                   action="{{ url_for('student_profile.family_edit', student_id=student.id, member_id=member.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar {{ member.role }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

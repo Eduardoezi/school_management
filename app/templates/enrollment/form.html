@@ -1,8 +1,9 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}{{ 'Editar' if enrollment else 'Nueva' }} Inscripción{% endblock %}
 {% block content %}
 <h2>{{ 'Editar' if enrollment else 'Nueva' }} Inscripción</h2>
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="mb-3">
         <label for="school_id" class="form-label">Estudiante (Cédula escolar) *</label>
         <select class="form-select" id="school_id" name="school_id" required>

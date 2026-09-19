@@ -1,9 +1,10 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Reporte de Asistencia{% endblock %}
 {% block content %}
 <h2>📊 Reporte de Asistencia</h2>
 
 <form method="POST" class="row g-3 mb-4 border p-3 rounded bg-light">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="col-md-3">
         <label class="form-label">Desde *</label>
         <input type="date" class="form-control" name="from_date" 

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Perfil del Personal{% endblock %}
 {% block content %}
 
@@ -137,6 +137,7 @@
                                   action="{{ url_for('staff_profile.unassign_course', teacher_id=teacher.id, course_code=c.code) }}"
                                   style="display:inline;"
                                   onsubmit="return confirm('¿Quitar este curso a {{ teacher.first_name }}?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Desasignar">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
@@ -168,6 +169,7 @@
         <form method="POST"
               action="{{ url_for('staff_profile.assign_course', teacher_id=teacher.id) }}"
               class="row g-2 align-items-end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-6">
                 <label class="form-label small mb-1">Curso</label>
                 <select name="course_code" class="form-select" required>

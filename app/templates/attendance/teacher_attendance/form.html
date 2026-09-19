@@ -1,8 +1,9 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}{{ 'Editar' if attendance else 'Nuevo' }} Registro de Asistencia{% endblock %}
 {% block content %}
 <h2>{{ 'Editar' if attendance else 'Nuevo' }} Registro de Asistencia</h2>
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="mb-3">
         <label for="teacher_id" class="form-label">Profesor</label>
         <select class="form-select" id="teacher_id" name="teacher_id" required>

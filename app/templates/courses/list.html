@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
 {% block title %}Lista de Cursos{% endblock %}
 {% block content %}
 
@@ -65,18 +66,19 @@
                 <td>{{ course.grade or '-' }}</td>
                 <td>{{ course.section or '-' }}</td>
                 <td>{{ course.academic_year or '-' }}</td>
-                {% if view_mode == 'admin' %}
+                {% if view_mode == 'directivo' %}
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
                         <a href="{{ url_for('courses.edit_view', course_code=course.code) }}"
-                           class="btn btn-outline-warning" title="Editar">
+                        class="btn btn-outline-warning" title="Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <a href="{{ url_for('courses.delete_view', course_code=course.code) }}"
-                           class="btn btn-outline-danger" title="Eliminar"
-                           onclick="return confirm('¿Eliminar este curso?');">
-                            <i class="bi bi-trash"></i>
-                        </a>
+                        {% if current_user.role == 'directivo' %}
+                            <a href="{{ url_for('courses.confirm_delete', course_code=course.code) }}"
+                            class="btn btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {% endif %}
                     </div>
                 </td>
                 {% endif %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Mi Asistencia{% endblock %}
 {% block content %}
 <h2>📋 Mi Asistencia - Hoy</h2>
@@ -11,9 +11,11 @@
     <p>No hay registro de asistencia para hoy.</p>
 {% endif %}
 <form method="POST" action="{{ url_for('attendance.checkin') }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-success">Registrar Entrada</button>
 </form>
 <form method="POST" action="{{ url_for('attendance.checkout') }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">Registrar Salida</button>
 </form>
 {% endblock %}

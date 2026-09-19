@@ -1,0 +1,164 @@
+﻿{% extends "base.html" %}
+{% block title %}Lote {{ batch.batch_number }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">
+        <i class="bi bi-check-circle text-success me-2"></i>
+        Lote {{ batch.batch_number }}
+    </h2>
+    <a href="{{ url_for('attendance.manual_load_history') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-clock-history me-1"></i>Historial
+    </a>
+</div>
+
+{% if batch.is_late_load %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    <strong>Carga tardía:</strong> se registró {{ batch.days_after_event }} días después de la fecha de asistencia.
+</div>
+{% else %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>
+    Carga completada correctamente. Se guardaron <strong>{{ batch.teachers_count }}</strong> registros.
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <small class="text-muted">Nº de lote</small>
+                <p class="mb-0 fw-semibold">{{ batch.batch_number }}</p>
+            </div>
+            <div class="col-md-3 mb-2">
+                <small class="text-muted">Fecha de la asistencia</small>
+                <p class="mb-0 fw-semibold">{{ batch.attendance_date }}</p>
+            </div>
+            <div class="col-md-3 mb-2">
+                <small class="text-muted">Cargado por</small>
+                <p class="mb-0 fw-semibold">{{ batch.loaded_by_username or '-' }}</p>
+            </div>
+            <div class="col-md-3 mb-2">
+                <small class="text-muted">Fecha y hora de la carga</small>
+                <p class="mb-0 fw-semibold">{{ batch.created_at }}</p>
+            </div>
+
+            <div class="col-12 mt-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">Razón / Justificación del lote</small>
+                    {% if current_user.role in ['directivo', 'secretario'] %}
+                        <a href="{{ url_for('attendance.manual_load_edit_reason', batch_id=batch.id) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    {% endif %}
+                </div>
+                <p class="mb-1">{{ batch.reason }}</p>
+
+                {% if batch.reason_updated_at %}
+                    <small class="text-muted">
+                        <i class="bi bi-pencil me-1"></i>
+                        Última edición: {{ batch.reason_updated_at }}
+                        (por <strong>{{ batch.reason_updated_by_username or 'usuario desconocido' }}</strong>)
+                    </small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-list-check me-2"></i>Registros cargados
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Docente</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                        <th class="text-center" style="width: 80px;">Editar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.teacher_id }}</td>
+                        <td>{{ r.first_name }} {{ r.last_name }}</td>
+                        <td>{{ r.check_in or '-' }}</td>
+                        <td>{{ r.check_out or '-' }}</td>
+                        <td>
+                            {% if r.status == 'present' %}<span class="badge bg-success">Presente</span>
+                            {% elif r.status == 'late' %}<span class="badge bg-warning text-dark">Tarde</span>
+                            {% elif r.status == 'absent' %}<span class="badge bg-danger">Ausente</span>
+                            {% else %}<span class="badge bg-secondary">Justificado</span>{% endif %}
+                        </td>
+                        <td>{{ r.remarks or '-' }}</td>
+                        <td class="text-center">
+                            {% if current_user.role in ['directivo', 'secretario'] %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modal-remarks-{{ r.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('attendance.index', date=batch.attendance_date) }}"
+       class="btn btn-primary">
+        <i class="bi bi-calendar-check me-1"></i>Ver asistencia del {{ batch.attendance_date }}
+    </a>
+    <a href="{{ url_for('attendance.manual_load') }}" class="btn btn-outline-secondary">
+        Cargar otra fecha
+    </a>
+</div>
+
+{# ==================== MODALES DE EDICIÓN POR DOCENTE ==================== #}
+{% for r in records %}
+<div class="modal fade" id="modal-remarks-{{ r.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST"
+                  action="{{ url_for('attendance.manual_load_edit_remarks', attendance_id=r.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="batch_id" value="{{ batch.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil me-2"></i>Editar observación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">
+                        Docente: <strong>{{ r.first_name }} {{ r.last_name }}</strong>
+                    </p>
+                    <label class="form-label">Observaciones</label>
+                    <textarea class="form-control" name="remarks" rows="3"
+                              placeholder="Ej: Se adjunta aval médico entregado el 20/09...">{{ r.remarks or '' }}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

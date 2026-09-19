@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Registro de Docente{% endblock %}
 {% block content %}
 
@@ -7,6 +7,7 @@
 </h2>
 
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     {# ---------- DATOS BÁSICOS ---------- #}
     <div class="card mb-3">

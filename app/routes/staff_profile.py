@@ -4,6 +4,8 @@ from app.models.teacher import Teacher
 from app.models.staff_detail import StaffDetail
 from app.models.course import Course
 from app.utils.decorators import role_required
+from app.utils.db import get_db_connection
+from app.models.user import User
 
 staff_profile_bp = Blueprint('staff_profile', __name__,
                               url_prefix='/staff/<int:teacher_id>/profile')

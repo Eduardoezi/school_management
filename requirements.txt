@@ -40,3 +40,7 @@ MarkupSafe==3.0.3
 # Generación de PDF
 # ============================================================
 xhtml2pdf==0.2.16
+
+# Autenticación biométrica
+webauthn==2.7.1
+zeroconf==0.132.2

@@ -6,9 +6,12 @@
     --sidebar-width: 260px;
     --sidebar-bg: #1e293b;
     --sidebar-hover: #334155;
-    --sidebar-text: #cbd5e1;
+    --sidebar-text: #cbd1d7;
     --sidebar-active: #3b82f6;
     --topbar-height: 60px;
+
+    /* Única fuente de verdad para el breakpoint móvil */
+    --mobile-breakpoint: 992px;
 }
 
 * {
@@ -19,7 +22,12 @@ body {
     margin: 0;
     padding: 0;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: #f1f5f9;
+    background: #f4f6f8;
+}
+
+/* Bloquea el scroll de fondo cuando el sidebar móvil está abierto */
+body.sidebar-open {
+    overflow: hidden;
 }
 
 /* ---------- Sidebar ---------- */
@@ -37,10 +45,12 @@ body {
     z-index: 1100;
     display: flex;
     flex-direction: column;
-    -webkit-overflow-scrolling: touch;
+
+    /* Scroll personalizado (Firefox + WebKit) */
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
 }
 
-/* Scroll personalizado dentro del sidebar */
 .sidebar::-webkit-scrollbar {
     width: 6px;
 }
@@ -90,7 +100,7 @@ body {
     gap: 0.6rem;
     font-size: 0.9rem;
     border-left: 3px solid transparent;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
     white-space: nowrap;
 }
 
@@ -118,6 +128,13 @@ body {
     pointer-events: none;
 }
 
+.sidebar .nav-link:focus-visible {
+    outline: 2px solid var(--sidebar-active);
+    outline-offset: -2px;
+    background: var(--sidebar-hover);
+    color: #fff;
+}
+
 /* ---------- Contenido principal ---------- */
 .main-wrapper {
     margin-left: var(--sidebar-width);
@@ -129,7 +146,7 @@ body {
 
 .topbar {
     height: var(--topbar-height);
-    background: #fff;
+    background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
@@ -154,11 +171,16 @@ body {
 }
 
 .topbar .btn-toggle:hover {
-    background: #f1f5f9;
+    background: #eef2f7;
 }
 
 .topbar .btn-toggle:active {
-    background: #e2e8f0;
+    background: #e0e7ef;
+}
+
+.topbar .btn-toggle:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
 }
 
 .topbar .user-info {
@@ -171,7 +193,7 @@ body {
 }
 
 .topbar .role-badge {
-    background: #dbeafe;
+    background: #eff3f8;
     color: #1e40af;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
@@ -193,6 +215,7 @@ body {
     background: rgba(15, 23, 42, 0.55);
     z-index: 1050;
     backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     animation: fadeIn 0.2s ease;
 }
 
@@ -251,16 +274,18 @@ body {
     }
 }
 
-/* ---------- Tarjetas y utilidades ---------- */
+/* ============================================================
+   CARDS Y UTILIDADES
+   ============================================================ */
 .card {
     border: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     border-radius: 10px;
+    transition: box-shadow 0.2s ease;   /* aquí, no en :hover */
 }
 
 .card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.2s;
 }
 
 .page-title {
@@ -300,7 +325,7 @@ body {
 
 .sidebar-user .user-role {
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: #e7eef9;
     text-transform: capitalize;
 }
 
@@ -387,10 +412,6 @@ body {
     object-fit: cover;
 }
 
-.sidebar-user .avatar-img {
-    object-fit: cover;
-}
-
 .sidebar-user-link {
     display: flex;
     align-items: center;
@@ -415,4 +436,55 @@ body {
 .avatar-circle-lg {
     font-size: 2rem;
     font-weight: 700;
+}
+
+/* ============================================================
+   FIX: <select> / <option> con texto visible
+   ============================================================ */
+.form-select,
+.form-control {
+    color-scheme: light;
+    color: #212529 !important;
+    background-color: #fff !important;
+}
+
+.form-select option,
+.form-select optgroup {
+    color: #212529;
+    background-color: #fff;
+}
+
+.form-select option[value=""] {
+    color: #6c757d;
+}
+
+/* ============================================================
+   IMPRESIÓN (Ctrl+P)
+   ============================================================ */
+@media print {
+    .sidebar,
+    .topbar,
+    .sidebar-overlay,
+    .btn,
+    .btn-group {
+        display: none !important;
+    }
+
+    .main-wrapper {
+        margin-left: 0 !important;
+    }
+
+    #app-container {
+        padding: 0 !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        page-break-inside: avoid;
+    }
 }

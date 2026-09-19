@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Gestión de Usuarios{% endblock %}
 {% block content %}
 
@@ -152,6 +152,7 @@
                                   action="{{ url_for('admin.change_role', user_id=u.id) }}"
                                   class="d-flex gap-1"
                                   onsubmit="return confirm('¿Cambiar el rol de &quot;{{ u.username }}&quot;?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="new_role" class="form-select form-select-sm" style="max-width: 120px;">
                                     <option value="directivo"  {% if u.role == 'directivo'  %}selected{% endif %}>Directivo</option>
                                     <option value="secretario" {% if u.role == 'secretario' %}selected{% endif %}>Secretario</option>
@@ -178,6 +179,7 @@
                                       action="{{ url_for('admin.deactivate_user', user_id=u.id) }}"
                                       style="display:inline;"
                                       onsubmit="return confirm('¿Desactivar a &quot;{{ u.username }}&quot;?\n\nNo podrá iniciar sesión pero se conserva su historial.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
                                             title="Desactivar usuario">
                                         <i class="bi bi-slash-circle"></i>
@@ -188,6 +190,7 @@
                                       action="{{ url_for('admin.reactivate_user', user_id=u.id) }}"
                                       style="display:inline;"
                                       onsubmit="return confirm('¿Reactivar a &quot;{{ u.username }}&quot;?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-success"
                                             title="Reactivar usuario">
                                         <i class="bi bi-check-circle"></i>
@@ -214,6 +217,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" id="resetForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title">
                         <i class="bi bi-key-fill me-2"></i>Resetear contraseña

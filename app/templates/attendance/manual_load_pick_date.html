@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Carga manual de asistencia{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-calendar-plus me-2"></i>Carga manual de asistencia
+</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>¿Cuándo usar esta herramienta?</strong><br>
+            Solo cuando el kiosco falló o un docente olvidó marcar su asistencia en una fecha pasada.
+            Toda carga queda registrada con tu nombre y el motivo que indiques.
+        </div>
+
+        <form method="GET" action="{{ url_for('attendance.manual_load') }}">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fecha a cargar *</label>
+                    <input type="date" class="form-control" name="date"
+                           max="{{ today }}" required>
+                    <small class="text-muted">Solo fechas anteriores a hoy.</small>
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-right me-1"></i>Continuar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <a href="{{ url_for('attendance.manual_load_history') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-clock-history me-1"></i>Ver historial de cargas anteriores
+        </a>
+    </div>
+</div>
+
+{% endblock %}
