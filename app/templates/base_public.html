@@ -70,22 +70,45 @@
 
         /* ---------- Formularios (para login/registro) ---------- */
         .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff;
+            background-color: rgba(255, 255, 255, 0.96);
+            border: 1px solid #cbd5e1;
+            color: #172033;
+            color-scheme: light;
             border-radius: 10px;
             padding: 0.75rem 1rem;
         }
 
         .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.12);
+            background-color: #fff;
             border-color: #3b82f6;
-            color: #fff;
+            color: #172033;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
 
         .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.4);
+            color: #64748b;
+            opacity: 1;
+        }
+
+        .form-select option,
+        .form-select optgroup {
+            background-color: #fff;
+            color: #172033;
+        }
+
+        .form-control:disabled,
+        .form-control[readonly],
+        .form-select:disabled {
+            background-color: #e2e8f0;
+            color: #475569;
+            opacity: 1;
+        }
+
+        .form-control:-webkit-autofill,
+        .form-control:-webkit-autofill:hover,
+        .form-control:-webkit-autofill:focus {
+            -webkit-text-fill-color: #172033;
+            box-shadow: 0 0 0 1000px #fff inset;
         }
 
         .form-label {
@@ -94,7 +117,11 @@
         }
 
         .form-text, small.text-muted {
-            color: rgba(255, 255, 255, 0.5) !important;
+            color: rgba(255, 255, 255, 0.78) !important;
+        }
+
+        .public-muted-text {
+            color: #cbd5e1 !important;
         }
 
         /* ---------- Botones ---------- */
@@ -142,6 +169,22 @@
 
         .public-card p, .public-card ul, .public-card li {
             color: #cbd5e1;
+        }
+
+        .public-light-card {
+            color: #172033;
+            border: 1px solid rgba(203, 213, 225, 0.8);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+        }
+
+        .public-light-card .form-label,
+        .public-light-card p {
+            color: #172033;
+        }
+
+        .public-light-card .form-text,
+        .public-light-card small.text-muted {
+            color: #475569 !important;
         }
 
         /* ---------- Enlaces dentro del card ---------- */
