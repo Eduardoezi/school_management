@@ -19,7 +19,7 @@
                 <label for="cedula" class="form-label fw-semibold">Ingresa tu cédula</label>
                 <input type="text" inputmode="numeric" pattern="[0-9]*"
                        class="form-control form-control-lg text-center mb-3"
-                       id="cedula" placeholder="00000000" maxlength="10"
+                       id="cedula" placeholder="Ingresa aquí" maxlength="10"
                        style="font-size: 1.5rem; letter-spacing: 2px;">
                 <button type="button" class="btn btn-primary w-100 btn-lg"
                         id="btn-validar"
@@ -37,7 +37,8 @@
                 </div>
                 <p class="mb-0">Confirma tu identidad en tu teléfono...</p>
             </div>
-
+            <a href="{{ url_for('main.index') }}" class="back-btn" title="Volver al inicio">
+                    <i class="bi bi-house"></i></a>
         </div>
     </div>
 </div>

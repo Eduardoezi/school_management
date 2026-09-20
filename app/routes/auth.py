@@ -17,7 +17,17 @@ def login():
         password = request.form['password']
         user = User.get_by_username(username)
 
+
+
         if user and user.check_password(password):
+            # Verifica que el usuario tenga un rol válido y no esté pendiente de aprobación
+            if user.role.lower() == 'pendiente':
+                flash(
+                    'Tu cuenta fue registrada, pero aún debe ser aprobada por un directivo.',
+                    'warning'
+                )
+                return render_template('login.html')
+            
             # Verificar que la cuenta esté activa
             if not user.active:
                 flash('Tu cuenta está desactivada. Contacta al directivo.', 'danger')
@@ -58,17 +68,18 @@ def register():
         username = request.form['username'].strip()
         email = request.form['email'].strip()
         password = request.form['password']
-        role = request.form.get('role', 'maestro')
+        # ---------- Rol válido ----------
+        # El usuario no puede seleccionar ni enviar su rol.
+        # El directivo lo asignará desde el panel administrativo.
+        role = 'pendiente'
         teacher_id = request.form.get('teacher_id', '').strip()
+
 
         # ---------- Validaciones básicas ----------
         if not username or not email or not password:
             flash('Todos los campos obligatorios deben estar llenos.', 'danger')
             return render_template('register.html')
 
-        # ---------- Rol válido ----------
-        if role not in ['Pendiente']:
-            role = 'Pendiente'
 
         # ---------- Validar cédula del personal ----------
         if not teacher_id:
@@ -112,7 +123,8 @@ def register():
         user_id = User.create(username, email, password, role, teacher_id_int)
 
         if user_id:
-            flash('Usuario registrado exitosamente. Ya puede iniciar sesión.', 'success')
+            flash('Usuario registrado exitosamente. Tu nivel de acceso debe ser asignado por un directivo antes de iniciar sesión.',
+    'success')
             return redirect(url_for('auth.login'))
 
         flash('El nombre de usuario o el correo ya están en uso.', 'danger')
