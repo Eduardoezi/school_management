@@ -1,6 +1,6 @@
 from datetime import datetime
-
-from flask import Flask, redirect, url_for, flash, request
+from flask_wtf.csrf import CSRFProtect
+from flask import Flask, redirect, url_for, flash, render_template, request
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect          # ← NUEVO
 
@@ -76,6 +76,12 @@ def _register_error_handlers(app: Flask) -> None:
     def too_large(e):
         flash('El archivo es demasiado grande. Máximo 2 MB.', 'danger')
         return redirect(request.referrer or url_for('main.index'))
+
+    # ---------- Manejo de errores ----------
+    @app.errorhandler(403)
+    def forbidden(e):
+        """Página 403 personalizada."""
+        return render_template('errors/403.html'), 403
 
 
 def _register_request_hooks(app: Flask) -> None:

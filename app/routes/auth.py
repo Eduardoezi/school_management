@@ -67,8 +67,8 @@ def register():
             return render_template('register.html')
 
         # ---------- Rol válido ----------
-        if role not in ['directivo', 'secretario', 'maestro']:
-            role = 'maestro'
+        if role not in ['Pendiente']:
+            role = 'Pendiente'
 
         # ---------- Validar cédula del personal ----------
         if not teacher_id:

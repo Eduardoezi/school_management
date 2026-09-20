@@ -1,4 +1,4 @@
-﻿{% extends "base_public.html" %}
+﻿﻿﻿{% extends "base_public.html" %}
 {% block title %}Marcar Asistencia{% endblock %}
 
 {% block content %}
@@ -6,13 +6,13 @@
 
     <div class="text-center mb-4">
         <div id="live-clock" style="font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;">--:--:--</div>
-        <div id="live-date" class="text-muted">Cargando fecha...</div>
+        <div id="live-date" class="public-muted-text">Cargando fecha...</div>
         <h4 class="mt-3"><i class="bi bi-fingerprint me-2"></i>Registro de Asistencia</h4>
     </div>
 
     <div id="status-message" class="alert d-none" role="alert"></div>
 
-    <div class="card">
+    <div class="card public-light-card">
         <div class="card-body p-4">
 
             <div id="step-cedula">

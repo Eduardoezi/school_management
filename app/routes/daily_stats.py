@@ -1,11 +1,28 @@
+"""
+Rutas del módulo de estadística diaria.
+
+Aplican autorización RBAC+ABAC (SEG-006):
+- Un maestro solo puede reportar asistencia de SUS cursos.
+- Un especialista puede reportar de cualquier curso (ve toda la matrícula).
+- Directivo/Secretario tienen acceso total.
+
+El `course_code` del formulario se valida contra el usuario actual
+antes de cualquier operación de lectura o escritura.
+"""
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from datetime import date
+
 from app.models.daily_attendance_stat import DailyAttendanceStat
 from app.models.enrollment import Enrollment
 from app.models.teacher import Teacher
 from app.models.course import Course
 from app.utils.decorators import role_required
+
+# 🔒 SEG-006: autorización por curso
+from app.security import Permission
+from app.security.helpers import get_course_or_403
 
 daily_stats_bp = Blueprint('daily_stats', __name__, url_prefix='/daily-stats')
 
@@ -34,23 +51,54 @@ def my_report():
         flash('No puedes seleccionar una fecha futura.', 'warning')
         return redirect(url_for('daily_stats.my_report'))
 
+    # ---------- Cálculo de matrícula (solo si ya hay curso) ----------
     matricula = {'total': 0, 'girls': 0, 'boys': 0, 'unknown': 0}
     if courses:
         matricula = Enrollment.get_matricula(courses[0]['code'], selected_date)
 
+    # ---------- POST ----------
     if request.method == 'POST':
         stat_date = request.form.get('stat_date', '')
         if stat_date > today_str:
             flash('No puedes guardar reportes de fechas futuras.', 'danger')
             return redirect(url_for('daily_stats.my_report'))
 
-        course_code = request.form['course_code']
+        course_code = request.form.get('course_code')
+
+        # 🔒 SEG-006: valida que el usuario pueda operar ese curso.
+        # Lanza 403 si no es titular ni está en la M2M y no es especialista.
+        get_course_or_403(course_code, Permission.DAILY_STATS_CREATE)
+
+        # Validación de entrada: cantidades no negativas
+        try:
+            gp = int(request.form.get('girls_present', 0) or 0)
+            bp = int(request.form.get('boys_present', 0) or 0)
+            ga = int(request.form.get('girls_absent', 0) or 0)
+            ba = int(request.form.get('boys_absent', 0) or 0)
+        except ValueError:
+            flash('Los valores de asistencia deben ser números enteros.', 'danger')
+            return redirect(url_for('daily_stats.my_report'))
+
+        if min(gp, bp, ga, ba) < 0:
+            flash('Los valores de asistencia no pueden ser negativos.', 'danger')
+            return redirect(url_for('daily_stats.my_report'))
+
+        # Validación contra matrícula del curso a esa fecha
+        matricula_actual = Enrollment.get_matricula(course_code, stat_date)
+        if (gp + bp) > matricula_actual['total']:
+            flash(
+                f'La suma de presentes ({gp + bp}) supera la matrícula '
+                f'({matricula_actual["total"]}) a esa fecha.',
+                'danger'
+            )
+            return redirect(url_for('daily_stats.my_report'))
+
         data = {
-            'girls_present': int(request.form.get('girls_present', 0) or 0),
-            'boys_present':  int(request.form.get('boys_present', 0) or 0),
-            'girls_absent':  int(request.form.get('girls_absent', 0) or 0),
-            'boys_absent':   int(request.form.get('boys_absent', 0) or 0),
-            'notes':         request.form.get('notes')
+            'girls_present': gp,
+            'boys_present':  bp,
+            'girls_absent':  ga,
+            'boys_absent':   ba,
+            'notes':         request.form.get('notes'),
         }
         if DailyAttendanceStat.get_or_create(course_code, stat_date,
                                              teacher['id'], data):
@@ -58,6 +106,7 @@ def my_report():
             return redirect(url_for('daily_stats.my_report', date=stat_date))
         flash('Error al guardar.', 'danger')
 
+    # ---------- GET: reportes ya cargados ----------
     my_stats = []
     if teacher:
         for c in courses:
@@ -85,7 +134,6 @@ def admin_view():
     stats = DailyAttendanceStat.get_all_by_date(selected_date)
     summary = DailyAttendanceStat.get_summary_by_date(selected_date)
 
-    # Lista de TODOS los cursos para ofrecer "cargar" los que no tengan reporte
     all_courses = Course.get_all()
     reported_codes = {s['course_code'] for s in stats}
     missing_courses = [c for c in all_courses if c['code'] not in reported_codes]
@@ -107,7 +155,6 @@ def admin_view():
 def admin_report():
     today_str = date.today().strftime('%Y-%m-%d')
 
-    # Parámetros desde la URL: ?course=PE-0202&date=2026-09-15
     course_code = request.args.get('course') or request.form.get('course_code')
     stat_date = request.args.get('date') or request.form.get('stat_date') or today_str
 
@@ -128,23 +175,45 @@ def admin_report():
             flash('No puedes guardar reportes de fechas futuras.', 'danger')
             return redirect(url_for('daily_stats.admin_view'))
 
-        # El directivo usa su propio user_id cuando no hay docente vinculado
         teacher = Teacher.get_by_user_id(current_user.id)
         teacher_id = teacher['id'] if teacher else course.get('teacher_id')
+
+        # Fallback: si no hay docente vinculado, se rechaza (antes se inventaba).
         if not teacher_id:
-            # Fallback: usar el primer docente para no romper la FK
-            all_teachers = Teacher.get_all()
-            if not all_teachers:
-                flash('No hay docentes registrados para asociar el reporte.', 'danger')
-                return redirect(url_for('daily_stats.admin_view', date=stat_date))
-            teacher_id = all_teachers[0]['id']
+            flash('No hay docente asignado para asociar el reporte.', 'danger')
+            return redirect(url_for('daily_stats.admin_view', date=stat_date))
+
+        # Validación de entrada
+        try:
+            gp = int(request.form.get('girls_present', 0) or 0)
+            bp = int(request.form.get('boys_present', 0) or 0)
+            ga = int(request.form.get('girls_absent', 0) or 0)
+            ba = int(request.form.get('boys_absent', 0) or 0)
+        except ValueError:
+            flash('Los valores de asistencia deben ser números enteros.', 'danger')
+            return redirect(url_for('daily_stats.admin_report',
+                                    course=course_code, date=stat_date))
+
+        if min(gp, bp, ga, ba) < 0:
+            flash('Los valores de asistencia no pueden ser negativos.', 'danger')
+            return redirect(url_for('daily_stats.admin_report',
+                                    course=course_code, date=stat_date))
+
+        if (gp + bp) > matricula['total']:
+            flash(
+                f'La suma de presentes ({gp + bp}) supera la matrícula '
+                f'({matricula["total"]}) a esa fecha.',
+                'danger'
+            )
+            return redirect(url_for('daily_stats.admin_report',
+                                    course=course_code, date=stat_date))
 
         data = {
-            'girls_present': int(request.form.get('girls_present', 0) or 0),
-            'boys_present':  int(request.form.get('boys_present', 0) or 0),
-            'girls_absent':  int(request.form.get('girls_absent', 0) or 0),
-            'boys_absent':   int(request.form.get('boys_absent', 0) or 0),
-            'notes':         request.form.get('notes')
+            'girls_present': gp,
+            'boys_present':  bp,
+            'girls_absent':  ga,
+            'boys_absent':   ba,
+            'notes':         request.form.get('notes'),
         }
         if DailyAttendanceStat.get_or_create(course_code, stat_date, teacher_id, data):
             flash(f'Reporte de {course["name"]} guardado correctamente.', 'success')

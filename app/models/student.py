@@ -4,6 +4,45 @@ import mysql.connector
 
 class Student:
     @staticmethod
+    def is_in_teacher_courses(student_id: int, teacher_id: int) -> bool:
+        """
+        Devuelve True si el estudiante tiene inscripción activa en algún
+        curso donde el docente es titular (courses.teacher_id) o está
+        asignado en la M2M (course_teachers).
+
+        Se implementa con EXISTS para máxima eficiencia (corta en la
+        primera coincidencia).
+        """
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM students s
+                    JOIN enrollments e
+                        ON s.school_id = e.school_id
+                       AND e.status = 'activo'
+                    JOIN courses c
+                        ON e.course_code = c.code
+                    LEFT JOIN course_teachers ct
+                        ON ct.course_code = c.code
+                    WHERE s.id = %s
+                      AND (c.teacher_id = %s OR ct.teacher_id = %s)
+                )
+            """, (student_id, teacher_id, teacher_id))
+            row = cursor.fetchone()
+            return bool(row and row[0])
+        except Exception as e:
+            print(f"[Student.is_in_teacher_courses] {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
     def generate_school_id(multiple_birth_order, birth_date, representative_cedula):
         if not birth_date or not representative_cedula:
             return None
