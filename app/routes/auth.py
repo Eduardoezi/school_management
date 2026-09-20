@@ -21,7 +21,7 @@ def login():
 
         if user and user.check_password(password):
             # Verifica que el usuario tenga un rol válido y no esté pendiente de aprobación
-            if user.role.lower() == 'pendiente':
+            if (user.role or '').strip().lower() == 'pendiente':
                 flash(
                     'Tu cuenta fue registrada, pero aún debe ser aprobada por un directivo.',
                     'warning'

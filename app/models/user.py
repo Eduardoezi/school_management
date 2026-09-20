@@ -139,7 +139,7 @@ class User(UserMixin):
         return rows
 
     @staticmethod
-    def create(username, email, password, role='maestro', teacher_id=None):
+    def create(username, email, password, role='pendiente', teacher_id=None):
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         conn = get_db_connection()
         if not conn:
@@ -162,7 +162,7 @@ class User(UserMixin):
     @staticmethod
     def update_role(user_id, new_role):
         """Cambia el rol de un usuario."""
-        if new_role not in ('directivo', 'secretario', 'maestro'):
+        if new_role not in ('pendiente', 'directivo', 'secretario', 'maestro'):
             return False
         conn = get_db_connection()
         if not conn:
