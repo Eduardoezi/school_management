@@ -1,0 +1,45 @@
+{# app/templates/_confirm_delete.html #}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 640px;">
+
+  <div class="card border-danger shadow-sm">
+    <div class="card-header bg-danger text-white">
+      <h4 class="mb-0">{{ title }}</h4>
+    </div>
+
+    <div class="card-body">
+      <p class="lead">{{ message }}</p>
+
+      {% if details %}
+        <ul class="list-group mb-3">
+          {% for label, value in details %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span class="text-muted">{{ label }}</span>
+              <strong>{{ value if value else '—' }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <p class="text-danger fw-bold mb-3">
+        Esta acción no se puede deshacer.
+      </p>
+
+      <form method="POST" action="{{ action_url }}" class="d-flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">
+          Sí, eliminar
+        </button>
+        <a href="{{ cancel_url }}" class="btn btn-secondary">
+          Cancelar
+        </a>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

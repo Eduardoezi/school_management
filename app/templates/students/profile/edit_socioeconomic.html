@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Editar estudio socioeconómico{% endblock %}
 {% block content %}
 
@@ -10,6 +10,7 @@
 </p>
 
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="card">
         <div class="card-body">
             <div class="row">

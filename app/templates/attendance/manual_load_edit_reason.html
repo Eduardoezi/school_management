@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+{% block title %}Editar justificación del lote{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-pencil me-2"></i>Editar justificación
+</h2>
+<p class="text-muted">
+    Lote <strong>{{ batch.batch_number }}</strong> · Fecha de asistencia: {{ batch.attendance_date }}
+</p>
+
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1"></i>
+            Puedes ampliar la razón original para agregar información posterior:
+            entrega de aval, aclaratorias, nombres de testigos, etc.
+        </div>
+
+        <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">Razón / Justificación del lote *</label>
+                <textarea class="form-control" name="reason" rows="6" required>{{ batch.reason }}</textarea>
+                <small class="text-muted">
+                    Cada vez que edites, el sistema registra la fecha y quién lo hizo.
+                </small>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle me-1"></i>Guardar cambios
+                </button>
+                <a href="{{ url_for('attendance.manual_load_detail', batch_id=batch.id) }}"
+                   class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if batch.reason_updated_at %}
+<div class="card mt-3">
+    <div class="card-body">
+        <small class="text-muted">
+            <i class="bi bi-clock-history me-1"></i>
+            Última edición: {{ batch.reason_updated_at }}
+            por <strong>{{ batch.reason_updated_by_username or 'usuario desconocido' }}</strong>
+        </small>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

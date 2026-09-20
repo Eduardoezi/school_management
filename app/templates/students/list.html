@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
 {% block title %}Lista de Estudiantes{% endblock %}
 {% block content %}
 
@@ -128,35 +129,6 @@
                 </td>
                 <td>{{ student.rep_first_name }} {{ student.rep_last_name or '-' }}</td>
                 <td>
-                    <!--<div class="btn-group btn-group-sm" role="group">
-                        <a href="{{ url_for('students.detail_view', student_id=student.id) }}"
-                           class="btn btn-outline-info" title="Ver / Editar">
-                            <i class="bi bi-pencil-square"></i>
-                        </a>
-
-                        {% if current_user.role in ['maestro', 'directivo', 'secretario'] %}
-                            <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
-                               class="btn btn-outline-secondary" title="Histórico de rendimiento">
-                                <i class="bi bi-journal-bookmark"></i>
-                            </a>
-                        {% endif %}
-
-                        {% if current_user.role == 'maestro' %}
-                            <a href="{{ url_for('evaluations.record', student_id=student.id) }}"
-                               class="btn btn-outline-primary" title="Registrar evaluación">
-                                <i class="bi bi-journal-plus"></i>
-                            </a>
-                        {% endif %}
-
-                        {% if current_user.role == 'directivo' %}
-                            <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
-                               class="btn btn-outline-danger"
-                               title="Eliminar"
-                               onclick="return confirm('¿Eliminar definitivamente a {{ student.first_name }} {{ student.last_name }}?');">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        {% endif %}
-                    </div>-->
                     <div class="btn-group btn-group-sm" role="group">
                         <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
                         class="btn btn-outline-primary" title="Perfil completo">
@@ -188,10 +160,9 @@
                         {% endif %}
 
                         {% if current_user.role == 'directivo' %}
-                            <a href="{{ url_for('students.delete_view', student_id=student.id) }}"
+                            <a href="{{ url_for('students.confirm_delete', student_id=student.id) }}"
                             class="btn btn-outline-danger"
-                            title="Eliminar"
-                            onclick="return confirm('¿Eliminar definitivamente a {{ student.first_name }} {{ student.last_name }}?');">
+                            title="Eliminar">
                                 <i class="bi bi-trash"></i>
                             </a>
                         {% endif %}

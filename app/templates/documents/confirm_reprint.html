@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Documento existente{% endblock %}
 {% block content %}
 
@@ -52,6 +52,7 @@
                     <form method="POST"
                           action="{{ url_for('documents.constancia_estudio_new', student_id=student.id) }}"
                           onsubmit="return confirm('¿Emitir una nueva constancia con un número nuevo?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-file-plus me-1"></i>Emitir nueva (nuevo número)
                         </button>
@@ -60,6 +61,7 @@
                     <form method="POST"
                           action="{{ url_for('documents.certificacion_funciones_new', teacher_id=teacher.id) }}"
                           onsubmit="return confirm('¿Emitir una nueva certificación con un número nuevo?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-file-plus me-1"></i>Emitir nueva (nuevo número)
                         </button>

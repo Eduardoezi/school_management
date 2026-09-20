@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Editar Perfil del Personal{% endblock %}
 {% block content %}
 
@@ -10,6 +10,7 @@
 </p>
 
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     {# ---------- DATOS LABORALES ---------- #}
     <div class="card mb-3">

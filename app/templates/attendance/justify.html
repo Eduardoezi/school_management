@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Justificar Asistencia{% endblock %}
 {% block content %}
 <h2>📝 Justificar Asistencia</h2>
@@ -10,6 +10,7 @@
         <p><strong>Entrada:</strong> {{ record.check_in or '-' }}</p>
 
         <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label for="reason" class="form-label">Motivo de la justificación *</label>
                 <textarea class="form-control" id="reason" name="reason" rows="3" required

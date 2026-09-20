@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}{{ 'Editar' if existing else 'Cargar' }} reporte - {{ course.name }}{% endblock %}
 {% block content %}
 <h2 class="page-title">
@@ -47,6 +47,7 @@
 
 {# ---------- FORMULARIO ---------- #}
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="course_code" value="{{ course.code }}">
     <input type="hidden" name="stat_date" value="{{ selected_date }}">
     <input type="hidden" id="matricula-total" value="{{ matricula.total }}">

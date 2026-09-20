@@ -1,37 +1,70 @@
 {% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
 {% block title %}Inscripciones{% endblock %}
 {% block content %}
-<h2>📋 Inscripciones</h2>
-<a href="{{ url_for('enrollment.new_enrollment') }}" class="btn btn-primary mb-3">+ Nueva inscripción</a>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Cédula escolar</th>
-            <th>Estudiante</th>
-            <th>Curso</th>
-            <th>Fecha inscripción</th>
-            <th>Estado</th>
-            <th>Fecha egreso</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in enrollments %}
-        <tr>
-            <td>{{ e.id }}</td>
-            <td>{{ e.school_id }}</td>
-            <td>{{ e.first_name }} {{ e.last_name }}</td>
-            <td>{{ e.course_name }} ({{ e.course_code }})</td>
-            <td>{{ e.enrollment_date or '-' }}</td>
-            <td>{{ e.status }}</td>
-            <td>{{ e.egreso_date or '-' }}</td>
-            <td>
-                <a href="{{ url_for('enrollment.edit_view', enrollment_id=e.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                <a href="{{ url_for('enrollment.delete_view', enrollment_id=e.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h2><i class="bi bi-clipboard-check me-2"></i>Inscripciones</h2>
+<a href="{{ url_for('enrollment.new_enrollment') }}" class="btn btn-primary mb-3">
+    <i class="bi bi-plus-circle me-1"></i>Nueva inscripción
+</a>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Cédula escolar</th>
+                <th>Estudiante</th>
+                <th>Curso</th>
+                <th>Fecha inscripción</th>
+                <th>Estado</th>
+                <th>Fecha egreso</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in enrollments %}
+            <tr>
+                <td>{{ e.id }}</td>
+                <td>{{ e.school_id }}</td>
+                <td>{{ e.first_name }} {{ e.last_name }}</td>
+                <td>{{ e.course_name }} ({{ e.course_code }})</td>
+                <td>{{ e.enrollment_date or '-' }}</td>
+                <td>
+                    {% if e.status == 'activo' %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif e.status == 'egresado' %}
+                        <span class="badge bg-primary">Egresado</span>
+                    {% elif e.status == 'retirado' %}
+                        <span class="badge bg-danger">Retirado</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ e.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ e.egreso_date or '-' }}</td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('enrollment.edit_view', enrollment_id=e.id) }}"
+                           class="btn btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% if current_user.role == 'directivo' %}
+                            <a href="{{ url_for('enrollment.confirm_delete', enrollment_id=e.id) }}"
+                               class="btn btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+                    No hay inscripciones registradas.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

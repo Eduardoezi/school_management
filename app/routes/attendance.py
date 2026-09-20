@@ -6,6 +6,9 @@ from app.models.teacher_attendance import TeacherAttendance
 from app.models.school_schedule import SchoolSchedule
 from app.utils.decorators import role_required
 from app.utils import messages as MSG
+from app.models.attendance_batch_load import AttendanceBatchLoad
+from datetime import date as date_module, datetime as dt_module
+from app.utils.db import get_db_connection
 
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 
@@ -210,3 +213,239 @@ def report_csv():
 
     return Response(si.getvalue(), mimetype='text/csv',
                     headers={'Content-Disposition': 'attachment;filename=reporte_asistencia.csv'})
+
+# ============================================================
+# CARGA MANUAL DE ASISTENCIA (directivo / secretario)
+# ============================================================
+
+
+@attendance_bp.route('/manual-load', methods=['GET', 'POST'])
+@login_required
+@role_required('directivo', 'secretario')
+def manual_load():
+    today = date_module.today()
+    today_str = today.strftime('%Y-%m-%d')
+
+    # Fecha seleccionada (GET: puede venir de query, POST: del form)
+    selected_date = request.args.get('date') or request.form.get('attendance_date')
+
+# Validación 1: no futuras, no hoy, no más de 30 días
+    if selected_date:
+        if selected_date > today_str:
+            flash('No puedes cargar asistencia de fechas futuras.', 'danger')
+            return redirect(url_for('attendance.manual_load'))
+        if selected_date == today_str:
+            flash('Para la asistencia de hoy usa el kiosco. Solo puedes cargar fechas pasadas.', 'warning')
+            return redirect(url_for('attendance.manual_load'))
+
+        # Calcular días transcurridos
+        try:
+            d_sel = dt_module.strptime(selected_date, '%Y-%m-%d').date()
+            days_ago = (today - d_sel).days
+        except Exception:
+            days_ago = 0
+
+        # Bloquear mayor a 30 días
+        if days_ago > 30:
+            flash(
+                f'No se puede cargar asistencia con más de 30 días de antigüedad. '
+                f'La fecha seleccionada tiene {days_ago} días. '
+                f'Contacta al administrador del sistema para casos excepcionales.',
+                'danger'
+            )
+            return redirect(url_for('attendance.manual_load'))
+
+    # GET sin fecha: mostrar formulario para elegirla
+    if request.method == 'GET' and not selected_date:
+        return render_template('attendance/manual_load_pick_date.html',
+                               today=today_str)
+
+    # POST: procesar la carga
+    if request.method == 'POST':
+        reason = (request.form.get('reason') or '').strip()
+        if not reason:
+            flash('Debes indicar la razón por la cual cargas la asistencia manualmente.', 'danger')
+            return redirect(url_for('attendance.manual_load', date=selected_date))
+
+        # Verificar que no exista un lote previo para esta fecha
+        existing_batch = AttendanceBatchLoad.get_by_attendance_date(selected_date)
+        if existing_batch and request.form.get('confirm_overwrite') != 'yes':
+            flash(
+                f'Ya existe una carga manual para el {selected_date} '
+                f'(lote {existing_batch["batch_number"]}). Marca la casilla '
+                f'para confirmar que quieres sobrescribir los registros cargados manualmente.',
+                'warning'
+            )
+            return redirect(url_for('attendance.manual_load', date=selected_date))
+
+        # Recolectar los registros del formulario
+        teachers = Teacher.get_all()
+        source = 'manual_director' if current_user.role == 'directivo' else 'manual_secretary'
+        records_to_save = []
+
+        for t in teachers:
+            tid = t['id']
+            # Solo procesamos si el checkbox "incluir" está marcado
+            if request.form.get(f'include_{tid}') != 'on':
+                continue
+
+            status = request.form.get(f'status_{tid}') or 'present'
+            check_in = request.form.get(f'check_in_{tid}') or None
+            check_out = request.form.get(f'check_out_{tid}') or None
+            remarks = request.form.get(f'remarks_{tid}') or None
+
+            # Validaciones
+            if status in ('absent', 'justified'):
+                # No requiere check_in
+                pass
+            elif status == 'present' or status == 'late':
+                if not check_in:
+                    flash(f'Falta la hora de entrada para {t["first_name"]} {t["last_name"]}.', 'danger')
+                    return redirect(url_for('attendance.manual_load', date=selected_date))
+
+            if check_out and check_in and check_out < check_in:
+                flash(f'La salida no puede ser antes de la entrada para {t["first_name"]} {t["last_name"]}.', 'danger')
+                return redirect(url_for('attendance.manual_load', date=selected_date))
+
+            records_to_save.append({
+                'teacher_id': tid,
+                'status': status,
+                'check_in': check_in,
+                'check_out': check_out,
+                'remarks': remarks
+            })
+
+        if not records_to_save:
+            flash('No marcaste ningún docente para incluir en la carga.', 'warning')
+            return redirect(url_for('attendance.manual_load', date=selected_date))
+
+        # Crear el lote (marcando si es tardío)
+        batch = AttendanceBatchLoad.create_v2(
+            attendance_date=selected_date,
+            reason=reason,
+            loaded_by=current_user.id,
+            teachers_count=len(records_to_save),
+            days_after_event=days_ago
+        )
+        if not batch:
+            flash('Error al crear el lote de carga manual.', 'danger')
+            return redirect(url_for('attendance.manual_load', date=selected_date))
+
+        # Guardar cada registro
+        saved = 0
+        for rec in records_to_save:
+            ok = TeacherAttendance.save_manual(
+                rec['teacher_id'], selected_date,
+                rec, batch['id'], source=source
+            )
+            if ok:
+                saved += 1
+
+        flash(
+            f'Lote {batch["batch_number"]} creado. '
+            f'{saved} registros cargados para el {selected_date}.',
+            'success'
+        )
+        return redirect(url_for('attendance.manual_load_detail', batch_id=batch['id']))
+
+    # GET con fecha: mostrar el formulario de carga
+    teachers_list = TeacherAttendance.get_all_teachers_for_date(selected_date)
+    existing_batch = AttendanceBatchLoad.get_by_attendance_date(selected_date)
+
+    # Días de antigüedad
+    try:
+        d_sel = dt_module.strptime(selected_date, '%Y-%m-%d').date()
+        days_ago = (today - d_sel).days
+    except Exception:
+        days_ago = 0
+
+    return render_template('attendance/manual_load.html',
+                           selected_date=selected_date,
+                           teachers_list=teachers_list,
+                           existing_batch=existing_batch,
+                           days_ago=days_ago,
+                           today=today_str)
+
+
+@attendance_bp.route('/manual-load/detail/<int:batch_id>')
+@login_required
+@role_required('directivo', 'secretario')
+def manual_load_detail(batch_id):
+    batch = AttendanceBatchLoad.get_by_id(batch_id)
+    if not batch:
+        flash('Lote no encontrado.', 'danger')
+        return redirect(url_for('attendance.manual_load'))
+
+    # Registros del lote
+    conn = get_db_connection()
+    records = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT ta.*, t.first_name, t.last_name
+            FROM teacher_attendance ta
+            JOIN teachers t ON ta.teacher_id = t.id
+            WHERE ta.batch_id = %s
+            ORDER BY t.last_name, t.first_name
+        """, (batch_id,))
+        records = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+    return render_template('attendance/manual_load_detail.html',
+                           batch=batch,
+                           records=records)
+
+
+@attendance_bp.route('/manual-load/history')
+@login_required
+@role_required('directivo', 'secretario')
+def manual_load_history():
+    batches = AttendanceBatchLoad.get_all(limit=200)
+    return render_template('attendance/manual_load_history.html',
+                           batches=batches)
+
+# ============================================================
+# EDITAR JUSTIFICACIÓN DEL LOTE
+# ============================================================
+@attendance_bp.route('/manual-load/<int:batch_id>/edit-reason', methods=['GET', 'POST'])
+@login_required
+@role_required('directivo', 'secretario')
+def manual_load_edit_reason(batch_id):
+    batch = AttendanceBatchLoad.get_by_id(batch_id)
+    if not batch:
+        flash('Lote no encontrado.', 'danger')
+        return redirect(url_for('attendance.manual_load_history'))
+
+    if request.method == 'POST':
+        new_reason = (request.form.get('reason') or '').strip()
+        if not new_reason:
+            flash('La razón no puede estar vacía.', 'danger')
+            return redirect(url_for('attendance.manual_load_edit_reason', batch_id=batch_id))
+
+        if AttendanceBatchLoad.update_reason(batch_id, new_reason, current_user.id):
+            flash('Justificación del lote actualizada.', 'success')
+            return redirect(url_for('attendance.manual_load_detail', batch_id=batch_id))
+        flash('Error al actualizar la justificación.', 'danger')
+
+    return render_template('attendance/manual_load_edit_reason.html', batch=batch)
+
+
+# ============================================================
+# EDITAR OBSERVACIÓN INDIVIDUAL DE UN DOCENTE
+# ============================================================
+@attendance_bp.route('/manual-load/record/<int:attendance_id>/edit-remarks', methods=['POST'])
+@login_required
+@role_required('directivo', 'secretario')
+def manual_load_edit_remarks(attendance_id):
+    new_remarks = (request.form.get('remarks') or '').strip()
+    batch_id = request.form.get('batch_id')
+
+    if AttendanceBatchLoad.update_teacher_remarks(attendance_id, new_remarks or None):
+        flash('Observación actualizada.', 'success')
+    else:
+        flash('Error al actualizar la observación.', 'danger')
+
+    if batch_id:
+        return redirect(url_for('attendance.manual_load_detail', batch_id=batch_id))
+    return redirect(url_for('attendance.manual_load_history'))

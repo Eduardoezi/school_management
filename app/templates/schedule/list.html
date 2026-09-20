@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Horarios Escolares{% endblock %}
 {% block content %}
-<h2>🗓️ Horarios Escolares</h2>
-<a href="{{ url_for('schedule.create_view') }}" class="btn btn-primary mb-3">+ Nuevo horario</a>
+<h2><i class="bi bi-calendar-week me-2"></i>Horarios Escolares</h2>
+<a href="{{ url_for('schedule.create_view') }}" class="btn btn-primary mb-3">
+    <i class="bi bi-plus-circle me-1"></i>Nuevo horario
+</a>
 
-<table class="table table-striped">
-    <thead>
+<table class="table table-striped align-middle">
+    <thead class="table-light">
         <tr>
             <th>Código</th>
             <th>Día</th>
             <th>Hora inicio</th>
             <th>Hora fin</th>
-            <th>Acciones</th>
+            <th class="text-center">Acciones</th>
         </tr>
     </thead>
     <tbody>
@@ -19,18 +21,31 @@
         <tr>
             <td>{{ s.code_schedules or '-' }}</td>
             <td>
-                {% set dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] %}
+                {% set dias = ['Lunes','Martes','Miércoles','Jueves','Viernes'] %}
                 {{ dias[s.day_of_week - 1] }}
             </td>
             <td>{{ s.start_time }}</td>
             <td>{{ s.end_time }}</td>
-            <td>
-                <a href="{{ url_for('schedule.edit_view', schedule_id=s.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                <a href="{{ url_for('schedule.delete_view', schedule_id=s.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                    <a href="{{ url_for('schedule.edit_view', schedule_id=s.id) }}"
+                       class="btn btn-outline-warning" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{{ url_for('schedule.confirm_delete', schedule_id=s.id) }}"
+                       class="btn btn-outline-danger" title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="text-center">No hay horarios registrados.</td></tr>
+        <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+                <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+                No hay horarios registrados.
+            </td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>

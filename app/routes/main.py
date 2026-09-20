@@ -7,6 +7,10 @@ from app.models.teacher import Teacher
 from app.models.course import Course
 from app.models.enrollment import Enrollment
 from app.models.daily_attendance_stat import DailyAttendanceStat
+from flask import send_file
+import os
+
+
 
 
 main_bp = Blueprint('main', __name__)
@@ -26,6 +30,8 @@ def index():
         'rif': '-'
     }
     return render_template('index.html', escuela=escuela)
+
+
 
 
 # ---------- Panel de control ----------
@@ -48,3 +54,8 @@ def dashboard():
                            total_courses=total_courses,
                            total_enrollments=total_enrollments,
                            total_presentes_hoy=total_presentes_hoy)
+
+@main_bp.route('/ca.pem')
+def download_ca():
+    path = os.path.join(os.getcwd(), 'certs', 'public', 'rootCA.pem')
+    return send_file(path, as_attachment=True, download_name='rootCA.pem')
