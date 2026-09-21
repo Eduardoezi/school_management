@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Calendario escolar{% endblock %}
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/calendar.css') }}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <h1 class="page-title mb-1"><i class="bi bi-calendar3 me-2"></i>Calendario escolar</h1>
+        <p class="text-muted mb-0">Consulta las actividades oficiales y las propias de la escuela.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if current_user.role == 'directivo' %}
+            <a class="btn btn-outline-primary" href="{{ url_for('calendar.create_calendar') }}">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo calendario
+            </a>
+            {% if calendar %}
+                <a class="btn btn-primary" href="{{ url_for('calendar.manage', calendar_id=calendar.id) }}">
+                    <i class="bi bi-gear me-1"></i>Administrar
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% if not calendar %}
+<div class="card"><div class="card-body text-center py-5">
+    <i class="bi bi-calendar-x display-4 text-muted"></i>
+    <h2 class="h5 mt-3">No hay un calendario publicado</h2>
+    <p class="text-muted mb-3">El director debe crear, revisar y publicar el calendario del año escolar.</p>
+    {% if current_user.role == 'directivo' %}
+        <a class="btn btn-primary" href="{{ url_for('calendar.create_calendar') }}">Crear calendario</a>
+    {% endif %}
+</div></div>
+{% else %}
+<div class="card mb-3 calendar-toolbar-card">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="calendar_id">Año escolar</label>
+                <select class="form-select" id="calendar_id" name="calendar_id" onchange="this.form.submit()">
+                    {% for item in calendars %}
+                        <option value="{{ item.id }}" {% if item.id == calendar.id %}selected{% endif %}>
+                            {{ item.academic_year }} - {{ item.title }}{% if item.status != 'published' %} (borrador){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="scope">Contenido</label>
+                <select class="form-select" id="scope" name="scope" onchange="this.form.submit()">
+                    {% for value, label in scope_labels.items() %}
+                        <option value="{{ value }}" {% if value == scope %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="hidden" name="view" value="{{ grid.view_name }}">
+            <input type="hidden" name="date" value="{{ grid.selected_date.isoformat() }}">
+            <div class="col-md-4 d-flex justify-content-md-end">
+                <div class="dropdown w-100 w-md-auto">
+                    <button class="btn btn-outline-success dropdown-toggle w-100" data-bs-toggle="dropdown" type="button">
+                        <i class="bi bi-download me-1"></i>Exportar .ics
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for value, label in scope_labels.items() %}
+                        <li><a class="dropdown-item" href="{{ url_for('calendar.export_ics', calendar_id=calendar.id, scope=value) }}">{{ label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card calendar-shell">
+    <div class="card-header bg-white calendar-heading">
+        <div class="calendar-navigation">
+            {% if grid.view_name != 'year' %}
+            <a class="btn btn-sm btn-outline-secondary" aria-label="Periodo anterior"
+               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=grid.view_name, date=grid.prev_date.isoformat()) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% endif %}
+            <div>
+                <h2 class="h5 mb-0">
+                    {% if grid.view_name == 'week' %}
+                        {{ grid.range_start.strftime('%d/%m/%Y') }} - {{ grid.range_end.strftime('%d/%m/%Y') }}
+                    {% elif grid.view_name == 'year' %}
+                        Año escolar {{ calendar.academic_year }}
+                    {% else %}
+                        {{ month_names[grid.selected_date.month] }} {{ grid.selected_date.year }}
+                    {% endif %}
+                </h2>
+                <small class="text-muted">{{ calendar.title }}</small>
+            </div>
+            {% if grid.view_name != 'year' %}
+            <a class="btn btn-sm btn-outline-secondary" aria-label="Periodo siguiente"
+               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=grid.view_name, date=grid.next_date.isoformat()) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        <div class="btn-group" role="group" aria-label="Cambiar visualización">
+            {% for value, label in [('week','Semanal'),('month','Mensual'),('year','Anual')] %}
+            <a class="btn btn-sm {% if grid.view_name == value %}btn-primary{% else %}btn-outline-primary{% endif %}"
+               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=value, date=grid.selected_date.isoformat()) }}">{{ label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if grid.view_name in ['week', 'month'] %}
+        <div class="calendar-grid {% if grid.view_name == 'week' %}calendar-grid-week{% endif %}">
+            {% for label in ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}<div class="calendar-weekday">{{ label }}</div>{% endfor %}
+            {% for week in grid.weeks %}
+                {% for day in week %}
+                <div class="calendar-day {% if grid.view_name == 'month' and day.month != grid.selected_date.month %}outside{% endif %} {% if day == now.date() %}today{% endif %}">
+                    <div class="calendar-day-number">{{ day.day }}</div>
+                    <div class="calendar-day-events">
+                    {% for event in grid.events_by_day.get(day, []) %}
+                        {% if current_user.role == 'directivo' %}
+                        <a href="{{ url_for('calendar.event_edit', event_id=event.id) }}"
+                           class="calendar-event origin-{{ event.origin }}" title="{{ event.description or event.title }}">
+                            {{ event.title }}
+                        </a>
+                        {% else %}
+                        <span class="calendar-event origin-{{ event.origin }}" title="{{ event.description or event.title }}">{{ event.title }}</span>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="year-grid">
+            {% for month in grid.months %}
+            <section class="year-month">
+                <a class="year-month-title" href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view='month', date='%04d-%02d-01'|format(month.year, month.month)) }}">{{ month.label }}</a>
+                <div class="mini-calendar">
+                    {% for label in ['L','M','X','J','V','S','D'] %}<div class="mini-weekday">{{ label }}</div>{% endfor %}
+                    {% for week in month.weeks %}
+                        {% for day in week %}
+                        <a href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view='week', date=day.isoformat()) }}"
+                           class="mini-day {% if day.month != month.month %}outside{% endif %} {% if grid.events_by_day.get(day) %}has-events{% endif %} {% if day == now.date() %}today{% endif %}"
+                           title="{% for event in grid.events_by_day.get(day, []) %}{{ event.title }}{% if not loop.last %} · {% endif %}{% endfor %}">{{ day.day }}</a>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer bg-white d-flex flex-wrap gap-3 small">
+        <span><i class="calendar-legend origin-ministerio"></i> Ministerio</span>
+        <span><i class="calendar-legend origin-escuela"></i> Escuela</span>
+        <span><i class="bi bi-circle-fill text-danger me-1"></i> Hoy</span>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

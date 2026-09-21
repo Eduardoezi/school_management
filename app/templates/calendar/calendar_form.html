@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Nuevo calendario{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('calendar.index') }}"><i class="bi bi-arrow-left"></i></a>
+    <h1 class="page-title mb-0">Nuevo calendario escolar</h1>
+</div>
+<div class="card"><div class="card-body">
+    <form method="POST" enctype="multipart/form-data" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-4">
+            <label class="form-label" for="academic_year">Año escolar</label>
+            <input class="form-control" id="academic_year" name="academic_year" required
+                   pattern="\d{4}-\d{4}" placeholder="2026-2027" value="{{ request.form.get('academic_year', '') }}">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label" for="title">Título</label>
+            <input class="form-control" id="title" name="title" required maxlength="150"
+                   placeholder="Calendario escolar 2026-2027" value="{{ request.form.get('title', '') }}">
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="source_pdf">PDF oficial del Ministerio</label>
+            <input class="form-control" type="file" id="source_pdf" name="source_pdf" accept="application/pdf,.pdf">
+            <div class="form-text">Se conserva como fuente protegida y se registra su huella SHA-256.</div>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2">
+            <a class="btn btn-outline-secondary" href="{{ url_for('calendar.index') }}">Cancelar</a>
+            <button class="btn btn-primary" type="submit">Crear borrador</button>
+        </div>
+    </form>
+</div></div>
+{% endblock %}

@@ -107,12 +107,13 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.staff_profile import staff_profile_bp
     from app.routes.documents import documents_bp
     from app.routes.webauthn_auth import webauthn_bp
+    from app.routes.calendar import calendar_bp
 
     for bp in (
         documents_bp, auth_bp, main_bp, students_bp, enrollment_bp,
         teachers_bp, courses_bp, attendance_bp, schedule_bp,
         daily_stats_bp, evaluations_bp, admin_bp, profile_bp,
-        student_profile_bp, staff_profile_bp, webauthn_bp,
+        student_profile_bp, staff_profile_bp, webauthn_bp, calendar_bp,
     ):
         app.register_blueprint(bp)
 

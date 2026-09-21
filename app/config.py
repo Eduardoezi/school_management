@@ -65,6 +65,7 @@ class Config:
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024   # 2 MB
     UPLOAD_FOLDER = str(BASE_DIR / 'app' / 'static' / 'uploads')
     ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+    CALENDAR_UPLOAD_FOLDER = str(BASE_DIR / 'instance' / 'calendar_sources')
 
     # ---------- WebAuthn ----------
     WEBAUTHN_RP_ID = os.getenv('WEBAUTHN_RP_ID', 'gestionescolar.duckdns.org')

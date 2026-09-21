@@ -1,12 +1,13 @@
 from flask import Blueprint, render_template
 from flask_login import login_required
-from datetime import date
+from datetime import date, timedelta
 from app.models.institution_data import InstitutionData
 from app.models.student import Student
 from app.models.teacher import Teacher
 from app.models.course import Course
 from app.models.enrollment import Enrollment
 from app.models.daily_attendance_stat import DailyAttendanceStat
+from app.models.school_calendar import SchoolCalendar
 from flask import send_file
 import os
 
@@ -48,12 +49,24 @@ def dashboard():
     stats_hoy = DailyAttendanceStat.get_summary_by_date(hoy)
     total_presentes_hoy = sum(row['total'] for row in stats_hoy) if stats_hoy else 0
 
+    published_calendar = SchoolCalendar.get_current_published()
+    upcoming_calendar_events = []
+    if published_calendar:
+        upcoming_calendar_events = SchoolCalendar.get_events(
+            published_calendar['id'],
+            scope='both',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=45),
+        )[:6]
+
     return render_template('dashboard.html',
                            total_students=total_students,
                            total_teachers=total_teachers,
                            total_courses=total_courses,
                            total_enrollments=total_enrollments,
-                           total_presentes_hoy=total_presentes_hoy)
+                           total_presentes_hoy=total_presentes_hoy,
+                           published_calendar=published_calendar,
+                           upcoming_calendar_events=upcoming_calendar_events)
 
 @main_bp.route('/ca.pem')
 def download_ca():
