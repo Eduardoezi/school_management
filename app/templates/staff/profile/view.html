@@ -341,5 +341,40 @@
     </div>
 </div>
 {% endif %}
+{# ---------- DATOS BANCARIOS ---------- #}
+{% if details and details.bank_account_last6 %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-bank me-2 text-primary"></i>Datos bancarios
+        </h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Banco</label>
+                <p class="mb-0 fw-semibold">{{ details.bank_name or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Tipo de cuenta</label>
+                <p class="mb-0 fw-semibold text-capitalize">{{ details.bank_account_type or '-' }}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Número</label>
+                <p class="mb-0 fw-semibold">
+                    {% if current_user.role == 'directivo' %}
+                        {# Aquí podrías mostrar el número completo si lo cargas con get_bank_account #}
+                        •••• •••• •••• {{ details.bank_account_last6 }}
+                        <a href="#" class="ms-2 small"
+                           onclick="alert('Número completo solo disponible desde el generador de PDF. Por seguridad no se muestra en la web.'); return false;">
+                            Ver completo
+                        </a>
+                    {% else %}
+                        •••• •••• •••• {{ details.bank_account_last6 }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

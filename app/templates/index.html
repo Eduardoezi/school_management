@@ -1,4 +1,5 @@
 {% extends "base_public.html" %}
+
 {% block title %}Bienvenido{% endblock %}
 
 {% block extra_css %}
@@ -43,7 +44,6 @@
         margin-bottom: 2rem;
     }
 
-    /* ---------- Grid de info ---------- */
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -98,7 +98,6 @@
         word-break: break-word;
     }
 
-    /* ---------- Botones CTA ---------- */
     .cta-buttons {
         display: flex;
         gap: 0.75rem;
@@ -113,7 +112,6 @@
         font-weight: 600;
     }
 
-    /* ---------- Divisor ---------- */
     .divider {
         display: flex;
         align-items: center;
@@ -130,17 +128,42 @@
         content: '';
         flex: 1;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.15),
+            transparent
+        );
     }
 
-    /* ---------- Responsive ---------- */
+    .logged-user {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(147, 197, 253, 0.2);
+        border-radius: 14px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .logged-user-name {
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .logged-user-role {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
     @media (max-width: 576px) {
         .hero-title {
             font-size: 1.75rem;
         }
+
         .public-card {
             padding: 1.75rem 1.25rem;
         }
+
         .info-grid {
             grid-template-columns: 1fr;
         }
@@ -160,89 +183,156 @@
     <h1 class="hero-title">Sistema de Gestión Escolar</h1>
     <p class="hero-subtitle">Plataforma administrativa y académica</p>
 
-    <div class="hero-school">{{ escuela.nombre }}</div>
-    <div class="hero-location">
-        <i class="bi bi-geo-alt-fill me-1"></i>{{ escuela.direccion }}
+    {# ---------- DATOS DE LA INSTITUCIÓN ---------- #}
+    <div class="hero-school">
+        {{ escuela.nombre or 'Institución Educativa' }}
     </div>
+
+    <div class="hero-location">
+        <i class="bi bi-geo-alt-fill me-1"></i>
+        {{ escuela.direccion or 'Dirección no registrada' }}
+    </div>
+
+    {# ---------- USUARIO AUTENTICADO ---------- #}
+    {% if current_user.is_authenticated %}
+        <div class="logged-user"
+             role="status"
+             aria-label="Información de la sesión actual">
+
+            <h2 class="logged-user-name h5 mb-1">
+                <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
+                Bienvenido, {{ display_name }}
+            </h2>
+
+            <p class="logged-user-role mb-0">
+                <span class="badge bg-primary text-capitalize">{{ role_label }}</span>
+
+                {% if current_user.is_online %}
+                    <span class="text-success ms-2">
+                        <i class="bi bi-circle-fill me-1"
+                           aria-hidden="true"
+                           style="font-size: 0.5rem; vertical-align: middle;"></i>
+                        En línea
+                    </span>
+                {% else %}
+                    <span class="text-muted ms-2">
+                        <i class="bi bi-circle me-1"
+                           aria-hidden="true"
+                           style="font-size: 0.5rem; vertical-align: middle;"></i>
+                        Desconectado
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
 
     {# ---------- GRID DE INFORMACIÓN ---------- #}
     <div class="info-grid">
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-telephone-fill"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-telephone-fill"></i>
+            </div>
             <div>
                 <div class="info-label">Teléfono</div>
-                <div class="info-value">{{ escuela.telefono }}</div>
+                <div class="info-value">{{ escuela.telefono or '-' }}</div>
             </div>
         </div>
 
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-envelope-fill"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
             <div>
                 <div class="info-label">Correo</div>
-                <div class="info-value">{{ escuela.email }}</div>
+                <div class="info-value">{{ escuela.email or '-' }}</div>
             </div>
         </div>
 
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
             <div>
                 <div class="info-label">Código DEA</div>
-                <div class="info-value">{{ escuela.codigo_dea }}</div>
+                <div class="info-value">{{ escuela.codigo_dea or '-' }}</div>
             </div>
         </div>
 
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
             <div>
                 <div class="info-label">Código Administrativo</div>
-                <div class="info-value">{{ escuela.codigo_administrativo }}</div>
+                <div class="info-value">{{ escuela.codigo_administrativo or '-' }}</div>
             </div>
         </div>
 
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-building-fill"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-building-fill"></i>
+            </div>
             <div>
-                <div class="info-label">Código dependencia</div>
-                <div class="info-value">{{ escuela.codigo_dependencia }}</div>
+                <div class="info-label">Código de dependencia</div>
+                <div class="info-value">{{ escuela.codigo_dependencia or '-' }}</div>
             </div>
         </div>
 
         <div class="info-item">
-            <div class="info-icon"><i class="bi bi-shield-check"></i></div>
+            <div class="info-icon">
+                <i class="bi bi-shield-check"></i>
+            </div>
             <div>
                 <div class="info-label">RIF</div>
-                <div class="info-value">{{ escuela.rif }}</div>
+                <div class="info-value">{{ escuela.rif or '-' }}</div>
             </div>
         </div>
     </div>
 
-    {# ---------- BOTONES ---------- #}
+    {# ---------- ACCIONES SEGÚN ESTADO DE SESIÓN ---------- #}
     {% if not current_user.is_authenticated %}
+        <div class="alert alert-info">
+            <p class="mb-1">
+                Bienvenido al sistema de gestión escolar.
+            </p>
+            <p class="mb-0">
+                Inicia sesión para acceder a las funciones administrativas.
+                Si no tienes cuenta, contacta al directivo del plantel.
+            </p>
+        </div>
+
         <div class="divider">Acceso al sistema</div>
+
         <div class="cta-buttons">
             <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Iniciar sesión
             </a>
+
             <a class="btn btn-outline-light" href="{{ url_for('attendance.clock') }}">
-                <i class="bi bi-clock-history me-2"></i>Marcar asistencia
+                <i class="bi bi-clock-history me-2"></i>
+                Marcar asistencia
             </a>
         </div>
     {% else %}
         <div class="divider">Sesión activa</div>
+
         <div class="cta-buttons">
             <a class="btn btn-primary" href="{{ url_for('main.dashboard') }}">
-                <i class="bi bi-speedometer2 me-2"></i>Ir al panel de control
+                <i class="bi bi-speedometer2 me-2"></i>
+                Ir al panel de control
             </a>
-            <a class="btn btn-outline-light" href="{{ url_for('attendance.clock') }}">
-                <i class="bi bi-clock-history me-2"></i>Marcar asistencia
+
+            <a class="btn btn-outline-light" href="{{ url_for('auth.logout') }}">
+                <i class="bi bi-box-arrow-right me-2"></i>
+                Cerrar sesión
             </a>
         </div>
     {% endif %}
-
 </div>
 
 <div class="text-center mt-4 small" style="color: rgba(255,255,255,0.4);">
     <i class="bi bi-c-circle me-1"></i>
-    {{ escuela.nombre }} · {{ 2026 }}
+    {{ escuela.nombre or 'Institución Educativa' }} · {{ now.year }}
 </div>
 {% endblock %}

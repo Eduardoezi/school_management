@@ -1,52 +1,166 @@
 {% extends "base.html" %}
-{% from "_macros.html" import csrf_field %}
 {% block title %}Inscripciones{% endblock %}
 {% block content %}
-<h2><i class="bi bi-clipboard-check me-2"></i>Inscripciones</h2>
+
+{# ============================================================
+   LISTADO DE INSCRIPCIONES
+   Filtros en cliente: búsqueda, curso, sección, estado, año.
+   Ordenamiento por columnas y atajos de teclado.
+   ============================================================ #}
+
+<h2 class="page-title">
+    <i class="bi bi-clipboard-check me-2"></i>Inscripciones
+    <span class="badge bg-primary ms-2">{{ enrollments|length }}</span>
+</h2>
+
 <a href="{{ url_for('enrollment.new_enrollment') }}" class="btn btn-primary mb-3">
     <i class="bi bi-plus-circle me-1"></i>Nueva inscripción
 </a>
 
+{# ---------- Panel de filtros ---------- #}
+{% if enrollments %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text"
+                           id="search-input"
+                           class="form-control"
+                           placeholder="Buscar cédula, nombre, curso..."
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <select id="course-filter" class="form-select">
+                    <option value="">📚 Curso</option>
+                    {# Opciones dinámicas #}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select id="section-filter" class="form-select">
+                    <option value="">🔤 Sección</option>
+                    {# Opciones dinámicas #}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select id="status-filter" class="form-select">
+                    <option value="">Estado</option>
+                    <option value="activo">Activos</option>
+                    <option value="inactivo">Inactivos</option>
+                    <option value="no_inscrito">No inscritos</option>
+                    <option value="graduado">Graduados</option>
+                    <option value="retirado">Retirados</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select id="year-filter" class="form-select">
+                    <option value="">📅 Año</option>
+                    {# Opciones dinámicas #}
+                </select>
+            </div>
+
+            <div class="col-md-1 text-end">
+                <button type="button" id="clear-filters"
+                        class="btn btn-outline-secondary w-100"
+                        title="Limpiar filtros">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-2 small text-muted" id="counter">
+            Mostrando {{ enrollments|length }} de {{ enrollments|length }} inscripciones
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ---------- Tabla ---------- #}
 <div class="table-responsive">
-    <table class="table table-striped align-middle">
+    <table class="table table-hover align-middle" id="enrollments-table">
         <thead class="table-light">
             <tr>
-                <th>ID</th>
-                <th>Cédula escolar</th>
-                <th>Estudiante</th>
-                <th>Curso</th>
-                <th>Fecha inscripción</th>
-                <th>Estado</th>
-                <th>Fecha egreso</th>
+                <th data-sort="0" class="sortable">Cédula escolar</th>
+                <th data-sort="1" class="sortable">Estudiante</th>
+                <th data-sort="2" class="sortable">Curso</th>
+                <th data-sort="3" class="sortable">Año académico</th>
+                <th data-sort="4" class="sortable">Fecha inscripción</th>
+                <th data-sort="5" class="sortable">Estado</th>
+                <th data-sort="6" class="sortable">Fecha egreso</th>
                 <th class="text-center">Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for e in enrollments %}
-            <tr>
-                <td>{{ e.id }}</td>
-                <td>{{ e.school_id }}</td>
-                <td>{{ e.first_name }} {{ e.last_name }}</td>
-                <td>{{ e.course_name }} ({{ e.course_code }})</td>
+            <tr class="enrollment-row"
+                data-course="{{ e.course_name or '' }}"
+                data-course-code="{{ e.course_code or '' }}"
+                data-section="{{ e.section or '' }}"
+                data-status="{{ e.status or '' }}"
+                data-year="{{ e.academic_year or '' }}">
+
+                <td>{{ e.school_id or '-' }}</td>
+                <td>{{ e.first_name or '—' }} {{ e.last_name or '' }}</td>
+
+                <td>
+                    {% if e.course_name %}
+                        {{ e.course_name }}
+                        {% if e.section %}
+                            <span class="badge bg-light text-dark ms-1">{{ e.section }}</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ e.course_code }}</small>
+                    {% else %}
+                        <span class="text-muted small">{{ e.course_code or '-' }}</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ e.academic_year or '-' }}</td>
                 <td>{{ e.enrollment_date or '-' }}</td>
+
                 <td>
                     {% if e.status == 'activo' %}
                         <span class="badge bg-success">Activo</span>
-                    {% elif e.status == 'egresado' %}
-                        <span class="badge bg-primary">Egresado</span>
+                    {% elif e.status == 'inactivo' %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% elif e.status == 'no_inscrito' %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-clock me-1"></i>No inscrito
+                        </span>
+                    {% elif e.status == 'graduado' %}
+                        <span class="badge bg-primary">Graduado</span>
                     {% elif e.status == 'retirado' %}
                         <span class="badge bg-danger">Retirado</span>
                     {% else %}
-                        <span class="badge bg-secondary">{{ e.status }}</span>
+                        <span class="badge bg-light text-dark">{{ e.status or 'Sin estado' }}</span>
                     {% endif %}
                 </td>
+
                 <td>{{ e.egreso_date or '-' }}</td>
+
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
                         <a href="{{ url_for('enrollment.edit_view', enrollment_id=e.id) }}"
                            class="btn btn-outline-warning" title="Editar">
                             <i class="bi bi-pencil"></i>
                         </a>
+
+                        {% if e.student_id %}
+                            <a href="{{ url_for('student_profile.view', student_id=e.student_id) }}"
+                               class="btn btn-outline-info"
+                               title="Ver estudiante">
+                                <i class="bi bi-person-badge"></i>
+                            </a>
+                        {% endif %}
+
                         {% if current_user.role == 'directivo' %}
                             <a href="{{ url_for('enrollment.confirm_delete', enrollment_id=e.id) }}"
                                class="btn btn-outline-danger" title="Eliminar">
@@ -56,15 +170,211 @@
                     </div>
                 </td>
             </tr>
-            {% else %}
-            <tr>
+            {% endfor %}
+
+            {# Fila para "sin resultados" (oculta por defecto) #}
+            <tr id="no-results" style="display:none;">
                 <td colspan="8" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
-                    No hay inscripciones registradas.
+                    <i class="bi bi-search display-6 d-block mb-2 opacity-50"></i>
+                    No se encontraron inscripciones con esos criterios.
                 </td>
             </tr>
-            {% endfor %}
         </tbody>
     </table>
+
+    {% if not enrollments %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-inbox display-4 d-block mb-2 opacity-50"></i>
+        No hay inscripciones registradas.
+    </div>
+    {% endif %}
 </div>
+
+<style>
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    th.sortable:hover {
+        background-color: #e2e8f0;
+    }
+    th.sortable::after {
+        content: '\F282';      /* bootstrap-icons: chevron-expand */
+        font-family: 'bootstrap-icons';
+        font-size: 0.75rem;
+        margin-left: 0.35rem;
+        opacity: 0.35;
+    }
+    th.sortable.sort-asc::after {
+        content: '\F235';      /* chevron-up */
+        opacity: 1;
+    }
+    th.sortable.sort-desc::after {
+        content: '\F229';      /* chevron-down */
+        opacity: 1;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.getElementById('enrollments-table');
+    if (!table) return;
+
+    const rows = Array.from(table.querySelectorAll('tbody tr.enrollment-row'));
+    if (rows.length === 0) return;
+
+    const searchInput   = document.getElementById('search-input');
+    const courseFilter  = document.getElementById('course-filter');
+    const sectionFilter = document.getElementById('section-filter');
+    const statusFilter  = document.getElementById('status-filter');
+    const yearFilter    = document.getElementById('year-filter');
+    const clearBtn      = document.getElementById('clear-filters');
+    const counter       = document.getElementById('counter');
+    const noResults     = document.getElementById('no-results');
+
+    // ---------- 1. Normalizador (sin acentos, sin guiones, minúsculas) ----------
+    function normalize(text) {
+        return (text || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[-\s]/g, '');
+    }
+
+    // ---------- 2. Índice de búsqueda por fila ----------
+    rows.forEach(row => {
+        row.dataset.searchText = normalize(row.textContent);
+    });
+
+    // ---------- 3. Poblar dropdown de cursos ----------
+    const cursos = new Set();
+    rows.forEach(row => {
+        const c = (row.dataset.course || '').trim();
+        if (c && c !== '-') cursos.add(c);
+    });
+    Array.from(cursos).sort((a, b) => a.localeCompare(b, 'es')).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        courseFilter.appendChild(opt);
+    });
+
+    // ---------- 4. Poblar dropdown de secciones ----------
+    const secciones = new Set();
+    rows.forEach(row => {
+        const s = (row.dataset.section || '').trim();
+        if (s && s !== '-') secciones.add(s);
+    });
+    Array.from(secciones).sort((a, b) => a.localeCompare(b, 'es')).forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        sectionFilter.appendChild(opt);
+    });
+
+    // ---------- 5. Poblar dropdown de años ----------
+    const anios = new Set();
+    rows.forEach(row => {
+        const y = (row.dataset.year || '').trim();
+        if (y && y !== '-') anios.add(y);
+    });
+    Array.from(anios).sort().reverse().forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearFilter.appendChild(opt);
+    });
+
+    // ---------- 6. Aplicar filtros ----------
+    function applyFilters() {
+        const q       = normalize(searchInput.value);
+        const course  = courseFilter.value;
+        const section = sectionFilter.value;
+        const status  = statusFilter.value;
+        const year    = yearFilter.value;
+
+        let visibles = 0;
+
+        rows.forEach(row => {
+            const matchText    = !q       || row.dataset.searchText.includes(q);
+            const matchCourse  = !course  || row.dataset.course === course;
+            const matchSection = !section || row.dataset.section === section;
+            const matchStatus  = !status  || row.dataset.status === status;
+            const matchYear    = !year    || row.dataset.year === year;
+
+            const show = matchText && matchCourse && matchSection && matchStatus && matchYear;
+            row.style.display = show ? '' : 'none';
+            if (show) visibles++;
+        });
+
+        counter.textContent = `Mostrando ${visibles} de ${rows.length} inscripciones`;
+        noResults.style.display = visibles === 0 ? '' : 'none';
+    }
+
+    // ---------- 7. Eventos de filtros ----------
+    searchInput.addEventListener('input', applyFilters);
+    courseFilter.addEventListener('change', applyFilters);
+    sectionFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    yearFilter.addEventListener('change', applyFilters);
+
+    clearBtn.addEventListener('click', function () {
+        searchInput.value   = '';
+        courseFilter.value  = '';
+        sectionFilter.value = '';
+        statusFilter.value  = '';
+        yearFilter.value    = '';
+        applyFilters();
+        searchInput.focus();
+    });
+
+    // ---------- 8. Ordenamiento por columnas ----------
+    const tbody = table.querySelector('tbody');
+    let currentSort = { idx: null, dir: 'asc' };
+
+    table.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', function () {
+            const idx = parseInt(th.dataset.sort, 10);
+            const dir = (currentSort.idx === idx && currentSort.dir === 'asc') ? 'desc' : 'asc';
+
+            table.querySelectorAll('th.sortable').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+            rows.sort((a, b) => {
+                const aCell = (a.cells[idx]?.textContent || '').trim();
+                const bCell = (b.cells[idx]?.textContent || '').trim();
+                return dir === 'asc'
+                    ? aCell.localeCompare(bCell, 'es', { sensitivity: 'base', numeric: true })
+                    : bCell.localeCompare(aCell, 'es', { sensitivity: 'base', numeric: true });
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+            if (noResults) tbody.appendChild(noResults);
+
+            currentSort = { idx, dir };
+        });
+    });
+
+    // ---------- 9. Atajos de teclado ----------
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            applyFilters();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+    });
+
+    // ---------- 10. Ejecutar filtros iniciales ----------
+    applyFilters();
+});
+</script>
+
 {% endblock %}

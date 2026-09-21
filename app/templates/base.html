@@ -14,165 +14,210 @@
 
 <!-- ==================== SIDEBAR ==================== -->
 <aside class="sidebar" id="sidebar">
-    <a href="{{ url_for('main.dashboard') }}" class="sidebar-brand">
+    <a href="{{ url_for('main.index') }}" class="sidebar-brand">
         <i class="bi bi-mortarboard-fill"></i>
         <span>IEE Villa de Cura</span>
     </a>
+
     {# ---------- WIDGET USUARIO ---------- #}
-        {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated %}
         <div class="sidebar-user">
             <a href="{{ url_for('profile.index') }}" class="sidebar-user-link">
                 <div class="avatar-wrapper">
                     {% if current_user.avatar %}
                         <img src="{{ current_user.avatar_url }}"
-                            alt="{{ current_user.username }}"
-                            class="avatar-img">
+                             alt="{{ display_name }}"
+                             class="avatar-img">
                     {% else %}
                         <div class="avatar-circle">{{ current_user.initials }}</div>
                     {% endif %}
                     <span class="status-dot {% if current_user.is_online %}online{% endif %}"></span>
                 </div>
                 <div class="user-meta">
-                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-name">{{ display_name }}</div>
                     <div class="user-role">
                         {% if current_user.is_online %}
                             <span class="text-success">● En línea</span>
                         {% else %}
                             <span class="text-muted">● Desconectado</span>
                         {% endif %}
-                        · {{ current_user.role }}
+                        · {{ role_label }}
                     </div>
                 </div>
             </a>
         </div>
-        {% endif %}
-
+    {% endif %}
 
     {% if current_user.is_authenticated %}
 
         {# ---------- PRINCIPAL ---------- #}
         <div class="sidebar-section">Principal</div>
         <ul class="nav flex-column">
-            <li><a class="nav-link" href="{{ url_for('profile.index') }}">
-                <i class="bi bi-person-circle"></i> Mi perfil
-            </a></li>
-            <li><a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a></li>
+            <li>
+                <a class="nav-link" href="{{ url_for('profile.index') }}">
+                    <i class="bi bi-person-circle"></i> Mi perfil
+                </a>
+            </li>
+            <li>
+                <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
         </ul>
-        {# ---------- ACADÉMICO (todos los roles) ---------- #}
+
+        {# ---------- ACADÉMICO ---------- #}
         <div class="sidebar-section">Académico</div>
         <ul class="nav flex-column">
             {% if current_user.role in ['directivo', 'secretario'] %}
-                <li><a class="nav-link" href="{{ url_for('admin.institution') }}">
-                    <i class="bi bi-building"></i> Datos institucionales
-                </a></li>
-                <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
-                    <i class="bi bi-people-fill"></i> Estudiantes
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('admin.institution') }}">
+                        <i class="bi bi-building"></i> Datos institucionales
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('students.list_view') }}">
+                        <i class="bi bi-people-fill"></i> Estudiantes
+                    </a>
+                </li>
             {% endif %}
+
             {% if current_user.role == 'maestro' %}
-                <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
-                    <i class="bi bi-people-fill"></i> Mis estudiantes
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('students.list_view') }}">
+                        <i class="bi bi-people-fill"></i> Mis estudiantes
+                    </a>
+                </li>
             {% endif %}
+
             {% if current_user.role in ['directivo', 'secretario'] %}
-                <li><a class="nav-link" href="{{ url_for('teachers.list_view') }}">
-                    <i class="bi bi-person-badge-fill"></i> Docentes
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('teachers.list_view') }}">
+                        <i class="bi bi-person-badge-fill"></i> Docentes
+                    </a>
+                </li>
             {% endif %}
-            <li><a class="nav-link" href="{{ url_for('courses.list_view') }}">
-                <i class="bi bi-book-fill"></i>
-                {% if current_user.role == 'maestro' %}Mis cursos{% else %}Cursos{% endif %}
-            </a></li>
+
+            <li>
+                <a class="nav-link" href="{{ url_for('courses.list_view') }}">
+                    <i class="bi bi-book-fill"></i>
+                    {% if current_user.role == 'maestro' %}Mis cursos{% else %}Cursos{% endif %}
+                </a>
+            </li>
+
             {% if current_user.role in ['directivo', 'secretario'] %}
-                <li><a class="nav-link" href="{{ url_for('enrollment.list_view') }}">
-                    <i class="bi bi-clipboard-check-fill"></i> Matrículas
-                </a></li>
-                <li><a class="nav-link" href="{{ url_for('schedule.list_view') }}">
-                    <i class="bi bi-calendar-week-fill"></i> Horarios
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('enrollment.list_view') }}">
+                        <i class="bi bi-clipboard-check-fill"></i> Matrículas
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('schedule.list_view') }}">
+                        <i class="bi bi-calendar-week-fill"></i> Horarios
+                    </a>
+                </li>
             {% endif %}
         </ul>
 
         {# ---------- ASISTENCIA ---------- #}
         <div class="sidebar-section">Asistencia</div>
         <ul class="nav flex-column">
-            <li><a class="nav-link" href="{{ url_for('attendance.clock') }}">
-                <i class="bi bi-clock-fill"></i> Kiosco (entrada/salida)
-            </a></li>
+            <li>
+                <a class="nav-link" href="{{ url_for('attendance.clock') }}">
+                    <i class="bi bi-clock-fill"></i> Kiosco (entrada/salida)
+                </a>
+            </li>
+
             {% if current_user.role == 'maestro' %}
-                <li><a class="nav-link" href="{{ url_for('daily_stats.my_report') }}">
-                    <i class="bi bi-journal-text"></i> Reportar asistencia
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('daily_stats.my_report') }}">
+                        <i class="bi bi-journal-text"></i> Reportar asistencia
+                    </a>
+                </li>
             {% endif %}
+
             {% if current_user.role in ['directivo', 'secretario'] %}
-                <li><a class="nav-link" href="{{ url_for('attendance.index') }}">
-                    <i class="bi bi-person-check-fill"></i> Asistencia docente
-                </a></li>
-                <li><a class="nav-link" href="{{ url_for('daily_stats.admin_view') }}">
-                    <i class="bi bi-bar-chart-fill"></i> Estadística diaria
-                </a></li>
-            {% endif %}
-            {% if current_user.role in ['directivo', 'secretario'] %}
-                <li><a class="nav-link" href="{{ url_for('attendance.manual_load') }}">
-                    <i class="bi bi-calendar-plus"></i> Carga manual de asistencia
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('attendance.index') }}">
+                        <i class="bi bi-person-check-fill"></i> Asistencia docente
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('daily_stats.admin_view') }}">
+                        <i class="bi bi-bar-chart-fill"></i> Estadística diaria
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('attendance.manual_load') }}">
+                        <i class="bi bi-calendar-plus"></i> Carga manual de asistencia
+                    </a>
+                </li>
             {% endif %}
         </ul>
 
         {# ---------- EVALUACIÓN ---------- #}
         <div class="sidebar-section">Evaluación</div>
         <ul class="nav flex-column">
-            <li><a class="nav-link" href="{{ url_for('students.list_view') }}">
-                <i class="bi bi-journal-bookmark-fill"></i> Rendimiento
-            </a></li>
+            <li>
+                <a class="nav-link" href="{{ url_for('students.list_view') }}">
+                    <i class="bi bi-journal-bookmark-fill"></i> Rendimiento
+                </a>
+            </li>
+
             {% if current_user.role == 'directivo' %}
-                <li><a class="nav-link" href="{{ url_for('evaluations.areas_list') }}">
-                    <i class="bi bi-gear-fill"></i> Áreas de evaluación
-                </a></li>
-                <li><a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
-                    <i class="bi bi-calendar-range-fill"></i> Periodos
-                </a></li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('evaluations.areas_list') }}">
+                        <i class="bi bi-gear-fill"></i> Áreas de evaluación
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
+                        <i class="bi bi-calendar-range-fill"></i> Periodos
+                    </a>
+                </li>
             {% endif %}
         </ul>
 
         {# ---------- REPORTES ---------- #}
         {% if current_user.role in ['directivo', 'secretario'] %}
-        <div class="sidebar-section">Reportes</div>
-        <ul class="nav flex-column">
-            <li><a class="nav-link" href="{{ url_for('attendance.report') }}">
-                <i class="bi bi-file-earmark-bar-graph-fill"></i> Histórico docente
-            </a></li>
-            <li><a class="nav-link" href="{{ url_for('daily_stats.history') }}">
-                <i class="bi bi-graph-up-arrow"></i> Histórico estadísticas
-            </a></li>
-        </ul>
+            <div class="sidebar-section">Reportes</div>
+            <ul class="nav flex-column">
+                <li>
+                    <a class="nav-link" href="{{ url_for('attendance.report') }}">
+                        <i class="bi bi-file-earmark-bar-graph-fill"></i> Histórico docente
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('daily_stats.history') }}">
+                        <i class="bi bi-graph-up-arrow"></i> Histórico estadísticas
+                    </a>
+                </li>
+            </ul>
         {% endif %}
 
-        {# ---------- ADMINISTRACIÓN (solo directivo) ---------- #}
-        
+        {# ---------- ADMINISTRACIÓN ---------- #}
         {% if current_user.role == 'directivo' %}
             <div class="sidebar-section">Administración</div>
             <ul class="nav flex-column">
-                <li><a class="nav-link" href="{{ url_for('admin.users_list') }}">
-                    <i class="bi bi-people-fill"></i> Gestión de usuarios
-                </a></li>
-                <li><a class="nav-link" href="{{ url_for('admin.users_online') }}">
-                    <i class="bi bi-broadcast"></i> Usuarios en línea
-                </a></li>
-            <li><a class="nav-link disabled" href="#" title="Próximamente">
-                <i class="bi bi-people"></i> Usuarios <small class="ms-auto text-muted">(pronto)</small>
-            </a></li>
-            <li><a class="nav-link disabled" href="#" title="Próximamente">
-                <i class="bi bi-cash-coin"></i> Pagos <small class="ms-auto text-muted">(pronto)</small>
-            </a></li>
-        </ul>
+                <li>
+                    <a class="nav-link" href="{{ url_for('admin.users_list') }}">
+                        <i class="bi bi-people-fill"></i> Gestión de usuarios
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('admin.users_online') }}">
+                        <i class="bi bi-broadcast"></i> Usuarios en línea
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link disabled" href="#" title="Próximamente">
+                        <i class="bi bi-cash-coin"></i> Pagos
+                        <small class="ms-auto text-muted">(pronto)</small>
+                    </a>
+                </li>
+            </ul>
         {% endif %}
 
     {% endif %}
-        
-
 </aside>
 
 <!-- Overlay para móvil -->
@@ -182,23 +227,28 @@
 <div class="main-wrapper">
 
     <header class="topbar">
-        <button class="btn-toggle" id="sidebar-toggle"
-            type="button"
-            aria-label="Abrir menú"
-            aria-expanded="false"
-            aria-controls="sidebar">
-        <i class="bi bi-list"></i>
-    </button>
+        <button class="btn-toggle"
+                id="sidebar-toggle"
+                type="button"
+                aria-label="Abrir menú"
+                aria-expanded="false"
+                aria-controls="sidebar">
+            <i class="bi bi-list"></i>
+        </button>
 
         <div class="user-info">
             {% if current_user.is_authenticated %}
-                <span class="d-none d-md-inline">{{ current_user.username }}</span>
-                <span class="role-badge">{{ current_user.role }}</span>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary" title="Cerrar sesión">
+                <span class="d-none d-md-inline">{{ display_name }}</span>
+                <span class="role-badge">{{ role_label }}</span>
+                <a href="{{ url_for('auth.logout') }}"
+                   class="btn btn-sm btn-outline-secondary"
+                   title="Cerrar sesión">
                     <i class="bi bi-box-arrow-right"></i>
                 </a>
             {% else %}
-                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Iniciar sesión</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">
+                    Iniciar sesión
+                </a>
             {% endif %}
         </div>
     </header>
@@ -214,7 +264,6 @@
             {% endfor %}
         {% endwith %}
 
-        {# ============ CONTENIDO DE CADA PÁGINA ============ #}
         {% block content %}{% endblock %}
     </main>
 

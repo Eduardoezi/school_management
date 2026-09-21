@@ -1,51 +1,166 @@
 ﻿{% extends "base.html" %}
 {% block title %}{{ 'Editar' if enrollment else 'Nueva' }} Inscripción{% endblock %}
 {% block content %}
-<h2>{{ 'Editar' if enrollment else 'Nueva' }} Inscripción</h2>
+
+<h2 class="page-title">
+    <i class="bi bi-clipboard-check me-2"></i>
+    {{ 'Editar' if enrollment else 'Nueva' }} Inscripción
+</h2>
+
 <form method="POST">
+    {# ============================================================
+       DATOS PRINCIPALES
+       ============================================================ #}
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="mb-3">
-        <label for="school_id" class="form-label">Estudiante (Cédula escolar) *</label>
-        <select class="form-select" id="school_id" name="school_id" required>
-            <option value="">Seleccionar</option>
-            {% for s in students %}
-            <option value="{{ s.school_id }}" {% if enrollment and enrollment.school_id == s.school_id %}selected{% endif %}>
-                {{ s.school_id }} - {{ s.first_name }} {{ s.last_name }}
-            </option>
-            {% endfor %}
-        </select>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-person-vcard me-2 text-primary"></i>Datos de la inscripción
+            </h5>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="school_id" class="form-label">Estudiante *</label>
+                    <select class="form-select" id="school_id" name="school_id" required>
+                        <option value="">-- Seleccionar estudiante --</option>
+                        {% for s in students %}
+                        <option value="{{ s.school_id }}"
+                            {% if enrollment and enrollment.school_id == s.school_id %}selected{% endif %}>
+                            {{ s.school_id }} — {{ s.first_name }} {{ s.last_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="course_code" class="form-label">Curso *</label>
+                    <select class="form-select" id="course_code" name="course_code" required>
+                        <option value="">-- Seleccionar curso --</option>
+                        {% for c in courses %}
+                        <option value="{{ c.code }}"
+                            {% if enrollment and enrollment.course_code == c.code %}selected{% endif %}>
+                            {{ c.name }} ({{ c.code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="enrollment_date" class="form-label">Fecha de inscripción</label>
+                    <input type="date" class="form-control" id="enrollment_date" name="enrollment_date"
+                           value="{{ enrollment.enrollment_date if enrollment else '' }}">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Estado *</label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="activo"      {% if enrollment and enrollment.status == 'activo'      %}selected{% endif %}>Activo</option>
+                        <option value="inactivo"    {% if enrollment and enrollment.status == 'inactivo'    %}selected{% endif %}>Inactivo</option>
+                        <option value="no_inscrito" {% if enrollment and enrollment.status == 'no_inscrito' %}selected{% endif %}>No inscrito</option>
+                        <option value="graduado"    {% if enrollment and enrollment.status == 'graduado'    %}selected{% endif %}>Graduado</option>
+                        <option value="retirado"    {% if enrollment and enrollment.status == 'retirado'    %}selected{% endif %}>Retirado</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="egreso_date" class="form-label">Fecha de egreso</label>
+                    <input type="date" class="form-control" id="egreso_date" name="egreso_date"
+                           value="{{ enrollment.egreso_date if enrollment else '' }}">
+                    <small class="text-muted">Aplica si el estudiante egresó o se retiró.</small>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="course_code" class="form-label">Curso *</label>
-        <select class="form-select" id="course_code" name="course_code" required>
-            <option value="">Seleccionar</option>
-            {% for c in courses %}
-            <option value="{{ c.code }}" {% if enrollment and enrollment.course_code == c.code %}selected{% endif %}>
-                {{ c.name }} ({{ c.code }})
-            </option>
-            {% endfor %}
-        </select>
+
+    {# ============================================================
+       VIDA ACADÉMICA
+       ============================================================ #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-mortarboard me-2 text-primary"></i>Vida académica
+            </h5>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="promoted" name="promoted" value="1"
+                               {% if enrollment and enrollment.promoted %}checked{% endif %}>
+                        <label class="form-check-label" for="promoted">
+                            <strong>Promovido</strong> al siguiente grado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="repeater" name="repeater" value="1"
+                               {% if enrollment and enrollment.repeater %}checked{% endif %}>
+                        <label class="form-check-label" for="repeater">
+                            <strong>Repitiente</strong> del mismo grado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label for="observations" class="form-label">Observaciones académicas</label>
+                    <textarea class="form-control" id="observations" name="observations" rows="3"
+                              placeholder="Notas sobre el desempeño, adaptaciones curriculares, etc.">{{ enrollment.observations if enrollment else '' }}</textarea>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="enrollment_date" class="form-label">Fecha de inscripción</label>
-        <input type="date" class="form-control" id="enrollment_date" name="enrollment_date"
-               value="{{ enrollment.enrollment_date if enrollment else '' }}">
+
+    {# ============================================================
+       LOPNA (autorización legal)
+       ============================================================ #}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-shield-check me-2 text-primary"></i>Autorización LOPNA
+            </h5>
+            <p class="text-muted small">
+                Complete solo si existe una autorización especial por la LOPNA
+                (Ley Orgánica para la Protección de Niños, Niñas y Adolescentes).
+            </p>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="lopna_authorized_by" class="form-label">Autorizado por</label>
+                    <input type="text" class="form-control" id="lopna_authorized_by" name="lopna_authorized_by"
+                           value="{{ enrollment.lopna_authorized_by if enrollment else '' }}"
+                           placeholder="Nombre de quien autoriza">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="lopna_authorized_cedula" class="form-label">Cédula de quien autoriza</label>
+                    <input type="text" class="form-control" id="lopna_authorized_cedula" name="lopna_authorized_cedula"
+                           value="{{ enrollment.lopna_authorized_cedula if enrollment else '' }}">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="lopna_tutor_cedula" class="form-label">Cédula del tutor</label>
+                    <input type="text" class="form-control" id="lopna_tutor_cedula" name="lopna_tutor_cedula"
+                           value="{{ enrollment.lopna_tutor_cedula if enrollment else '' }}">
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label for="lopna_reason" class="form-label">Motivo de la autorización</label>
+                    <textarea class="form-control" id="lopna_reason" name="lopna_reason" rows="2"
+                              placeholder="Detalle del motivo">{{ enrollment.lopna_reason if enrollment else '' }}</textarea>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="status" class="form-label">Estado</label>
-        <select class="form-select" id="status" name="status">
-            <option value="activo" {% if enrollment and enrollment.status == 'activo' %}selected{% endif %}>Activo</option>
-            <option value="inactivo" {% if enrollment and enrollment.status == 'inactivo' %}selected{% endif %}>Inactivo</option>
-            <option value="egresado" {% if enrollment and enrollment.status == 'egresado' %}selected{% endif %}>Egresado</option>
-            <option value="retirado" {% if enrollment and enrollment.status == 'retirado' %}selected{% endif %}>Retirado</option>
-        </select>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar
+        </button>
+        <a href="{{ url_for('enrollment.list_view') }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i>Cancelar
+        </a>
     </div>
-    <div class="mb-3">
-        <label for="egreso_date" class="form-label">Fecha de egreso (si aplica)</label>
-        <input type="date" class="form-control" id="egreso_date" name="egreso_date"
-               value="{{ enrollment.egreso_date if enrollment else '' }}">
-    </div>
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a href="{{ url_for('enrollment.list_view') }}" class="btn btn-secondary">Cancelar</a>
 </form>
+
 {% endblock %}

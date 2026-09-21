@@ -2,7 +2,10 @@ from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
 from flask import Flask, redirect, url_for, flash, render_template, request
 from flask_login import LoginManager, current_user
-from flask_wtf.csrf import CSRFProtect          # ← NUEVO
+
+from flask_login import LoginManager, current_user
+from app.models.teacher import Teacher
+
 
 from app.config import Config
 from app.models.user import User
@@ -15,8 +18,55 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Por favor inicia sesión para acceder.'
 login_manager.login_message_category = 'warning'
 
-csrf = CSRFProtect()                             # ← NUEVO
+csrf = CSRFProtect()                            
 
+# ============================================================
+# Context processors
+# ============================================================
+def _register_context_processors(app: Flask) -> None:
+    """
+    Registra variables disponibles en TODAS las plantillas.
+
+    Inyecta:
+        now           → datetime actual.
+        teacher       → dict del docente vinculado o None.
+        display_name  → nombre visible (docente completo o username).
+        role_label    → etiqueta legible del rol.
+    """
+    from flask import g
+
+    @app.context_processor
+    def inject_now() -> dict:
+        return {'now': datetime.now()}
+
+    @app.context_processor
+    def inject_user_display() -> dict:
+        # ---------- Docente (cacheado por request) ----------
+        if not hasattr(g, '_current_teacher'):
+            teacher = None
+            if current_user.is_authenticated:
+                try:
+                    teacher = Teacher.get_by_user_id(current_user.id)
+                except Exception as exc:
+                    app.logger.exception(
+                        '[inject_user_display] Error obteniendo docente: %s', exc
+                    )
+                    teacher = None
+            g._current_teacher = teacher
+
+        # ---------- Nombre visible (cacheado) ----------
+        if not hasattr(g, '_display_name'):
+            g._display_name = _build_display_name(current_user, g._current_teacher)
+
+        # ---------- Rol legible (cacheado) ----------
+        if not hasattr(g, '_role_label'):
+            g._role_label = _build_role_label(current_user)
+
+        return {
+            'teacher':      g._current_teacher,
+            'display_name': g._display_name,
+            'role_label':   g._role_label,
+        }
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -122,7 +172,52 @@ def _register_request_hooks(app: Flask) -> None:
             conn.close()
 
 
-def _register_context_processors(app: Flask) -> None:
-    @app.context_processor
-    def inject_now():
-        return {'now': datetime.now()}
+# ============================================================
+# Helpers de presentación
+# ============================================================
+def _build_display_name(user, teacher) -> str:
+    """
+    Construye el nombre visible del usuario.
+
+    Reglas:
+        - Usuario con docente vinculado → "Nombre Apellido".
+        - Usuario sin docente            → username.
+        - Usuario anónimo                → cadena vacía.
+
+    Args:
+        user:    instancia de User (puede ser anónimo).
+        teacher: dict del docente o None.
+
+    Returns:
+        Cadena lista para mostrar en UI.
+    """
+    if not getattr(user, 'is_authenticated', False):
+        return ''
+
+    if teacher:
+        parts = [teacher.get('first_name'), teacher.get('last_name')]
+        full = ' '.join(p for p in parts if p)
+        if full.strip():
+            return full.strip()
+
+    return user.username or ''
+
+
+def _build_role_label(user) -> str:
+    """
+    Etiqueta legible del rol.
+
+    Args:
+        user: instancia de User.
+
+    Returns:
+        Rol capitalizado y traducido, o cadena vacía si anónimo.
+    """
+    if not getattr(user, 'is_authenticated', False):
+        return ''
+
+    from app.models.user import ROLE_LABELS
+    return ROLE_LABELS.get(
+        (user.role or '').lower(),
+        user.role or '',
+    )

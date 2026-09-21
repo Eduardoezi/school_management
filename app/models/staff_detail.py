@@ -1,23 +1,40 @@
 from app.utils.db import get_db_connection
+from app.utils.crypto import encrypt_str
 
 
 class StaffDetail:
     @staticmethod
     def get_by_teacher(teacher_id):
         conn = get_db_connection()
-        if not conn: return None
+        if not conn:
+            return None
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM staff_details WHERE teacher_id = %s", (teacher_id,))
+        cursor.execute(
+            "SELECT * FROM staff_details WHERE teacher_id = %s",
+            (teacher_id,)
+        )
         row = cursor.fetchone()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return row
 
     @staticmethod
     def save(teacher_id, data):
         conn = get_db_connection()
-        if not conn: return False
+        if not conn:
+            return False
         cursor = conn.cursor()
         try:
+            # --- Cifrar número de cuenta si viene ---
+            account_number = (data.get('bank_account_number') or '').strip()
+            encrypted = None
+            last6 = None
+            if account_number:
+                digits = ''.join(c for c in account_number if c.isdigit())
+                if len(digits) >= 6:
+                    encrypted = encrypt_str(digits)
+                    last6 = digits[-6:]
+
             cursor.execute("""
                 INSERT INTO staff_details
                     (teacher_id, codigo_rac, cargo, staff_type, specialist_type,
@@ -25,9 +42,12 @@ class StaffDetail:
                      shirt_size, pants_size, shoe_size,
                      academic_hours, admin_hours, shift,
                      worker_status, observations, specialty,
-                     birth_city, birth_state)
+                     birth_city, birth_state,
+                     bank_name, bank_account_type,
+                     bank_account_number_encrypted, bank_account_last6)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s)
+                        %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     codigo_rac        = VALUES(codigo_rac),
                     cargo             = VALUES(cargo),
@@ -45,7 +65,17 @@ class StaffDetail:
                     observations      = VALUES(observations),
                     specialty         = VALUES(specialty),
                     birth_city        = VALUES(birth_city),
-                    birth_state       = VALUES(birth_state)
+                    birth_state       = VALUES(birth_state),
+                    bank_name         = VALUES(bank_name),
+                    bank_account_type = VALUES(bank_account_type),
+                    bank_account_number_encrypted =
+                        IF(VALUES(bank_account_number_encrypted) IS NULL,
+                           bank_account_number_encrypted,
+                           VALUES(bank_account_number_encrypted)),
+                    bank_account_last6 =
+                        IF(VALUES(bank_account_last6) IS NULL,
+                           bank_account_last6,
+                           VALUES(bank_account_last6))
             """, (
                 teacher_id,
                 data.get('codigo_rac'),
@@ -64,7 +94,11 @@ class StaffDetail:
                 data.get('observations'),
                 data.get('specialty'),
                 data.get('birth_city'),
-                data.get('birth_state')
+                data.get('birth_state'),
+                data.get('bank_name') or None,
+                data.get('bank_account_type') or None,
+                encrypted,
+                last6,
             ))
             conn.commit()
             return True
@@ -72,4 +106,27 @@ class StaffDetail:
             print(f"[StaffDetail.save] {e}")
             return False
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_bank_account(teacher_id):
+        """Devuelve el número de cuenta DESCIFRADO (solo para admin)."""
+        from app.utils.crypto import decrypt_str
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT bank_account_number_encrypted
+                  FROM staff_details
+                 WHERE teacher_id = %s
+            """, (teacher_id,))
+            row = cursor.fetchone()
+            if not row or not row['bank_account_number_encrypted']:
+                return None
+            return decrypt_str(row['bank_account_number_encrypted'])
+        finally:
+            cursor.close()
+            conn.close()
