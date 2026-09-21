@@ -2,11 +2,7 @@ from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
 from flask import Flask, redirect, url_for, flash, render_template, request
 from flask_login import LoginManager, current_user
-
-
 from app.models.teacher import Teacher
-
-
 from app.config import Config
 from app.models.user import User
 from app.utils.db import get_db_connection
