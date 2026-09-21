@@ -3,7 +3,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask import Flask, redirect, url_for, flash, render_template, request
 from flask_login import LoginManager, current_user
 
-from flask_login import LoginManager, current_user
+
 from app.models.teacher import Teacher
 
 
