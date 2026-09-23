@@ -23,12 +23,14 @@ from typing import Any
 # Constantes
 # ============================================================
 CATEGORIES = (
-    'actividad',
+    
     'evaluacion',
     'reunion',
     'feriado',
     'asueto',
     'receso',
+    'actividad',
+    'efeméride',
     'celebracion',
     'otro',
 )

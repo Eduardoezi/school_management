@@ -1,12 +1,171 @@
 {% extends "base.html" %}
 {% block title %}Calendario escolar{% endblock %}
+
 {% block extra_css %}
-<link href="{{ url_for('static', filename='css/calendar.css') }}" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    /* ============ FullCalendar - Tema visual ============ */
+    .fc {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --fc-border-color: #e2e8f0;
+        --fc-today-bg-color: #eff6ff;
+        --fc-page-bg-color: #ffffff;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #0f172a;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        padding: 0.5rem 0;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #334155;
+        font-weight: 500;
+        font-size: 0.85rem;
+        padding: 4px 8px;
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+        background-color: #eff6ff;
+    }
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+    .fc .fc-daygrid-day.fc-day-other {
+        background-color: #f8fafc;
+    }
+    .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+        color: #94a3b8;
+    }
+
+    /* Botones del toolbar */
+    .fc .fc-button {
+        background-color: #fff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-weight: 500;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.75rem;
+        text-transform: capitalize;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.15s ease;
+    }
+    .fc .fc-button:hover {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+    .fc .fc-button:focus {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        outline: none;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+    }
+    .fc .fc-button-primary:disabled {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+        opacity: 1;
+    }
+    .fc .fc-button-group > .fc-button {
+        border-radius: 0;
+    }
+    .fc .fc-button-group > .fc-button:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+    .fc .fc-button-group > .fc-button:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    /* Eventos */
+    .fc-event {
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 1px 6px;
+        font-size: 0.76rem;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 1px;
+    }
+    .fc-event:hover {
+        filter: brightness(0.92);
+    }
+    .fc-daygrid-event-dot {
+        display: none;
+    }
+
+    /* Vista lista */
+    .fc .fc-list-day-cushion {
+        background-color: #f8fafc;
+    }
+    .fc .fc-list-event:hover td {
+        background-color: #f1f5f9;
+    }
+
+    /* Popover "más eventos" */
+    .fc .fc-popover {
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+        border: 1px solid #e2e8f0;
+    }
+    .fc .fc-popover-header {
+        background-color: #f8fafc;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    /* ============ Acciones rápidas laterales ============ */
+    .quick-action-card {
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+    .quick-action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        border-color: #cbd5e1;
+    }
+    .quick-action-card i {
+        line-height: 1;
+    }
+
+    /* Ajuste responsive */
+    @media (max-width: 767px) {
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .fc .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+        }
+    }
+</style>
 {% endblock %}
+
 {% block content %}
+
+<!-- ==================== CABECERA ==================== -->
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
     <div>
-        <h1 class="page-title mb-1"><i class="bi bi-calendar3 me-2"></i>Calendario escolar</h1>
+        <h1 class="page-title mb-1">
+            <i class="bi bi-calendar3 me-2"></i>Calendario escolar
+        </h1>
         <p class="text-muted mb-0">Consulta las actividades oficiales y las propias de la escuela.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -24,16 +183,21 @@
 </div>
 
 {% if not calendar %}
-<div class="card"><div class="card-body text-center py-5">
-    <i class="bi bi-calendar-x display-4 text-muted"></i>
-    <h2 class="h5 mt-3">No hay un calendario publicado</h2>
-    <p class="text-muted mb-3">El director debe crear, revisar y publicar el calendario del año escolar.</p>
-    {% if current_user.role == 'directivo' %}
-        <a class="btn btn-primary" href="{{ url_for('calendar.create_calendar') }}">Crear calendario</a>
-    {% endif %}
-</div></div>
+<!-- ==================== ESTADO VACÍO ==================== -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-calendar-x display-4 text-muted"></i>
+        <h2 class="h5 mt-3">No hay un calendario publicado</h2>
+        <p class="text-muted mb-3">El director debe crear, revisar y publicar el calendario del año escolar.</p>
+        {% if current_user.role == 'directivo' %}
+            <a class="btn btn-primary" href="{{ url_for('calendar.create_calendar') }}">Crear calendario</a>
+        {% endif %}
+    </div>
+</div>
+
 {% else %}
-<div class="card mb-3 calendar-toolbar-card">
+<!-- ==================== FILTROS ==================== -->
+<div class="card mb-3">
     <div class="card-body">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-4">
@@ -54,8 +218,6 @@
                     {% endfor %}
                 </select>
             </div>
-            <input type="hidden" name="view" value="{{ grid.view_name }}">
-            <input type="hidden" name="date" value="{{ grid.selected_date.isoformat() }}">
             <div class="col-md-4 d-flex justify-content-md-end">
                 <div class="dropdown w-100 w-md-auto">
                     <button class="btn btn-outline-success dropdown-toggle w-100" data-bs-toggle="dropdown" type="button">
@@ -63,7 +225,12 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         {% for value, label in scope_labels.items() %}
-                        <li><a class="dropdown-item" href="{{ url_for('calendar.export_ics', calendar_id=calendar.id, scope=value) }}">{{ label }}</a></li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ url_for('calendar.export_ics', calendar_id=calendar.id, scope=value) }}">
+                                {{ label }}
+                            </a>
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -72,90 +239,174 @@
     </div>
 </div>
 
-<div class="card calendar-shell">
-    <div class="card-header bg-white calendar-heading">
-        <div class="calendar-navigation">
-            {% if grid.view_name != 'year' %}
-            <a class="btn btn-sm btn-outline-secondary" aria-label="Periodo anterior"
-               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=grid.view_name, date=grid.prev_date.isoformat()) }}">
-                <i class="bi bi-chevron-left"></i>
-            </a>
-            {% endif %}
-            <div>
-                <h2 class="h5 mb-0">
-                    {% if grid.view_name == 'week' %}
-                        {{ grid.range_start.strftime('%d/%m/%Y') }} - {{ grid.range_end.strftime('%d/%m/%Y') }}
-                    {% elif grid.view_name == 'year' %}
-                        Año escolar {{ calendar.academic_year }}
-                    {% else %}
-                        {{ month_names[grid.selected_date.month] }} {{ grid.selected_date.year }}
-                    {% endif %}
-                </h2>
-                <small class="text-muted">{{ calendar.title }}</small>
-            </div>
-            {% if grid.view_name != 'year' %}
-            <a class="btn btn-sm btn-outline-secondary" aria-label="Periodo siguiente"
-               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=grid.view_name, date=grid.next_date.isoformat()) }}">
-                <i class="bi bi-chevron-right"></i>
-            </a>
-            {% endif %}
-        </div>
-        <div class="btn-group" role="group" aria-label="Cambiar visualización">
-            {% for value, label in [('week','Semanal'),('month','Mensual'),('year','Anual')] %}
-            <a class="btn btn-sm {% if grid.view_name == value %}btn-primary{% else %}btn-outline-primary{% endif %}"
-               href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view=value, date=grid.selected_date.isoformat()) }}">{{ label }}</a>
-            {% endfor %}
-        </div>
-    </div>
-    <div class="card-body p-0">
-        {% if grid.view_name in ['week', 'month'] %}
-        <div class="calendar-grid {% if grid.view_name == 'week' %}calendar-grid-week{% endif %}">
-            {% for label in ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}<div class="calendar-weekday">{{ label }}</div>{% endfor %}
-            {% for week in grid.weeks %}
-                {% for day in week %}
-                <div class="calendar-day {% if grid.view_name == 'month' and day.month != grid.selected_date.month %}outside{% endif %} {% if day == now.date() %}today{% endif %}">
-                    <div class="calendar-day-number">{{ day.day }}</div>
-                    <div class="calendar-day-events">
-                    {% for event in grid.events_by_day.get(day, []) %}
+<!-- ==================== CALENDARIO + ACCIONES ==================== -->
+<div class="row g-3">
+    <!-- Columna del calendario -->
+    <div class="col-lg-{{ '8' if current_user.role == 'directivo' else '12' }}">
+        <div class="card h-100">
+            <div class="card-body">
+                <!-- Encabezado interno -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 mb-0 fw-semibold text-dark">
+                            {{ calendar.title }}
+                        </h2>
+                        <small class="text-muted">Año escolar {{ calendar.academic_year }}</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small d-none d-md-inline">
+                            <i class="bi bi-circle-fill me-1" style="color:#3b82f6;font-size:.55rem;"></i>Ministerio
+                            <i class="bi bi-circle-fill ms-2 me-1" style="color:#10b981;font-size:.55rem;"></i>Escuela
+                        </span>
                         {% if current_user.role == 'directivo' %}
-                        <a href="{{ url_for('calendar.event_edit', event_id=event.id) }}"
-                           class="calendar-event origin-{{ event.origin }}" title="{{ event.description or event.title }}">
-                            {{ event.title }}
-                        </a>
-                        {% else %}
-                        <span class="calendar-event origin-{{ event.origin }}" title="{{ event.description or event.title }}">{{ event.title }}</span>
+                            <a class="btn btn-sm btn-primary"
+                               href="{{ url_for('calendar.event_create', calendar_id=calendar.id) }}"
+                               title="Agregar evento">
+                                <i class="bi bi-plus-lg"></i>
+                            </a>
                         {% endif %}
-                    {% endfor %}
                     </div>
                 </div>
-                {% endfor %}
-            {% endfor %}
+
+                <!-- Aquí vive FullCalendar -->
+                <div id="calendar"></div>
+            </div>
         </div>
-        {% else %}
-        <div class="year-grid">
-            {% for month in grid.months %}
-            <section class="year-month">
-                <a class="year-month-title" href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view='month', date='%04d-%02d-01'|format(month.year, month.month)) }}">{{ month.label }}</a>
-                <div class="mini-calendar">
-                    {% for label in ['L','M','X','J','V','S','D'] %}<div class="mini-weekday">{{ label }}</div>{% endfor %}
-                    {% for week in month.weeks %}
-                        {% for day in week %}
-                        <a href="{{ url_for('calendar.index', calendar_id=calendar.id, scope=scope, view='week', date=day.isoformat()) }}"
-                           class="mini-day {% if day.month != month.month %}outside{% endif %} {% if grid.events_by_day.get(day) %}has-events{% endif %} {% if day == now.date() %}today{% endif %}"
-                           title="{% for event in grid.events_by_day.get(day, []) %}{{ event.title }}{% if not loop.last %} · {% endif %}{% endfor %}">{{ day.day }}</a>
-                        {% endfor %}
-                    {% endfor %}
+    </div>
+
+    <!-- Columna de acciones rápidas (solo directivo) -->
+    {% if current_user.role == 'directivo' %}
+    <div class="col-lg-4">
+        <div class="row g-3">
+            <div class="col-6">
+                <a href="{{ url_for('calendar.event_create', calendar_id=calendar.id) }}"
+                   class="text-decoration-none">
+                    <div class="card quick-action-card text-center p-3 h-100">
+                        <i class="bi bi-calendar-plus-fill display-6 mb-2" style="color:#3b82f6;"></i>
+                        <span class="fw-semibold text-dark small">Agregar evento</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{{ url_for('calendar.manage', calendar_id=calendar.id) }}"
+                   class="text-decoration-none">
+                    <div class="card quick-action-card text-center p-3 h-100">
+                        <i class="bi bi-gear-fill display-6 mb-2" style="color:#3b82f6;"></i>
+                        <span class="fw-semibold text-dark small">Administrar</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{{ url_for('calendar.template_csv', calendar_id=calendar.id) }}"
+                   class="text-decoration-none">
+                    <div class="card quick-action-card text-center p-3 h-100">
+                        <i class="bi bi-filetype-csv display-6 mb-2" style="color:#10b981;"></i>
+                        <span class="fw-semibold text-dark small">Plantilla CSV</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{{ url_for('calendar.export_ics', calendar_id=calendar.id, scope='both') }}"
+                   class="text-decoration-none">
+                    <div class="card quick-action-card text-center p-3 h-100">
+                        <i class="bi bi-download display-6 mb-2" style="color:#10b981;"></i>
+                        <span class="fw-semibold text-dark small">Exportar .ics</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Tarjeta resumen -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small mb-3">Resumen del calendario</h6>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total de eventos</span>
+                    <strong>{{ calendar.event_count }}</strong>
                 </div>
-            </section>
-            {% endfor %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Estado</span>
+                    <span class="badge {% if calendar.status == 'published' %}bg-success{% elif calendar.status == 'archived' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                        {{ {'published':'Publicado','archived':'Archivado','draft':'Borrador'}[calendar.status] }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Año escolar</span>
+                    <strong>{{ calendar.academic_year }}</strong>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
-    <div class="card-footer bg-white d-flex flex-wrap gap-3 small">
-        <span><i class="calendar-legend origin-ministerio"></i> Ministerio</span>
-        <span><i class="calendar-legend origin-escuela"></i> Escuela</span>
-        <span><i class="bi bi-circle-fill text-danger me-1"></i> Hoy</span>
-    </div>
+    {% endif %}
 </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if calendar %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+
+    // Eventos serializados desde Flask
+    var eventsData = {{ events_json | safe }};
+
+    // Vista inicial según lo que pidió el usuario en la URL
+    var initialView = 'dayGridMonth';
+    {% if grid and grid.view_name == 'week' %}
+    initialView = 'timeGridWeek';
+    {% endif %}
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: initialView,
+        locale: 'es',
+        firstDay: 1,               // Lunes
+        height: 'auto',
+        dayMaxEvents: 3,           // "ver más" cuando hay muchos eventos
+        eventDisplay: 'block',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listMonth'
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            list: 'Lista'
+        },
+        events: eventsData,
+        eventClick: function (info) {
+            // Si el evento trae URL (solo directivo), navega; si no, abre un alert con detalle
+            if (info.event.url) {
+                info.jsEvent.preventDefault();
+                window.location.href = info.event.url;
+                return;
+            }
+            var p = info.event.extendedProps;
+            var lines = [];
+            if (p.category) lines.push('Categoría: ' + p.category);
+            if (p.origin) lines.push('Origen: ' + p.origin);
+            if (p.description) lines.push('', p.description);
+            if (p.affects_classes) lines.push('', '⚠️ Suspende clases');
+            if (p.affects_attendance) lines.push('', '⚠️ Afecta asistencia');
+            alert(info.event.title + (lines.length ? '\n\n' + lines.join('\n') : ''));
+        },
+        eventDidMount: function (info) {
+            // Tooltip nativo con la descripción
+            var p = info.event.extendedProps;
+            var tip = info.event.title;
+            if (p.description) tip += '\n' + p.description;
+            info.el.setAttribute('title', tip);
+        }
+    });
+
+    calendar.render();
+});
+</script>
 {% endif %}
 {% endblock %}

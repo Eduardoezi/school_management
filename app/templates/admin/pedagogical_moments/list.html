@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Momentos pedagógicos{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-calendar-range me-2"></i>Momentos pedagógicos
+    <span class="badge bg-primary ms-2">{{ moments|length }}</span>
+</h2>
+
+<p class="text-muted">
+    Los momentos pedagógicos condicionan los períodos de evaluación.
+    El vocabulario oficial del MPPE es "I/II/III Momento", pero aquí puedes
+    usar "1er Lapso", "2do Lapso", etc. según la práctica de tu institución.
+</p>
+
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ url_for('pedagogical_moments.create_view') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo momento
+    </a>
+</div>
+
+{% if moments %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nombre</th>
+                <th class="text-center">Orden</th>
+                <th class="text-center">Períodos que lo usan</th>
+                <th class="text-center">Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in moments %}
+            <tr>
+                <td><strong>{{ m.name }}</strong></td>
+                <td class="text-center">{{ m.sort_order }}</td>
+                <td class="text-center">
+                    {% if m.periods_count %}
+                        <span class="badge bg-info text-dark">{{ m.periods_count }}</span>
+                    {% else %}
+                        <span class="text-muted small">—</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if m.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ url_for('pedagogical_moments.edit_view', moment_id=m.id) }}"
+                           class="btn btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('pedagogical_moments.toggle_view', moment_id=m.id) }}"
+                              style="display:inline;"
+                              {% if m.is_active and m.periods_count %}
+                                  onsubmit="return confirm('Este momento tiene {{ m.periods_count }} período(s). No podrás desactivarlo.');"
+                              {% endif %}>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-secondary"
+                                    title="{% if m.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                <i class="bi bi-{% if m.is_active %}x-circle{% else %}check-circle{% endif %}"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    No hay momentos pedagógicos registrados.
+</div>
+{% endif %}
+
+{% endblock %}

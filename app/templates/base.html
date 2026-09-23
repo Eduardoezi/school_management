@@ -220,6 +220,18 @@
                     </a>
                 </li>
                 <li>
+                    <a class="nav-link" href="{{ url_for('pedagogical_moments.list_view') }}">
+                        <i class="bi bi-calendar-range"></i> Momentos pedagógicos
+                    </a>
+                </li>
+                {% if current_user.role == 'directivo' %}
+                    <li>
+                        <a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
+                            <i class="bi bi-calendar-check"></i> Períodos de evaluación
+                        </a>
+                    </li>
+                {% endif %}
+                <li>
                     <a class="nav-link" href="{{ url_for('admin.users_list') }}">
                         <i class="bi bi-people-fill"></i> Gestión de usuarios
                     </a>

@@ -1,22 +1,57 @@
 {% extends "base.html" %}
-{% block title %}Periodos de Evaluación{% endblock %}
+{% block title %}Períodos de Evaluación{% endblock %}
 {% block content %}
-<h2>📅 Periodos de Evaluación</h2>
-<a href="{{ url_for('evaluations.period_create') }}" class="btn btn-primary mb-3">+ Nuevo periodo</a>
-<table class="table table-striped">
-    <thead><tr><th>Año</th><th>Periodo</th><th>Desde</th><th>Hasta</th></tr></thead>
-    <tbody>
-        {% for p in periods %}
-        <tr>
-            <td>{{ p.academic_year }}</td>
-            <td>{{ p.name }}</td>
-            <td>{{ p.start_date or '-' }}</td>
-            <td>{{ p.end_date or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center text-muted">No hay periodos registrados.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Volver al panel</a>
+
+<h2 class="page-title">
+    <i class="bi bi-calendar-range me-2"></i>Períodos de Evaluación
+    <span class="badge bg-primary ms-2">{{ periods|length }}</span>
+</h2>
+
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ url_for('evaluations.period_create') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo período
+    </a>
+</div>
+
+{% if periods %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Año escolar</th>
+                <th>Momento pedagógico</th>
+                <th>Período</th>
+                <th>Desde</th>
+                <th>Hasta</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in periods %}
+            <tr>
+                <td>{{ p.academic_year }}</td>
+                <td>
+                    {% if p.moment_name %}
+                        <span class="badge bg-info text-dark">{{ p.moment_name }}</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Sin asignar</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>{{ p.start_date or '-' }}</td>
+                <td>{{ p.end_date or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    No hay períodos registrados.
+</div>
+{% endif %}
+
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+    Volver al panel
+</a>
+
 {% endblock %}

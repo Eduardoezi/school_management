@@ -12,7 +12,7 @@ Reglas:
     - Al enviar, pasa a 'enviado'.
     - El director (o secretario, si se autoriza) revisa y cambia a
       'aprobado' o 'devuelto' con comentario.
-    - Cuando se aprueba, se publica (Fase 6) → 'publicado'.
+    - Cuando se aprueba, se publica (Fase 4) → 'publicado'.
     - El soft delete usa `deleted_at`.
 """
 
@@ -33,7 +33,6 @@ TEACHER_ROLES  = ('titular', 'especialista', 'auxiliar')
 LOCATION_TYPES = ('aula', 'fuera_aula', 'ambos')
 STATUSES       = ('borrador', 'enviado', 'devuelto', 'aprobado', 'publicado', 'archivado')
 
-# Estados en los que el docente puede editar su plan
 EDITABLE_STATUSES = ('borrador', 'devuelto')
 
 
@@ -70,10 +69,7 @@ class ClassroomPlan:
     def get_by_teacher(teacher_id: int,
                        academic_year_id: Optional[int] = None,
                        include_archived: bool = False) -> list[dict]:
-        """
-        Planes de un docente. Por defecto excluye archivados.
-        Si se pasa academic_year_id, filtra por año.
-        """
+        """Planes de un docente. Por defecto excluye archivados."""
         conn = get_db_connection()
         if not conn:
             return []
@@ -138,12 +134,45 @@ class ClassroomPlan:
             cursor.close()
             conn.close()
 
+    @staticmethod
+    def get_by_academic_year(academic_year_id: int,
+                             include_archived: bool = False) -> list[dict]:
+        """
+        Todos los planes de un año escolar (para la bandeja del director).
+        """
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        try:
+            sql = """
+                SELECT p.*,
+                       t.first_name AS teacher_first_name,
+                       t.last_name  AS teacher_last_name,
+                       c.name       AS course_name,
+                       ay.name      AS academic_year_name
+                  FROM classroom_plans p
+                  JOIN teachers       t  ON p.teacher_id = t.id
+                  JOIN academic_years ay ON p.academic_year_id = ay.id
+                  LEFT JOIN courses   c  ON p.course_code = c.code
+                 WHERE p.academic_year_id = %s
+                   AND p.deleted_at IS NULL
+            """
+            params: list = [academic_year_id]
+            if not include_archived:
+                sql += " AND p.status <> 'archivado'"
+            sql += " ORDER BY p.submitted_at DESC, p.id DESC"
+            cursor.execute(sql, params)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()
+
     # ============================================================
     # Crear / actualizar cabecera
     # ============================================================
     @staticmethod
     def create(data: dict) -> Optional[int]:
-        """Crea un plan en estado 'borrador'. Devuelve el ID."""
         conn = get_db_connection()
         if not conn:
             return None
@@ -199,7 +228,6 @@ class ClassroomPlan:
 
     @staticmethod
     def update(plan_id: int, data: dict) -> bool:
-        """Actualiza la cabecera del plan. Solo si es editable."""
         if not ClassroomPlan.is_editable(plan_id):
             return False
         conn = get_db_connection()
@@ -258,7 +286,6 @@ class ClassroomPlan:
     # ============================================================
     @staticmethod
     def is_editable(plan_id: int) -> bool:
-        """True si el plan está en 'borrador' o 'devuelto'."""
         conn = get_db_connection()
         if not conn:
             return False
@@ -278,7 +305,6 @@ class ClassroomPlan:
 
     @staticmethod
     def submit_for_review(plan_id: int) -> bool:
-        """Docente envía el plan a revisión."""
         conn = get_db_connection()
         if not conn:
             return False
@@ -304,7 +330,6 @@ class ClassroomPlan:
 
     @staticmethod
     def approve(plan_id: int) -> bool:
-        """Director aprueba el plan."""
         conn = get_db_connection()
         if not conn:
             return False
@@ -330,7 +355,6 @@ class ClassroomPlan:
 
     @staticmethod
     def return_for_correction(plan_id: int) -> bool:
-        """Director devuelve el plan con recomendaciones."""
         conn = get_db_connection()
         if not conn:
             return False
@@ -355,10 +379,6 @@ class ClassroomPlan:
 
     @staticmethod
     def publish(plan_id: int) -> bool:
-        """
-        Marca el plan como publicado (Fase 6). Se llama después de
-        convertir las actividades en eventos del calendario.
-        """
         conn = get_db_connection()
         if not conn:
             return False
@@ -383,7 +403,6 @@ class ClassroomPlan:
 
     @staticmethod
     def archive(plan_id: int) -> bool:
-        """Archiva un plan. Se usa cuando termina el año escolar."""
         conn = get_db_connection()
         if not conn:
             return False
@@ -406,10 +425,6 @@ class ClassroomPlan:
 
     @staticmethod
     def soft_delete(plan_id: int) -> bool:
-        """
-        Soft delete: marca `deleted_at` sin borrar la fila.
-        Preserva historial para auditoría.
-        """
         conn = get_db_connection()
         if not conn:
             return False
@@ -429,8 +444,3 @@ class ClassroomPlan:
         finally:
             cursor.close()
             conn.close()
-
-    # ============================================================
-    # Áreas y actividades: se manejan desde PlanArea y PlanActivity
-    # (los crearé en la Fase 2.2 del mensaje siguiente)
-    # ============================================================

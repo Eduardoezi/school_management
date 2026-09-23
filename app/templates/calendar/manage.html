@@ -1,5 +1,76 @@
 {% extends "base.html" %}
 {% block title %}Administrar calendario{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============ Filtro inteligente ============ */
+    .event-filter-bar {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .event-filter-bar .form-control,
+    .event-filter-bar .form-select {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.9rem;
+    }
+    .event-filter-bar .form-control:focus,
+    .event-filter-bar .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .event-filter-bar .filter-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+        display: block;
+    }
+    .event-filter-bar .results-count {
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .event-filter-bar .results-count strong {
+        color: #0f172a;
+    }
+    #eventsTable tbody tr.filtered-out {
+        display: none;
+    }
+    #eventsTable tbody tr.no-results td {
+        text-align: center;
+        color: #94a3b8;
+        padding: 2rem 1rem;
+        font-style: italic;
+    }
+    .clear-filter-btn {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #64748b;
+        font-size: 0.82rem;
+        padding: 0.5rem 0.85rem;
+        transition: all 0.15s ease;
+    }
+    .clear-filter-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
+    /* Resaltar coincidencias */
+    .event-filter-bar .search-hint {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        margin-top: 0.35rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
     <div>
@@ -45,35 +116,286 @@
     </div>
 </div>
 
-<div class="card mb-4"><div class="card-body">
-    <h2 class="h5 mb-3">Eventos</h2>
-    <div class="table-responsive"><table class="table table-hover align-middle">
-        <thead><tr><th>Fecha</th><th>Origen</th><th>Evento</th><th>Categoría</th><th>Impacto</th><th class="text-end">Acciones</th></tr></thead>
-        <tbody>
-        {% for event in events %}
-        <tr>
-            <td class="text-nowrap">{{ event.start_date.strftime('%d/%m/%Y') }}{% if event.end_date != event.start_date %}<br><small class="text-muted">hasta {{ event.end_date.strftime('%d/%m/%Y') }}</small>{% endif %}</td>
-            <td><span class="badge {% if event.origin == 'ministerio' %}bg-primary{% else %}bg-success{% endif %}">{{ event.origin|capitalize }}</span></td>
-            <td><strong>{{ event.title }}</strong>{% if event.description %}<br><small class="text-muted">{{ event.description }}</small>{% endif %}</td>
-            <td>{{ event.category|capitalize }}</td>
-            <td>{% if event.affects_classes %}<span class="badge bg-danger">Suspende clases</span>{% endif %} {% if event.affects_attendance %}<span class="badge bg-warning text-dark">Asistencia</span>{% endif %}</td>
-            <td class="text-end text-nowrap">
-                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('calendar.event_edit', event_id=event.id) }}" aria-label="Editar {{ event.title }}"><i class="bi bi-pencil"></i></a>
-                <form method="POST" action="{{ url_for('calendar.event_delete', event_id=event.id) }}" class="d-inline" onsubmit="return confirm('¿Retirar este evento del calendario?');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Retirar {{ event.title }}"><i class="bi bi-trash"></i></button>
-                </form>
-            </td>
-        </tr>
-        {% else %}<tr><td colspan="6" class="text-center text-muted py-4">Todavía no hay eventos.</td></tr>{% endfor %}
-        </tbody>
-    </table></div>
-</div></div>
+<!-- ==================== EVENTOS con filtro inteligente ==================== -->
+<div class="card mb-4">
+    <div class="card-body">
 
-<div class="card"><div class="card-body">
-    <h2 class="h5 mb-3">Bitácora</h2>
-    <div class="table-responsive"><table class="table table-sm">
-        <thead><tr><th>Fecha</th><th>Acción</th><th>Usuario</th></tr></thead>
-        <tbody>{% for item in audit %}<tr><td>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</td><td><code>{{ item.action }}</code></td><td>{{ item.username or 'Sistema' }}</td></tr>{% else %}<tr><td colspan="3" class="text-muted">Sin actividad registrada.</td></tr>{% endfor %}</tbody>
-    </table></div>
-</div></div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h2 class="h5 mb-0">Eventos</h2>
+            <span class="results-count" id="resultsCount">
+                Mostrando <strong id="visibleCount">{{ events|length }}</strong> de <strong>{{ events|length }}</strong>
+            </span>
+        </div>
+
+        <!-- ============ Filtro inteligente ============ -->
+        <div class="event-filter-bar">
+            <div class="row g-2 align-items-end">
+                <div class="col-lg-5">
+                    <label class="filter-label" for="filterSearch">
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="filterSearch"
+                           placeholder="Título, descripción, categoría, origen..."
+                           autocomplete="off">
+                    <div class="search-hint">
+                        Busca en título, descripción, categoría, origen e impacto.
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="filter-label" for="filterCategory">
+                        <i class="bi bi-tag me-1"></i>Categoría
+                    </label>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">Todas las categorías</option>
+                        <option value="actividad">Actividad</option>
+                        <option value="efeméride">Efeméride</option>
+                        <option value="evaluacion">Evaluación</option>
+                        <option value="reunion">Reunión</option>
+                        <option value="feriado">Feriado</option>
+                        <option value="asueto">Asueto</option>
+                        <option value="receso">Receso</option>
+                        <option value="celebracion">Celebración</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="filter-label" for="filterOrigin">
+                        <i class="bi bi-diagram-3 me-1"></i>Origen
+                    </label>
+                    <select class="form-select" id="filterOrigin">
+                        <option value="">Todos</option>
+                        <option value="ministerio">Ministerio</option>
+                        <option value="escuela">Escuela</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="filter-label" for="filterDateFrom">Desde</label>
+                    <input type="date" class="form-control" id="filterDateFrom">
+                </div>
+                <div class="col-lg-2">
+                    <label class="filter-label" for="filterDateTo">Hasta</label>
+                    <input type="date" class="form-control" id="filterDateTo">
+                </div>
+                <div class="col-lg-2 d-flex justify-content-end">
+                    <button type="button" class="clear-filter-btn w-100" id="clearFilters">
+                        <i class="bi bi-x-lg me-1"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ Tabla ============ -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="eventsTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Origen</th>
+                        <th>Evento</th>
+                        <th>Categoría</th>
+                        <th>Impacto</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for event in events %}
+                <tr
+                    data-search="{{ (event.title ~ ' ' ~ (event.description or '') ~ ' ' ~ (event.category or '') ~ ' ' ~ (event.origin or ''))|lower }}"
+                    data-category="{{ event.category or '' }}"
+                    data-origin="{{ event.origin or '' }}"
+                    data-date-from="{{ event.start_date.isoformat() }}"
+                    data-date-to="{{ event.end_date.isoformat() }}"
+                >
+                    <td class="text-nowrap">
+                        {{ event.start_date.strftime('%d/%m/%Y') }}
+                        {% if event.end_date != event.start_date %}
+                            <br><small class="text-muted">hasta {{ event.end_date.strftime('%d/%m/%Y') }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if event.origin == 'ministerio' %}bg-primary{% else %}bg-success{% endif %}">
+                            {{ event.origin|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>{{ event.title }}</strong>
+                        {% if event.description %}
+                            <br><small class="text-muted">{{ event.description }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.category|capitalize }}</td>
+                    <td>
+                        {% if event.affects_classes %}
+                            <span class="badge bg-danger">Suspende clases</span>
+                        {% endif %}
+                        {% if event.affects_attendance %}
+                            <span class="badge bg-warning text-dark">Asistencia</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="{{ url_for('calendar.event_edit', event_id=event.id) }}"
+                           aria-label="Editar {{ event.title }}">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('calendar.event_delete', event_id=event.id) }}"
+                              class="d-inline"
+                              onsubmit="return confirm('¿Retirar este evento del calendario?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger"
+                                    type="submit"
+                                    aria-label="Retirar {{ event.title }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Todavía no hay eventos.</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Bitácora</h2>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead><tr><th>Fecha</th><th>Acción</th><th>Usuario</th></tr></thead>
+                <tbody>
+                {% for item in audit %}
+                <tr>
+                    <td>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><code>{{ item.action }}</code></td>
+                    <td>{{ item.username or 'Sistema' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-muted">Sin actividad registrada.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    'use strict';
+
+    const searchInput   = document.getElementById('filterSearch');
+    const categorySel   = document.getElementById('filterCategory');
+    const originSel     = document.getElementById('filterOrigin');
+    const dateFromInput = document.getElementById('filterDateFrom');
+    const dateToInput   = document.getElementById('filterDateTo');
+    const clearBtn      = document.getElementById('clearFilters');
+    const table         = document.getElementById('eventsTable');
+
+    if (!table) return;
+
+    const tbody       = table.querySelector('tbody');
+    const rows        = Array.from(tbody.querySelectorAll('tr[data-search]'));
+    const visibleEl   = document.getElementById('visibleCount');
+    const total       = rows.length;
+
+    function norm(str) {
+        return (str || '').toString().trim().toLowerCase();
+    }
+
+    function rowMatches(row, term, category, origin, from, to) {
+        // Texto libre: recorre todo el data-search
+        if (term && !row.dataset.search.includes(term)) return false;
+
+        // Categoría exacta
+        if (category && row.dataset.category !== category) return false;
+
+        // Origen exacto
+        if (origin && row.dataset.origin !== origin) return false;
+
+        // Rango de fechas por solape: el evento toca [from, to]
+        const rowFrom = row.dataset.dateFrom;
+        const rowTo   = row.dataset.dateTo;
+        if (from && rowTo < from) return false;
+        if (to   && rowFrom > to) return false;
+
+        return true;
+    }
+
+    function applyFilters() {
+        const term     = norm(searchInput.value);
+        const category = categorySel.value;
+        const origin   = originSel.value;
+        const from     = dateFromInput.value;
+        const to       = dateToInput.value;
+
+        let visible = 0;
+        rows.forEach(function (row) {
+            const ok = rowMatches(row, term, category, origin, from, to);
+            row.classList.toggle('filtered-out', !ok);
+            if (ok) visible++;
+        });
+
+        visibleEl.textContent = visible;
+
+        // Mensaje "sin resultados"
+        let emptyRow = tbody.querySelector('tr.no-results');
+        const hasFilters = term || category || origin || from || to;
+        if (visible === 0 && hasFilters) {
+            if (!emptyRow) {
+                emptyRow = document.createElement('tr');
+                emptyRow.className = 'no-results';
+                emptyRow.innerHTML = '<td colspan="6">No hay eventos que coincidan con los filtros aplicados.</td>';
+                tbody.appendChild(emptyRow);
+            }
+        } else if (emptyRow) {
+            emptyRow.remove();
+        }
+    }
+
+    // Debounce para el input de texto (evita recalcular en cada tecla)
+    let debounceTimer = null;
+    function debouncedApply() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 120);
+    }
+
+    searchInput.addEventListener('input', debouncedApply);
+    categorySel.addEventListener('change', applyFilters);
+    originSel.addEventListener('change', applyFilters);
+    dateFromInput.addEventListener('change', applyFilters);
+    dateToInput.addEventListener('change', applyFilters);
+
+    clearBtn.addEventListener('click', function () {
+        searchInput.value   = '';
+        categorySel.value   = '';
+        originSel.value     = '';
+        dateFromInput.value = '';
+        dateToInput.value   = '';
+        applyFilters();
+        searchInput.focus();
+    });
+
+    // Atajo: Escape limpia el buscador
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            searchInput.value = '';
+            applyFilters();
+        }
+    });
+
+    // Estado inicial (por si el navegador recuerda valores)
+    applyFilters();
+})();
+</script>
 {% endblock %}

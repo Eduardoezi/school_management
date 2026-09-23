@@ -1,43 +1,171 @@
 {% extends "base.html" %}
-{% block title %}Planes pendientes de revisión{% endblock %}
+{% block title %}Planes de aula{% endblock %}
 {% block content %}
+
 <h2 class="page-title">
-    <i class="bi bi-inbox me-2"></i>Planes pendientes de revisión
-    <span class="badge bg-primary ms-2">{{ plans|length }}</span>
+    <i class="bi bi-inbox me-2"></i>Planes de aula
+    <span class="badge bg-primary ms-2">{{ counters.total }}</span>
 </h2>
 
-<p class="text-muted">Año escolar: <strong>{{ year.name }}</strong></p>
+<p class="text-muted mb-3">Año escolar: <strong>{{ year.name }}</strong></p>
 
+{# ---------- Contadores ---------- #}
+<div class="row g-2 mb-3">
+    <div class="col-md-3">
+        <a href="{{ url_for('plans.review_queue', status='enviado') }}"
+           class="card text-decoration-none {% if status_filter == 'enviado' %}border-warning border-2{% endif %}">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Pendientes</span>
+                    <span class="badge bg-warning text-dark">{{ counters.enviado }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('plans.review_queue', status='devuelto') }}"
+           class="card text-decoration-none {% if status_filter == 'devuelto' %}border-danger border-2{% endif %}">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Devueltos</span>
+                    <span class="badge bg-danger">{{ counters.devuelto }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('plans.review_queue', status='aprobado') }}"
+           class="card text-decoration-none {% if status_filter == 'aprobado' %}border-success border-2{% endif %}">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Aprobados</span>
+                    <span class="badge bg-success">{{ counters.aprobado }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('plans.review_queue', status='todos') }}"
+           class="card text-decoration-none {% if status_filter == 'todos' %}border-primary border-2{% endif %}">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Todos</span>
+                    <span class="badge bg-primary">{{ counters.total }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+{# ---------- Filtros ---------- #}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Docente</label>
+                <select name="teacher" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos los docentes</option>
+                    {% for t in teachers %}
+                        <option value="{{ t.id }}" {% if teacher_filter == t.id %}selected{% endif %}>
+                            {{ t.first_name }} {{ t.last_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Grado</label>
+                <select name="grade" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    {% for g in grades %}
+                        <option value="{{ g }}" {% if grade_filter == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <div class="col-md-3">
+                <a href="{{ url_for('plans.review_queue') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ---------- Tabla ---------- #}
 {% if plans %}
-<table class="table table-hover">
-    <thead class="table-light">
-        <tr>
-            <th>Docente</th>
-            <th>Proyecto</th>
-            <th>Período</th>
-            <th>Enviado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in plans %}
-        <tr>
-            <td>{{ p.teacher_first_name }} {{ p.teacher_last_name }}</td>
-            <td>{{ p.learning_project_title or 'Sin título' }}</td>
-            <td>{{ p.start_date }} → {{ p.end_date }}</td>
-            <td>{{ p.submitted_at or '-' }}</td>
-            <td>
-                <a href="{{ url_for('plans.detail_view', plan_id=p.id) }}"
-                   class="btn btn-sm btn-primary">Revisar</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Docente</th>
+                <th>Proyecto</th>
+                <th>Curso</th>
+                <th>Período</th>
+                <th>Estado</th>
+                <th>Enviado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in plans %}
+            <tr>
+                <td>
+                    <strong>{{ p.teacher_first_name }} {{ p.teacher_last_name }}</strong>
+                </td>
+                <td>
+                    {{ p.learning_project_title or 'Sin título' }}
+                    <br>
+                    <small class="text-muted text-capitalize">{{ p.planning_type }}</small>
+                </td>
+                <td>
+                    <small>
+                        {{ p.grade or '-' }}
+                        {% if p.section %}· {{ p.section }}{% endif %}
+                        {% if p.course_name %}<br>{{ p.course_name }}{% endif %}
+                    </small>
+                </td>
+                <td>
+                    <small>
+                        {{ p.start_date }}<br>
+                        <span class="text-muted">hasta {{ p.end_date }}</span>
+                    </small>
+                </td>
+                <td>
+                    {% if p.status == 'borrador' %}
+                        <span class="badge bg-secondary">Borrador</span>
+                    {% elif p.status == 'enviado' %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                    {% elif p.status == 'devuelto' %}
+                        <span class="badge bg-danger">Devuelto</span>
+                    {% elif p.status == 'aprobado' %}
+                        <span class="badge bg-success">Aprobado</span>
+                    {% elif p.status == 'publicado' %}
+                        <span class="badge bg-primary">Publicado</span>
+                    {% elif p.status == 'archivado' %}
+                        <span class="badge bg-dark">Archivado</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <small class="text-muted">
+                        {{ p.submitted_at.strftime('%d/%m/%Y %H:%M') if p.submitted_at else '-' }}
+                    </small>
+                </td>
+                <td class="text-center">
+                    <a href="{{ url_for('plans.review_view', plan_id=p.id) }}"
+                       class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye me-1"></i>Revisar
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
 <div class="text-center text-muted py-5">
     <i class="bi bi-check-circle display-4 d-block mb-2 opacity-50"></i>
-    No hay planes pendientes de revisión.
+    No hay planes en este estado.
 </div>
 {% endif %}
+
 {% endblock %}

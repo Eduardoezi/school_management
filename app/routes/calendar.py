@@ -5,6 +5,7 @@ from __future__ import annotations
 import calendar as calendar_lib
 import hashlib
 import io
+import json
 import uuid
 from datetime import date, timedelta
 from pathlib import Path
@@ -131,6 +132,39 @@ def _calendar_grid(calendar_record, view_name, selected_date, scope):
     }
 
 
+def _serialize_events_for_fullcalendar(events, is_director: bool):
+    """Convierte eventos de la BD al formato JSON que espera FullCalendar."""
+    serialized = []
+    for ev in events:
+        origin = ev["origin"]
+        # Azul para ministerio, verde para escuela (igual que tu leyenda)
+        color = "#3b82f6" if origin == "ministerio" else "#10b981"
+        # FullCalendar trata 'end' como exclusivo → sumamos 1 día
+        end_exclusive = ev["end_date"] + timedelta(days=1)
+        item = {
+            "id": ev["id"],
+            "title": ev["title"],
+            "start": ev["start_date"].isoformat(),
+            "end": end_exclusive.isoformat(),
+            "allDay": True,
+            "backgroundColor": color,
+            "borderColor": color,
+            "textColor": "#ffffff",
+            "extendedProps": {
+                "origin": origin,
+                "category": ev.get("category") or "",
+                "description": ev.get("description") or "",
+                "affects_classes": bool(ev.get("affects_classes")),
+                "affects_attendance": bool(ev.get("affects_attendance")),
+                "source_page": ev.get("source_page"),
+            },
+        }
+        if is_director:
+            item["url"] = url_for("calendar.event_edit", event_id=ev["id"])
+        serialized.append(item)
+    return serialized
+
+
 @calendar_bp.route("/")
 @login_required
 def index():
@@ -147,6 +181,7 @@ def index():
         published_only=current_user.role != "directivo"
     )
     grid = None
+    events_json = "[]"
     if selected_calendar:
         year_start, year_end = academic_year_bounds(selected_calendar["academic_year"])
         default_date = date.today()
@@ -154,6 +189,12 @@ def index():
             default_date = year_start
         selected_date = _parse_iso_date(request.args.get("date"), default_date)
         grid = _calendar_grid(selected_calendar, view_name, selected_date, scope)
+        events_json = json.dumps(
+            _serialize_events_for_fullcalendar(
+                grid["events"], current_user.role == "directivo"
+            ),
+            ensure_ascii=False,
+        )
 
     return render_template(
         "calendar/index.html",
@@ -163,6 +204,7 @@ def index():
         scope_labels=SCOPE_LABELS,
         grid=grid,
         month_names=MONTH_NAMES,
+        events_json=events_json,
     )
 
 

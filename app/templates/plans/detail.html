@@ -6,6 +6,18 @@
     <i class="bi bi-journal-text me-2"></i>{{ plan.learning_project_title or 'Plan sin título' }}
 </h2>
 
+{# Alerta si fue devuelto #}
+{% if plan.status == 'devuelto' %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Este plan fue devuelto para corrección.</strong>
+    Revisa las recomendaciones abajo y haz los cambios necesarios.
+    <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}" class="alert-link ms-2">
+        Editar ahora →
+    </a>
+</div>
+{% endif %}
+
 <div class="d-flex gap-2 mb-3">
     <a href="{{ url_for('plans.list_view') }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Volver
@@ -13,6 +25,9 @@
     {% if plan.status in ('borrador', 'devuelto') %}
         <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}" class="btn btn-sm btn-warning">
             <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+        <a href="{{ url_for('plans.validate_view', plan_id=plan.id) }}" class="btn btn-sm btn-success">
+            <i class="bi bi-clipboard-check me-1"></i>Validar y enviar
         </a>
     {% endif %}
 </div>
@@ -29,6 +44,7 @@
             <div class="col-md-6">
                 <p><strong>Grado:</strong> {{ plan.grade or '-' }}</p>
                 <p><strong>Sección:</strong> {{ plan.section or '-' }}</p>
+                <p><strong>Matrícula:</strong> {{ plan.enrollment_count or '—' }}</p>
                 <p><strong>Estado:</strong>
                     {% if plan.status == 'borrador' %}<span class="badge bg-secondary">Borrador</span>
                     {% elif plan.status == 'enviado' %}<span class="badge bg-warning text-dark">En revisión</span>
@@ -104,7 +120,12 @@
                 <strong>{{ r.reviewer_username }} ({{ r.reviewer_role }})</strong>
                 <small class="text-muted">{{ r.created_at }}</small>
             </div>
-            <div class="small text-muted text-capitalize mb-1">{{ r.action }}</div>
+            <div class="small text-muted text-capitalize mb-1">
+                {% if r.action == 'aprobado' %}Aprobó el plan
+                {% elif r.action == 'devuelto' %}Devolvió el plan para corrección
+                {% elif r.action == 'comentario' %}Comentario
+                {% else %}{{ r.action }}{% endif %}
+            </div>
             {% if r.comment %}<p class="mb-0">{{ r.comment }}</p>{% endif %}
         </div>
         {% endfor %}
