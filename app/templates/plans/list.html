@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Mis Planes de Aula{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-journal-text me-2"></i>Mis Planes de Aula
+    <span class="badge bg-primary ms-2">{{ plans|length }}</span>
+</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="text-muted mb-0">
+        Año escolar activo: <strong>{{ year.name }}</strong>
+    </p>
+    <a href="{{ url_for('plans.create_view') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo plan
+    </a>
+</div>
+
+{% if plans %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Título / Proyecto</th>
+                <th>Tipo</th>
+                <th>Período</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in plans %}
+            <tr>
+                <td>
+                    <strong>{{ p.learning_project_title or 'Sin título' }}</strong>
+                    <br>
+                    <small class="text-muted">
+                        {{ p.grade or '-' }}
+                        {% if p.section %}· Sección {{ p.section }}{% endif %}
+                        {% if p.course_name %}· {{ p.course_name }}{% endif %}
+                    </small>
+                </td>
+                <td>
+                    <span class="badge bg-info text-dark text-capitalize">
+                        {{ p.planning_type }}
+                    </span>
+                </td>
+                <td>
+                    <small>
+                        {{ p.start_date }}<br>
+                        <span class="text-muted">hasta {{ p.end_date }}</span>
+                    </small>
+                </td>
+                <td>
+                    {% if p.status == 'borrador' %}
+                        <span class="badge bg-secondary">Borrador</span>
+                    {% elif p.status == 'enviado' %}
+                        <span class="badge bg-warning text-dark">En revisión</span>
+                    {% elif p.status == 'devuelto' %}
+                        <span class="badge bg-danger">Devuelto</span>
+                    {% elif p.status == 'aprobado' %}
+                        <span class="badge bg-success">Aprobado</span>
+                    {% elif p.status == 'publicado' %}
+                        <span class="badge bg-primary">Publicado</span>
+                    {% elif p.status == 'archivado' %}
+                        <span class="badge bg-dark">Archivado</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('plans.detail_view', plan_id=p.id) }}"
+                           class="btn btn-outline-primary" title="Ver detalle">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if p.status in ('borrador', 'devuelto') %}
+                            <a href="{{ url_for('plans.edit_view', plan_id=p.id) }}"
+                               class="btn btn-outline-warning" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-journal-x display-4 d-block mb-2 opacity-50"></i>
+    No tienes planes de aula creados en este año escolar.<br>
+    <a href="{{ url_for('plans.create_view') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-circle me-1"></i>Crear mi primer plan
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

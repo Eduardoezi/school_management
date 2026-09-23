@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Plan de Aula{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-plus-circle me-2"></i>Nuevo Plan de Aula
+</h2>
+
+<p class="text-muted">
+    Docente: <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong> ·
+    Año escolar: <strong>{{ year.name }}</strong>
+</p>
+
+<form method="POST" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-info-circle me-2 text-primary"></i>Datos generales
+            </h5>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo de planificación *</label>
+                    <select name="planning_type" class="form-select" required>
+                        <option value="semanal"    {% if form.get('planning_type') == 'semanal'    %}selected{% endif %}>Semanal</option>
+                        <option value="quincenal"  {% if form.get('planning_type') == 'quincenal'  %}selected{% endif %}>Quincenal</option>
+                        <option value="mensual"    {% if form.get('planning_type') == 'mensual'    %}selected{% endif %}>Mensual</option>
+                        <option value="bimensual"  {% if form.get('planning_type') == 'bimensual'  %}selected{% endif %}>Bimensual</option>
+                        <option value="trimestral" {% if form.get('planning_type') == 'trimestral' %}selected{% endif %}>Trimestral</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Rol del docente en el plan</label>
+                    <select name="teacher_role_in_plan" class="form-select">
+                        <option value="titular">Titular</option>
+                        <option value="especialista">Especialista</option>
+                        <option value="auxiliar">Auxiliar</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Momento pedagógico</label>
+                    <input type="text" name="pedagogical_moment" class="form-control"
+                           value="{{ form.get('pedagogical_moment', '') }}"
+                           placeholder="Ej: I Momento">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Curso (opcional)</label>
+                    <select name="course_code" class="form-select">
+                        <option value="">-- Sin curso específico --</option>
+                        {% for c in courses %}
+                            <option value="{{ c.code }}">{{ c.name }} ({{ c.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Grado</label>
+                    <input type="text" name="grade" class="form-control"
+                           value="{{ form.get('grade', '') }}"
+                           placeholder="Ej: 1er Grado">
+                </div>
+
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">Sección</label>
+                    <input type="text" name="section" class="form-control"
+                           value="{{ form.get('section', '') }}"
+                           placeholder="A">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Matrícula</label>
+                    <input type="number" name="enrollment_count" class="form-control"
+                           value="{{ form.get('enrollment_count', '') }}"
+                           min="0">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Lugar</label>
+                    <select name="location_type" class="form-select">
+                        <option value="aula">En el aula</option>
+                        <option value="fuera_aula">Fuera del aula</option>
+                        <option value="ambos">Ambos</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de inicio *</label>
+                    <input type="date" name="start_date" class="form-control"
+                           value="{{ form.get('start_date', '') }}" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de finalización *</label>
+                    <input type="date" name="end_date" class="form-control"
+                           value="{{ form.get('end_date', '') }}" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-book me-2 text-primary"></i>Fundamentación
+            </h5>
+
+            <div class="mb-3">
+                <label class="form-label">Título del proyecto de aprendizaje</label>
+                <input type="text" name="learning_project_title" class="form-control"
+                       value="{{ form.get('learning_project_title', '') }}"
+                       placeholder="Ej: La matemática en mi comunidad">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Diagnóstico situacional</label>
+                <textarea name="situational_diagnosis" class="form-control" rows="3"
+                          placeholder="Descripción breve del contexto y necesidades del grupo">{{ form.get('situational_diagnosis', '') }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Fundamentación teórica</label>
+                <textarea name="theoretical_foundation" class="form-control" rows="3">{{ form.get('theoretical_foundation', '') }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Propósitos</label>
+                    <textarea name="purposes" class="form-control" rows="3">{{ form.get('purposes', '') }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Línea de investigación</label>
+                    <textarea name="research_line" class="form-control" rows="3">{{ form.get('research_line', '') }}</textarea>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Observaciones generales</label>
+                <textarea name="general_observations" class="form-control" rows="2">{{ form.get('general_observations', '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Crear plan
+        </button>
+        <a href="{{ url_for('plans.list_view') }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i>Cancelar
+        </a>
+    </div>
+</form>
+
+{% endblock %}

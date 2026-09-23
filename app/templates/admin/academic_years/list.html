@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Años Escolares{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-calendar-range me-2"></i>Años Escolares
+    <span class="badge bg-primary ms-2">{{ years|length }}</span>
+</h2>
+
+{# ---------- Aviso del año activo ---------- #}
+{% if active %}
+<div class="alert alert-success d-flex align-items-center justify-content-between">
+    <div>
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Año activo:</strong> {{ active.name }}
+        <span class="text-muted ms-2">
+            ({{ active.start_date }} → {{ active.end_date }})
+        </span>
+    </div>
+    <span class="badge bg-success">En curso</span>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>No hay un año escolar activo.</strong>
+    Los docentes no podrán crear planes hasta que actives uno.
+</div>
+{% endif %}
+
+{# ---------- Aviso del año próximo ---------- #}
+{% if next_year %}
+<div class="alert alert-info">
+    <i class="bi bi-hourglass-split me-2"></i>
+    <strong>Año en preparación:</strong> {{ next_year.name }}
+    <span class="text-muted ms-2">
+        ({{ next_year.start_date }} → {{ next_year.end_date }})
+    </span>
+</div>
+{% endif %}
+
+{# ---------- Botón crear ---------- #}
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ url_for('academic_years.create_view') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo año escolar
+    </a>
+</div>
+
+{# ---------- Tabla ---------- #}
+{% if years %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nombre</th>
+                <th>Período</th>
+                <th>Duración</th>
+                <th class="text-center">Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for y in years %}
+            <tr {% if y.is_active %}class="table-success"{% endif %}>
+                <td>
+                    <strong>{{ y.name }}</strong>
+                </td>
+                <td>
+                    <small>
+                        <i class="bi bi-calendar-event me-1"></i>{{ y.start_date }}
+                        <br>
+                        <i class="bi bi-calendar-check me-1"></i>{{ y.end_date }}
+                    </small>
+                </td>
+                <td>
+                    {% set start = y.start_date %}
+                    {% set end = y.end_date %}
+                    <small class="text-muted">Inicio a fin</small>
+                </td>
+                <td class="text-center">
+                    {% if y.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                    {% elif y.is_next %}
+                        <span class="badge bg-info text-dark">Próximo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+
+                        {# --- Activar (si no está activo) --- #}
+                        {% if not y.is_active %}
+                        <button type="button"
+                                class="btn btn-outline-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-activate-{{ y.id }}"
+                                title="Activar este año">
+                            <i class="bi bi-play-circle"></i>
+                        </button>
+                        {% endif %}
+
+                        {# --- Marcar como próximo (si no está activo) --- #}
+                        {% if not y.is_active and not y.is_next %}
+                        <form method="POST"
+                              action="{{ url_for('academic_years.mark_next_view', year_id=y.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('¿Marcar {{ y.name }} como próximo año en preparación?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn btn-outline-info"
+                                    title="Marcar como próximo">
+                                <i class="bi bi-hourglass-split"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {# --- Eliminar (solo si no está activo) --- #}
+                        {% if not y.is_active %}
+                        <form method="POST"
+                              action="{{ url_for('academic_years.delete_view', year_id=y.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('¿Eliminar el año escolar {{ y.name }}? Esta acción no se puede deshacer.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn btn-outline-danger"
+                                    title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ---------- Modales de confirmación para activar ---------- #}
+{% for y in years %}
+    {% if not y.is_active %}
+    <div class="modal fade" id="modal-activate-{{ y.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{{ url_for('academic_years.activate_view', year_id=y.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="confirm" value="yes">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                            Confirmar activación
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p>Vas a activar el año escolar:</p>
+                        <h4 class="text-center mb-3">{{ y.name }}</h4>
+                        <p class="text-muted small mb-0">
+                            <strong>Consecuencias:</strong>
+                        </p>
+                        <ul class="small text-muted">
+                            {% if active %}
+                                <li>El año <strong>{{ active.name }}</strong> pasará a inactivo automáticamente.</li>
+                                <li>Los planes de aula del año anterior <strong>se conservan</strong> y quedan consultables.</li>
+                            {% endif %}
+                            <li>Los nuevos planes de aula se asociarán a <strong>{{ y.name }}</strong>.</li>
+                            <li>Los docentes verán este año como el "año en curso" en sus paneles.</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>Sí, activar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-calendar-x display-4 d-block mb-2 opacity-50"></i>
+    No hay años escolares registrados.<br>
+    <a href="{{ url_for('academic_years.create_view') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-circle me-1"></i>Crear el primer año escolar
+    </a>
+</div>
+{% endif %}
+
+{# ---------- Nota informativa ---------- #}
+<div class="card mt-4">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-info-circle me-2 text-primary"></i>¿Cómo funciona el ciclo?
+        </h6>
+        <ol class="small text-muted mb-0">
+            <li>Cuando empieza el año escolar, actívalo con el botón verde.</li>
+            <li>El año anterior pasa automáticamente a inactivo, pero sus datos se conservan.</li>
+            <li>Durante el año activo, crea el <strong>año siguiente</strong> y márcalo como "próximo".</li>
+            <li>Cuando termine el ciclo actual, activa el que estaba en preparación.</li>
+            <li>Los planes de aula quedan vinculados al año en que se crearon, así que el histórico nunca se pierde.</li>
+        </ol>
+    </div>
+</div>
+
+{% endblock %}

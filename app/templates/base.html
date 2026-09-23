@@ -80,6 +80,13 @@
                     </a>
                 </li>
             {% endif %}
+            {% if current_user.role == 'maestro' %}
+                <li>
+                    <a class="nav-link" href="{{ url_for('plans.list_view') }}">
+                        <i class="bi bi-journal-text"></i> Mis planes de aula
+                    </a>
+                </li>
+            {% endif %}
 
             {% if current_user.role == 'maestro' %}
                 <li>
@@ -212,6 +219,11 @@
                     <a class="nav-link disabled" href="#" title="Próximamente">
                         <i class="bi bi-cash-coin"></i> Pagos
                         <small class="ms-auto text-muted">(pronto)</small>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url_for('academic_years.list_view') }}">
+                        <i class="bi bi-calendar-range"></i> Años escolares
                     </a>
                 </li>
             </ul>

@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% block title %}Editar Plan de Aula{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-pencil-square me-2"></i>Editar Plan de Aula
+</h2>
+
+{% if plan.status == 'devuelto' %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>El directivo te devolvió este plan para corrección.</strong>
+    Revisa las recomendaciones en la pestaña <a href="{{ url_for('plans.detail_view', plan_id=plan.id) }}">Detalle</a>
+    y ajusta lo necesario.
+</div>
+{% endif %}
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    Estado actual: <strong class="text-capitalize">{{ plan.status }}</strong>.
+    Guarda los cambios antes de enviar a revisión.
+</div>
+
+{# ==================== PESTAÑAS ==================== #}
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+            <i class="bi bi-info-circle me-1"></i>Datos generales
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-areas" type="button">
+            <i class="bi bi-book me-1"></i>Áreas
+            {% if areas %}<span class="badge bg-primary ms-1">{{ areas|length }}</span>{% endif %}
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-actions" type="button">
+            <i class="bi bi-check2-circle me-1"></i>Acciones
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    {# ==================== TAB: DATOS GENERALES ==================== #}
+    <div class="tab-pane fade show active" id="tab-general">
+        <form method="POST" action="{{ url_for('plans.edit_view', plan_id=plan.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de planificación</label>
+                            <select name="planning_type" class="form-select">
+                                {% for t in ['semanal','quincenal','mensual','bimensual','trimestral'] %}
+                                    <option value="{{ t }}" {% if plan.planning_type == t %}selected{% endif %}>
+                                        {{ t|capitalize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Momento pedagógico</label>
+                            <input type="text" name="pedagogical_moment" class="form-control"
+                                   value="{{ plan.pedagogical_moment or '' }}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Curso</label>
+                            <select name="course_code" class="form-select">
+                                <option value="">-- Sin curso específico --</option>
+                                {% for c in courses %}
+                                    <option value="{{ c.code }}" {% if plan.course_code == c.code %}selected{% endif %}>
+                                        {{ c.name }} ({{ c.code }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Grado</label>
+                            <input type="text" name="grade" class="form-control"
+                                   value="{{ plan.grade or '' }}">
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Sección</label>
+                            <input type="text" name="section" class="form-control"
+                                   value="{{ plan.section or '' }}">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Matrícula</label>
+                            <input type="number" name="enrollment_count" class="form-control"
+                                   value="{{ plan.enrollment_count or '' }}">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Lugar</label>
+                            <select name="location_type" class="form-select">
+                                {% for t in ['aula','fuera_aula','ambos'] %}
+                                    <option value="{{ t }}" {% if plan.location_type == t %}selected{% endif %}>
+                                        {% if t == 'aula' %}En el aula{% elif t == 'fuera_aula' %}Fuera del aula{% else %}Ambos{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha de inicio</label>
+                            <input type="date" name="start_date" class="form-control"
+                                   value="{{ plan.start_date }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha de finalización</label>
+                            <input type="date" name="end_date" class="form-control"
+                                   value="{{ plan.end_date }}" required>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Título del proyecto</label>
+                            <input type="text" name="learning_project_title" class="form-control"
+                                   value="{{ plan.learning_project_title or '' }}">
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Diagnóstico situacional</label>
+                            <textarea name="situational_diagnosis" class="form-control" rows="3">{{ plan.situational_diagnosis or '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Fundamentación teórica</label>
+                            <textarea name="theoretical_foundation" class="form-control" rows="3">{{ plan.theoretical_foundation or '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Propósitos</label>
+                            <textarea name="purposes" class="form-control" rows="3">{{ plan.purposes or '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Línea de investigación</label>
+                            <textarea name="research_line" class="form-control" rows="3">{{ plan.research_line or '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Observaciones generales</label>
+                            <textarea name="general_observations" class="form-control" rows="2">{{ plan.general_observations or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# ==================== TAB: ÁREAS Y ACTIVIDADES ==================== #}
+    <div class="tab-pane fade" id="tab-areas">
+
+        {# --- Formulario para agregar área --- #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-plus-circle me-2 text-success"></i>Agregar área de formación
+                </h5>
+                <form method="POST" action="{{ url_for('plans.add_area', plan_id=plan.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Área de formación *</label>
+                            <input type="text" name="formation_area" class="form-control" required
+                                   placeholder="Ej: Matemática, Lengua, Ciencias Naturales">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Abordaje pedagógico</label>
+                            <input type="text" name="pedagogical_approach" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Componentes curriculares</label>
+                            <textarea name="curricular_components" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Temas indispensables</label>
+                            <textarea name="essential_themes" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Contenidos</label>
+                            <textarea name="contents" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Aprendizajes esperados</label>
+                            <textarea name="expected_learning" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <label class="form-label small">Tareas</label>
+                            <textarea name="tasks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm mt-2">
+                        <i class="bi bi-plus me-1"></i>Agregar área
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {# --- Lista de áreas con sus actividades --- #}
+        {% for area in areas %}
+        <div class="card mb-3 border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <strong><i class="bi bi-bookmark-fill me-2"></i>{{ area.formation_area }}</strong>
+                <form method="POST"
+                      action="{{ url_for('plans.delete_area', area_id=area.id) }}"
+                      onsubmit="return confirm('¿Eliminar esta área y todas sus actividades?');"
+                      style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-light">
+                        <i class="bi bi-trash text-danger"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                {% if area.pedagogical_approach %}
+                    <p class="small text-muted mb-2"><strong>Abordaje:</strong> {{ area.pedagogical_approach }}</p>
+                {% endif %}
+                {% if area.contents %}
+                    <p class="small mb-2"><strong>Contenidos:</strong> {{ area.contents }}</p>
+                {% endif %}
+
+                <hr>
+                <h6 class="mb-3"><i class="bi bi-list-check me-1"></i>Actividades</h6>
+
+                {% if area.activities %}
+                    <div class="list-group mb-3">
+                    {% for act in area.activities %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ act.title }}</strong>
+                                    {% if act.start_datetime %}
+                                        <br><small class="text-muted">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            {{ act.start_datetime }}
+                                            {% if act.end_datetime %} → {{ act.end_datetime }}{% endif %}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                <form method="POST"
+                                      action="{{ url_for('plans.delete_activity', activity_id=act.id) }}"
+                                      onsubmit="return confirm('¿Eliminar esta actividad?');"
+                                      style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small">Sin actividades registradas.</p>
+                {% endif %}
+
+                {# Formulario rápido para agregar actividad #}
+                <details>
+                    <summary class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar actividad
+                    </summary>
+                    <form method="POST"
+                          action="{{ url_for('plans.add_activity', area_id=area.id) }}"
+                          class="mt-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-8 mb-2">
+                                <label class="form-label small">Título *</label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Estrategia</label>
+                                <input type="text" name="strategy" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Descripción</label>
+                                <textarea name="description" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Indicadores</label>
+                                <textarea name="indicators" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Técnica de evaluación</label>
+                                <input type="text" name="evaluation_technique" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Instrumento</label>
+                                <input type="text" name="evaluation_instrument" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Recursos</label>
+                                <input type="text" name="resources" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Inicio</label>
+                                <input type="datetime-local" name="start_datetime" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Fin</label>
+                                <input type="datetime-local" name="end_datetime" class="form-control">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Lugar</label>
+                                <input type="text" name="location" class="form-control">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">
+                            <i class="bi bi-check me-1"></i>Guardar actividad
+                        </button>
+                    </form>
+                </details>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+            Aún no has agregado áreas a este plan.
+        </div>
+        {% endfor %}
+    </div>
+
+    {# ==================== TAB: ACCIONES ==================== #}
+    <div class="tab-pane fade" id="tab-actions">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-send-check me-2 text-success"></i>Enviar a revisión
+                </h5>
+                <p class="text-muted">
+                    Cuando estés conforme con el plan, envíalo a revisión.
+                    El directivo lo evaluará y podrá aprobarlo o devolverlo con recomendaciones.
+                </p>
+
+                <form method="POST" action="{{ url_for('plans.submit_view', plan_id=plan.id) }}"
+                      onsubmit="return confirm('¿Enviar este plan a revisión? No podrás editarlo mientras esté en evaluación.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-send me-1"></i>Enviar a revisión
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <h5 class="card-title mb-3 text-danger">
+                    <i class="bi bi-trash me-2"></i>Eliminar plan
+                </h5>
+                <p class="text-muted small">
+                    Esta acción marca el plan como eliminado, pero conserva el historial.
+                </p>
+                <form method="POST" action="{{ url_for('plans.delete_view', plan_id=plan.id) }}"
+                      onsubmit="return confirm('¿Eliminar este plan?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>Eliminar plan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
