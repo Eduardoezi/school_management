@@ -1,8 +1,10 @@
+# app/__init__.py
 from datetime import datetime
-from flask_wtf.csrf import CSRFProtect
+
 from flask import Flask, redirect, url_for, flash, render_template, request
 from flask_login import LoginManager, current_user
-from app.models.teacher import Teacher
+from flask_wtf.csrf import CSRFProtect
+
 from app.config import Config
 from app.models.user import User
 from app.utils.db import get_db_connection
@@ -14,56 +16,12 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Por favor inicia sesión para acceder.'
 login_manager.login_message_category = 'warning'
 
-csrf = CSRFProtect()                            
+csrf = CSRFProtect()
+
 
 # ============================================================
-# Context processors
+# Flask-Login
 # ============================================================
-def _register_context_processors(app: Flask) -> None:
-    """
-    Registra variables disponibles en TODAS las plantillas.
-
-    Inyecta:
-        now           → datetime actual.
-        teacher       → dict del docente vinculado o None.
-        display_name  → nombre visible (docente completo o username).
-        role_label    → etiqueta legible del rol.
-    """
-    from flask import g
-
-    @app.context_processor
-    def inject_now() -> dict:
-        return {'now': datetime.now()}
-
-    @app.context_processor
-    def inject_user_display() -> dict:
-        # ---------- Docente (cacheado por request) ----------
-        if not hasattr(g, '_current_teacher'):
-            teacher = None
-            if current_user.is_authenticated:
-                try:
-                    teacher = Teacher.get_by_user_id(current_user.id)
-                except Exception as exc:
-                    app.logger.exception(
-                        '[inject_user_display] Error obteniendo docente: %s', exc
-                    )
-                    teacher = None
-            g._current_teacher = teacher
-
-        # ---------- Nombre visible (cacheado) ----------
-        if not hasattr(g, '_display_name'):
-            g._display_name = _build_display_name(current_user, g._current_teacher)
-
-        # ---------- Rol legible (cacheado) ----------
-        if not hasattr(g, '_role_label'):
-            g._role_label = _build_role_label(current_user)
-
-        return {
-            'teacher':      g._current_teacher,
-            'display_name': g._display_name,
-            'role_label':   g._role_label,
-        }
-
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -72,13 +30,14 @@ def load_user(user_id):
         return None
 
 
-# ---------- Fábrica de la app ----------
+# ============================================================
+# Fábrica de la app
+# ============================================================
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
 
-    # Inicializar extensiones
-    csrf.init_app(app)                           # ← NUEVO
+    csrf.init_app(app)
     login_manager.init_app(app)
 
     _register_blueprints(app)
@@ -89,7 +48,9 @@ def create_app(config_object=Config):
     return app
 
 
-# ---------- Helpers internos ----------
+# ============================================================
+# Blueprints
+# ============================================================
 def _register_blueprints(app: Flask) -> None:
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
@@ -109,29 +70,39 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.webauthn_auth import webauthn_bp
     from app.routes.plans import plans_bp
     from app.routes.academic_years import academic_years_bp
+    from app.routes.calendar import calendar_bp
 
     for bp in (
         documents_bp, auth_bp, main_bp, students_bp, enrollment_bp,
         teachers_bp, courses_bp, attendance_bp, schedule_bp,
-        daily_stats_bp, evaluations_bp, admin_bp, profile_bp,
-        student_profile_bp, staff_profile_bp, webauthn_bp, plans_bp, academic_years_bp,
+        daily_stats_bp, evaluations_bp, admin_bp, profile_bp, calendar_bp,
+        student_profile_bp, staff_profile_bp, webauthn_bp, plans_bp,
+        academic_years_bp,
     ):
         app.register_blueprint(bp)
 
 
+# ============================================================
+# Manejadores de errores
+# ============================================================
 def _register_error_handlers(app: Flask) -> None:
     @app.errorhandler(413)
     def too_large(e):
         flash('El archivo es demasiado grande. Máximo 2 MB.', 'danger')
         return redirect(request.referrer or url_for('main.index'))
 
-    # ---------- Manejo de errores ----------
     @app.errorhandler(403)
     def forbidden(e):
-        """Página 403 personalizada."""
         return render_template('errors/403.html'), 403
 
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template('errors/404.html'), 404
 
+
+# ============================================================
+# Hooks por request
+# ============================================================
 def _register_request_hooks(app: Flask) -> None:
     @app.before_request
     def update_last_seen():
@@ -171,24 +142,47 @@ def _register_request_hooks(app: Flask) -> None:
 
 
 # ============================================================
+# Context processors
+# ============================================================
+def _register_context_processors(app: Flask) -> None:
+    from flask import g
+
+    @app.context_processor
+    def inject_now() -> dict:
+        return {'now': datetime.now()}
+
+    @app.context_processor
+    def inject_user_display() -> dict:
+        if not hasattr(g, '_current_teacher'):
+            teacher = None
+            if current_user.is_authenticated:
+                try:
+                    from app.models.teacher import Teacher
+                    teacher = Teacher.get_by_user_id(current_user.id)
+                except Exception as exc:
+                    app.logger.exception(
+                        '[inject_user_display] Error obteniendo docente: %s', exc
+                    )
+                    teacher = None
+            g._current_teacher = teacher
+
+        if not hasattr(g, '_display_name'):
+            g._display_name = _build_display_name(current_user, g._current_teacher)
+
+        if not hasattr(g, '_role_label'):
+            g._role_label = _build_role_label(current_user)
+
+        return {
+            'teacher':      g._current_teacher,
+            'display_name': g._display_name,
+            'role_label':   g._role_label,
+        }
+
+
+# ============================================================
 # Helpers de presentación
 # ============================================================
 def _build_display_name(user, teacher) -> str:
-    """
-    Construye el nombre visible del usuario.
-
-    Reglas:
-        - Usuario con docente vinculado → "Nombre Apellido".
-        - Usuario sin docente            → username.
-        - Usuario anónimo                → cadena vacía.
-
-    Args:
-        user:    instancia de User (puede ser anónimo).
-        teacher: dict del docente o None.
-
-    Returns:
-        Cadena lista para mostrar en UI.
-    """
     if not getattr(user, 'is_authenticated', False):
         return ''
 
@@ -202,15 +196,6 @@ def _build_display_name(user, teacher) -> str:
 
 
 def _build_role_label(user) -> str:
-    """
-    Etiqueta legible del rol.
-
-    Args:
-        user: instancia de User.
-
-    Returns:
-        Rol capitalizado y traducido, o cadena vacía si anónimo.
-    """
     if not getattr(user, 'is_authenticated', False):
         return ''
 

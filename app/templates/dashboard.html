@@ -75,7 +75,9 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Acciones rápidas</h5>
+                <h5 class="card-title">
+                    <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Acciones rápidas
+                </h5>
                 <div class="d-grid gap-2 mt-3">
                     {% if current_user.role in ['directivo', 'secretario'] %}
                         <a href="{{ url_for('students.create_view') }}" class="btn btn-outline-primary text-start">
@@ -85,6 +87,7 @@
                             <i class="bi bi-clipboard-plus-fill me-2"></i>Nueva inscripción
                         </a>
                     {% endif %}
+
                     {% if current_user.role == 'directivo' %}
                         <a href="{{ url_for('teachers.create_view') }}" class="btn btn-outline-primary text-start">
                             <i class="bi bi-person-badge me-2"></i>Registrar docente
@@ -92,8 +95,15 @@
                         <a href="{{ url_for('courses.create_view') }}" class="btn btn-outline-primary text-start">
                             <i class="bi bi-plus-square-fill me-2"></i>Crear curso
                         </a>
+                        <a href="{{ url_for('academic_years.list_view') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-calendar-range me-2"></i>Gestionar años escolares
+                        </a>
                     {% endif %}
+
                     {% if current_user.role == 'maestro' %}
+                        <a href="{{ url_for('plans.create_view') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-journal-plus me-2"></i>Crear plan de aula
+                        </a>
                         <a href="{{ url_for('daily_stats.my_report') }}" class="btn btn-outline-primary text-start">
                             <i class="bi bi-journal-text me-2"></i>Reportar asistencia del día
                         </a>
@@ -109,12 +119,15 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-clock-history text-primary me-2"></i>Últimas actividades</h5>
-                <ul class="list-group list-group-flush mt-3">
-                    <li class="list-group-item px-0">🔹 Actualización de notas pendiente</li>
-                    <li class="list-group-item px-0">🔹 Inscripciones abiertas</li>
-                    <li class="list-group-item px-0">🔹 Reunión de profesores mañana</li>
-                </ul>
+                <h5 class="card-title">
+                    <i class="bi bi-calendar-event text-primary me-2"></i>Calendario escolar
+                </h5>
+                <p class="text-muted small mb-3">
+                    Consulta las actividades oficiales y las propias de la escuela.
+                </p>
+                <a href="{{ url_for('calendar.index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-calendar3 me-1"></i>Ver calendario
+                </a>
             </div>
         </div>
     </div>

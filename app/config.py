@@ -45,7 +45,7 @@ class Config:
 
     # ---------- SSL (Let's Encrypt via win-acme) ----------
     SSL_CERT = os.getenv('SSL_CERT') or r'C:\certs\gestionescolar.duckdns.org\gestionescolar.duckdns.org-chain.pem'
-    SSL_KEY  = os.getenv('SSL_KEY')  or r'C:\certs\gestionescolar.duckdns.org\gestionescolar.duckdns.org-key.pem'
+    SSL_KEY = os.getenv('SSL_KEY') or r'C:\certs\gestionescolar.duckdns.org\gestionescolar.duckdns.org-key.pem'
 
     # ---------- Base de datos MySQL ----------
     MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
@@ -57,16 +57,20 @@ class Config:
     # ---------- Cookies / sesión ----------
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = _as_bool(
-        os.getenv('SESSION_COOKIE_SECURE'), default=True
-    )   # True porque ya sirves por HTTPS
+    SESSION_COOKIE_SECURE = _as_bool(os.getenv('SESSION_COOKIE_SECURE'), default=True)
 
     # ---------- Subida de archivos ----------
-    MAX_CONTENT_LENGTH = 2 * 1024 * 1024   # 2 MB
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2 MB
     UPLOAD_FOLDER = str(BASE_DIR / 'app' / 'static' / 'uploads')
     ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+
+    # ---------- Subida de calendarios ----------
+    CALENDAR_UPLOAD_FOLDER = str(BASE_DIR / 'app' / 'static' / 'uploads' / 'calendars')
 
     # ---------- WebAuthn ----------
     WEBAUTHN_RP_ID = os.getenv('WEBAUTHN_RP_ID', 'gestionescolar.duckdns.org')
     WEBAUTHN_RP_NAME = os.getenv('WEBAUTHN_RP_NAME', 'Sistema Escolar IEE Villa de Cura')
     WEBAUTHN_ORIGIN = os.getenv('WEBAUTHN_ORIGIN', 'https://gestionescolar.duckdns.org:5000')
+
+    # ---------- Cifrado de cuentas bancarias ----------
+    BANK_ENCRYPTION_KEY = os.getenv('BANK_ENCRYPTION_KEY')

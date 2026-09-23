@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{% if event %}Editar evento{% else %}Nuevo evento{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('calendar.manage', calendar_id=calendar.id) }}"><i class="bi bi-arrow-left"></i></a>
+    <div><h1 class="page-title mb-0">{% if event %}Editar evento{% else %}Nuevo evento{% endif %}</h1><small class="text-muted">{{ calendar.academic_year }} - {{ calendar.title }}</small></div>
+</div>
+<div class="card"><div class="card-body">
+    <form method="POST" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-8">
+            <label class="form-label" for="title">Título</label>
+            <input class="form-control" id="title" name="title" maxlength="200" required value="{{ request.form.get('title', event.title if event else '') }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="origin">Origen</label>
+            {% set selected_origin = request.form.get('origin', event.origin if event else 'escuela') %}
+            <select class="form-select" id="origin" name="origin">
+                <option value="ministerio" {% if selected_origin == 'ministerio' %}selected{% endif %}>Ministerio</option>
+                <option value="escuela" {% if selected_origin == 'escuela' %}selected{% endif %}>Escuela</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="start_date">Fecha inicial</label>
+            <input class="form-control" type="date" id="start_date" name="start_date" required value="{{ request.form.get('start_date', event.start_date.isoformat() if event else '') }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="end_date">Fecha final</label>
+            <input class="form-control" type="date" id="end_date" name="end_date" required value="{{ request.form.get('end_date', event.end_date.isoformat() if event else '') }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="category">Categoría</label>
+            {% set selected_category = request.form.get('category', event.category if event else 'actividad') %}
+            <select class="form-select" id="category" name="category">
+                {% for category in categories %}<option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category|capitalize }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="source_page">Página del PDF</label>
+            <input class="form-control" type="number" min="1" max="999" id="source_page" name="source_page" value="{{ request.form.get('source_page', event.source_page if event and event.source_page else '') }}">
+        </div>
+        <div class="col-md-8 d-flex align-items-end gap-4 pb-2">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="affects_classes" name="affects_classes" {% if (request.method == 'POST' and request.form.get('affects_classes')) or (request.method != 'POST' and event and event.affects_classes) %}checked{% endif %}>
+                <label class="form-check-label" for="affects_classes">Suspende clases</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="affects_attendance" name="affects_attendance" {% if (request.method == 'POST' and request.form.get('affects_attendance')) or (request.method != 'POST' and event and event.affects_attendance) %}checked{% endif %}>
+                <label class="form-check-label" for="affects_attendance">Afecta asistencia</label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="description">Descripción</label>
+            <textarea class="form-control" id="description" name="description" rows="4" maxlength="4000">{{ request.form.get('description', event.description if event and event.description else '') }}</textarea>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2">
+            <a class="btn btn-outline-secondary" href="{{ url_for('calendar.manage', calendar_id=calendar.id) }}">Cancelar</a>
+            <button class="btn btn-primary" type="submit">Guardar evento</button>
+        </div>
+    </form>
+</div></div>
+{% endblock %}
