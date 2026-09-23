@@ -212,15 +212,17 @@
 
         {# --- Lista de áreas con sus actividades --- #}
         {% for area in areas %}
-        <div class="card mb-3 border-primary">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <strong><i class="bi bi-bookmark-fill me-2"></i>{{ area.formation_area }}</strong>
+        <div class="d-flex gap-1">
+                <a href="{{ url_for('plans.edit_area', area_id=area.id) }}"
+                class="btn btn-sm btn-light" title="Editar área">
+                    <i class="bi bi-pencil"></i>
+                </a>
                 <form method="POST"
-                      action="{{ url_for('plans.delete_area', area_id=area.id) }}"
-                      onsubmit="return confirm('¿Eliminar esta área y todas sus actividades?');"
-                      style="display:inline;">
+                    action="{{ url_for('plans.delete_area', area_id=area.id) }}"
+                    onsubmit="return confirm('¿Eliminar esta área y todas sus actividades?');"
+                    style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-light">
+                    <button type="submit" class="btn btn-sm btn-light" title="Eliminar área">
                         <i class="bi bi-trash text-danger"></i>
                     </button>
                 </form>
@@ -251,16 +253,21 @@
                                         </small>
                                     {% endif %}
                                 </div>
-                                <form method="POST"
-                                      action="{{ url_for('plans.delete_activity', activity_id=act.id) }}"
-                                      onsubmit="return confirm('¿Eliminar esta actividad?');"
-                                      style="display:inline;">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('plans.edit_activity', activity_id=act.id) }}"
+                                    class="btn btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="POST"
+                                        action="{{ url_for('plans.delete_activity', activity_id=act.id) }}"
+                                        onsubmit="return confirm('¿Eliminar esta actividad?');"
+                                        style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                         </div>
                     {% endfor %}
                     </div>
@@ -346,13 +353,10 @@
                     El directivo lo evaluará y podrá aprobarlo o devolverlo con recomendaciones.
                 </p>
 
-                <form method="POST" action="{{ url_for('plans.submit_view', plan_id=plan.id) }}"
-                      onsubmit="return confirm('¿Enviar este plan a revisión? No podrás editarlo mientras esté en evaluación.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-send me-1"></i>Enviar a revisión
-                    </button>
-                </form>
+                <a href="{{ url_for('plans.validate_view', plan_id=plan.id) }}"
+                    class="btn btn-success">
+                        <i class="bi bi-clipboard-check me-1"></i>Validar y enviar
+                    </a>
 
                 <hr class="my-4">
 

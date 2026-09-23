@@ -11,6 +11,14 @@
     Año escolar: <strong>{{ year.name }}</strong>
 </p>
 
+{% if not assignments %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>No tienes cursos asignados en este año escolar.</strong>
+    Contacta al directivo para que te asigne al menos un curso.
+</div>
+{% endif %}
+
 <form method="POST" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -33,7 +41,7 @@
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Rol del docente en el plan</label>
+                    <label class="form-label">Rol del docente</label>
                     <select name="teacher_role_in_plan" class="form-select">
                         <option value="titular">Titular</option>
                         <option value="especialista">Especialista</option>
@@ -47,38 +55,39 @@
                            value="{{ form.get('pedagogical_moment', '') }}"
                            placeholder="Ej: I Momento">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Curso (opcional)</label>
-                    <select name="course_code" class="form-select">
+
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Curso asignado</label>
+                    <select name="course_code" class="form-select" id="course_select">
                         <option value="">-- Sin curso específico --</option>
-                        {% for c in courses %}
-                            <option value="{{ c.code }}">{{ c.name }} ({{ c.code }})</option>
+                        {% for a in assignments %}
+                            <option value="{{ a.course_code }}"
+                                    data-grade="{{ a.grade or '' }}"
+                                    data-section="{{ a.section or '' }}"
+                                    data-enrollment="{{ a.enrollment_count }}"
+                                    data-role="{{ a.role_in_course }}"
+                                    {% if form.get('course_code') == a.course_code %}selected{% endif %}>
+                                {{ a.course_name }} — {{ a.grade or '' }} {{ a.section or '' }} —
+                                {{ a.enrollment_count }} estudiantes — {{ a.role_in_course|capitalize }}
+                            </option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted">
+                        Solo aparecen los cursos que tienes asignados este año.
+                    </small>
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Grado</label>
-                    <input type="text" name="grade" class="form-control"
-                           value="{{ form.get('grade', '') }}"
-                           placeholder="Ej: 1er Grado">
+                    <label class="form-label">Matrícula actual</label>
+                    <input type="text" id="enrollment_display" class="form-control" readonly
+                           value="{{ form.get('enrollment_count', '') or '—' }}">
+                    <small class="text-muted">Se calcula automáticamente.</small>
                 </div>
 
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">Sección</label>
-                    <input type="text" name="section" class="form-control"
-                           value="{{ form.get('section', '') }}"
-                           placeholder="A">
-                </div>
+                <input type="hidden" name="grade"   id="grade_input"   value="{{ form.get('grade', '') }}">
+                <input type="hidden" name="section" id="section_input" value="{{ form.get('section', '') }}">
 
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Matrícula</label>
-                    <input type="number" name="enrollment_count" class="form-control"
-                           value="{{ form.get('enrollment_count', '') }}"
-                           min="0">
-                </div>
-
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Lugar</label>
                     <select name="location_type" class="form-select">
                         <option value="aula">En el aula</option>
@@ -87,13 +96,13 @@
                     </select>
                 </div>
 
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Fecha de inicio *</label>
                     <input type="date" name="start_date" class="form-control"
                            value="{{ form.get('start_date', '') }}" required>
                 </div>
 
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Fecha de finalización *</label>
                     <input type="date" name="end_date" class="form-control"
                            value="{{ form.get('end_date', '') }}" required>
@@ -111,14 +120,12 @@
             <div class="mb-3">
                 <label class="form-label">Título del proyecto de aprendizaje</label>
                 <input type="text" name="learning_project_title" class="form-control"
-                       value="{{ form.get('learning_project_title', '') }}"
-                       placeholder="Ej: La matemática en mi comunidad">
+                       value="{{ form.get('learning_project_title', '') }}">
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Diagnóstico situacional</label>
-                <textarea name="situational_diagnosis" class="form-control" rows="3"
-                          placeholder="Descripción breve del contexto y necesidades del grupo">{{ form.get('situational_diagnosis', '') }}</textarea>
+                <textarea name="situational_diagnosis" class="form-control" rows="3">{{ form.get('situational_diagnosis', '') }}</textarea>
             </div>
 
             <div class="mb-3">
@@ -145,7 +152,7 @@
     </div>
 
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-success">
+        <button type="submit" class="btn btn-success" {% if not assignments %}disabled{% endif %}>
             <i class="bi bi-check-circle me-1"></i>Crear plan
         </button>
         <a href="{{ url_for('plans.list_view') }}" class="btn btn-secondary">
@@ -153,5 +160,24 @@
         </a>
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('course_select');
+    const gradeInput = document.getElementById('grade_input');
+    const sectionInput = document.getElementById('section_input');
+    const enrollmentDisplay = document.getElementById('enrollment_display');
+
+    function updateFromSelection() {
+        const opt = select.options[select.selectedIndex];
+        gradeInput.value   = opt.dataset.grade || '';
+        sectionInput.value = opt.dataset.section || '';
+        enrollmentDisplay.value = opt.dataset.enrollment || '—';
+    }
+
+    select.addEventListener('change', updateFromSelection);
+    if (select.value) updateFromSelection();
+});
+</script>
 
 {% endblock %}

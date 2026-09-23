@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Validación del plan{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-clipboard-check me-2"></i>Validación del plan
+</h2>
+
+<p class="text-muted">
+    {{ plan.learning_project_title or 'Plan sin título' }}
+</p>
+
+{% if result.is_valid %}
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>¡El plan está listo para enviarse!</strong>
+        No se encontraron problemas.
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Resumen</h5>
+            <ul class="mb-0">
+                <li>{{ result.summary.areas_count }} áreas de formación</li>
+                <li>{{ result.summary.activities_count }} actividades pedagógicas</li>
+                <li>0 errores</li>
+            </ul>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('plans.submit_view', plan_id=plan.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-success"
+                onclick="return confirm('¿Enviar el plan a revisión? No podrás editarlo mientras esté en evaluación.');">
+            <i class="bi bi-send me-1"></i>Enviar a revisión
+        </button>
+        <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}"
+           class="btn btn-secondary">Volver a editar</a>
+    </form>
+{% else %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Se encontraron {{ result.summary.total_errors }} problemas.</strong>
+        Corrígelos antes de enviar el plan a revisión.
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Problemas detectados</h5>
+            <ol class="mb-0">
+                {% for error in result.errors %}
+                    <li class="mb-1">{{ error }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
+
+    <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}"
+       class="btn btn-primary">
+        <i class="bi bi-pencil me-1"></i>Volver a editar el plan
+    </a>
+{% endif %}
+
+{% endblock %}

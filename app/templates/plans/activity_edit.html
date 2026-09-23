@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Editar actividad{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{{ url_for('plans.edit_view', plan_id=plan.id) }}">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="page-title mb-0">Editar actividad</h2>
+</div>
+
+<p class="text-muted">
+    Área: <strong>{{ area.formation_area }}</strong> ·
+    Plan: <strong>{{ plan.learning_project_title or 'Sin título' }}</strong>
+</p>
+
+<form method="POST" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Título *</label>
+                    <input type="text" name="title" class="form-control"
+                           value="{{ activity.title or '' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Estrategia *</label>
+                    <input type="text" name="strategy" class="form-control"
+                           value="{{ activity.strategy or '' }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control" rows="2">{{ activity.description or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Indicadores *</label>
+                    <textarea name="indicators" class="form-control" rows="2" required>{{ activity.indicators or '' }}</textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Técnica de evaluación *</label>
+                    <input type="text" name="evaluation_technique" class="form-control"
+                           value="{{ activity.evaluation_technique or '' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Instrumento de evaluación *</label>
+                    <input type="text" name="evaluation_instrument" class="form-control"
+                           value="{{ activity.evaluation_instrument or '' }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Recursos</label>
+                    <input type="text" name="resources" class="form-control"
+                           value="{{ activity.resources or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Inicio</label>
+                    <input type="datetime-local" name="start_datetime" class="form-control"
+                           value="{{ activity.start_datetime.strftime('%Y-%m-%dT%H:%M') if activity.start_datetime else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fin</label>
+                    <input type="datetime-local" name="end_datetime" class="form-control"
+                           value="{{ activity.end_datetime.strftime('%Y-%m-%dT%H:%M') if activity.end_datetime else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lugar</label>
+                    <input type="text" name="location" class="form-control"
+                           value="{{ activity.location or '' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar cambios
+        </button>
+        <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}" class="btn btn-secondary">
+            Cancelar
+        </a>
+    </div>
+</form>
+
+{% endblock %}

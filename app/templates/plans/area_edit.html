@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Editar área{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{{ url_for('plans.edit_view', plan_id=plan.id) }}">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="page-title mb-0">Editar área de formación</h2>
+</div>
+
+<p class="text-muted">
+    Plan: <strong>{{ plan.learning_project_title or 'Sin título' }}</strong>
+</p>
+
+<form method="POST" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Área de formación *</label>
+                    <input type="text" name="formation_area" class="form-control"
+                           value="{{ area.formation_area or '' }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Abordaje pedagógico</label>
+                    <input type="text" name="pedagogical_approach" class="form-control"
+                           value="{{ area.pedagogical_approach or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Componentes curriculares</label>
+                    <textarea name="curricular_components" class="form-control" rows="3">{{ area.curricular_components or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Temas indispensables</label>
+                    <textarea name="essential_themes" class="form-control" rows="3">{{ area.essential_themes or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contenidos *</label>
+                    <textarea name="contents" class="form-control" rows="3" required>{{ area.contents or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Aprendizajes esperados *</label>
+                    <textarea name="expected_learning" class="form-control" rows="3" required>{{ area.expected_learning or '' }}</textarea>
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Tareas</label>
+                    <textarea name="tasks" class="form-control" rows="2">{{ area.tasks or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar cambios
+        </button>
+        <a href="{{ url_for('plans.edit_view', plan_id=plan.id) }}" class="btn btn-secondary">
+            Cancelar
+        </a>
+    </div>
+</form>
+
+{% endblock %}

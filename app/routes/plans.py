@@ -271,32 +271,6 @@ def edit_view(plan_id):
                            year=year)
 
 
-# ============================================================
-# ENVIAR A REVISIÓN
-# ============================================================
-@plans_bp.route('/<int:plan_id>/submit', methods=['POST'])
-@login_required
-@role_required('maestro', 'directivo')
-@plan_access_required('edit')
-def submit_view(plan_id, plan):
-    areas = PlanArea.get_by_plan(plan_id)
-    if not areas:
-        flash('El plan debe tener al menos un área antes de enviarse.', 'warning')
-        return redirect(url_for('plans.edit_view', plan_id=plan_id))
-
-    if ClassroomPlan.submit_for_review(plan_id):
-        PlanReview.create(
-            plan_id=plan_id,
-            reviewer_id=current_user.id,
-            action='comentario',
-            comment='Plan enviado a revisión por el docente.',
-        )
-        flash('Plan enviado a revisión.', 'success')
-    else:
-        flash('Error al enviar el plan.', 'danger')
-
-    return redirect(url_for('plans.detail_view', plan_id=plan_id))
-
 
 # ============================================================
 # SOFT DELETE
@@ -405,3 +379,114 @@ def delete_activity(activity_id, activity, area, plan):
     else:
         flash('Error al eliminar.', 'danger')
     return redirect(url_for('plans.edit_view', plan_id=plan['id']))
+
+# ============================================================
+# EDITAR ÁREA
+# ============================================================
+@plans_bp.route('/areas/<int:area_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('maestro', 'directivo')
+@area_access_required('edit')
+def edit_area(area_id, area, plan):
+    if request.method == 'POST':
+        data = {
+            'formation_area':        request.form.get('formation_area'),
+            'pedagogical_approach':  request.form.get('pedagogical_approach'),
+            'curricular_components': request.form.get('curricular_components'),
+            'essential_themes':      request.form.get('essential_themes'),
+            'contents':              request.form.get('contents'),
+            'expected_learning':     request.form.get('expected_learning'),
+            'tasks':                 request.form.get('tasks'),
+        }
+        if PlanArea.update(area_id, data):
+            flash('Área actualizada.', 'success')
+            return redirect(url_for('plans.edit_view', plan_id=plan['id']))
+        flash('Error al actualizar el área.', 'danger')
+
+    return render_template('plans/area_edit.html',
+                           area=area,
+                           plan=plan)
+
+
+# ============================================================
+# EDITAR ACTIVIDAD
+# ============================================================
+@plans_bp.route('/activities/<int:activity_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('maestro', 'directivo')
+@activity_access_required('edit')
+def edit_activity(activity_id, activity, area, plan):
+    if request.method == 'POST':
+        data = {
+            'title':                  request.form.get('title'),
+            'description':            request.form.get('description'),
+            'strategy':               request.form.get('strategy'),
+            'indicators':             request.form.get('indicators'),
+            'resources':              request.form.get('resources'),
+            'evaluation_technique':   request.form.get('evaluation_technique'),
+            'evaluation_instrument':  request.form.get('evaluation_instrument'),
+            'curricular_emphasis':    request.form.get('curricular_emphasis'),
+            'start_datetime':         request.form.get('start_datetime') or None,
+            'end_datetime':           request.form.get('end_datetime') or None,
+            'location':               request.form.get('location'),
+        }
+        if PlanActivity.update(activity_id, data):
+            flash('Actividad actualizada.', 'success')
+            return redirect(url_for('plans.edit_view', plan_id=plan['id']))
+        flash('Error al actualizar la actividad.', 'danger')
+
+    return render_template('plans/activity_edit.html',
+                           activity=activity,
+                           area=area,
+                           plan=plan)
+
+
+# ============================================================
+# VALIDACIÓN PREVIA AL ENVÍO
+# ============================================================
+@plans_bp.route('/<int:plan_id>/validate')
+@login_required
+@role_required('maestro', 'directivo')
+@plan_access_required('edit')
+def validate_view(plan_id, plan):
+    """Muestra un informe de validación antes de enviar a revisión."""
+    from app.utils.plan_validation import validate_plan_for_submission
+    result = validate_plan_for_submission(plan_id)
+    return render_template('plans/validate.html',
+                           plan=plan,
+                           result=result)
+
+
+# ============================================================
+# ENVIAR A REVISIÓN (con validación)
+# ============================================================
+@plans_bp.route('/<int:plan_id>/submit', methods=['POST'])
+@login_required
+@role_required('maestro', 'directivo')
+@plan_access_required('edit')
+def submit_view(plan_id, plan):
+    from app.utils.plan_validation import validate_plan_for_submission
+
+    result = validate_plan_for_submission(plan_id)
+
+    if not result['is_valid']:
+        # Guardar errores en sesión temporalmente para mostrarlos
+        flash(
+            f'No puedes enviar el plan todavía. Se encontraron '
+            f'{result["summary"]["total_errors"]} problemas.',
+            'danger'
+        )
+        return redirect(url_for('plans.validate_view', plan_id=plan_id))
+
+    if ClassroomPlan.submit_for_review(plan_id):
+        PlanReview.create(
+            plan_id=plan_id,
+            reviewer_id=current_user.id,
+            action='comentario',
+            comment='Plan enviado a revisión por el docente.',
+        )
+        flash('Plan enviado a revisión.', 'success')
+        return redirect(url_for('plans.detail_view', plan_id=plan_id))
+
+    flash('Error al enviar el plan.', 'danger')
+    return redirect(url_for('plans.edit_view', plan_id=plan_id))
