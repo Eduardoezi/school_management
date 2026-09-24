@@ -1,11 +1,17 @@
 """
-Modelo del catálogo de momentos pedagógicos.
+Catálogo de MOMENTOS PEDAGÓGICOS (a.k.a. LAPSOS).
 
-En la práctica del MPPE se llaman "momentos pedagógicos" (I, II, III Momento),
-pero en el uso diario se llaman "lapsos" (1er Lapso, 2do Lapso, 3er Lapso).
+El Ministerio del Poder Popular para la Educación llama "momentos pedagógicos"
+a los tres grandes bloques en que se divide el año escolar. En la práctica
+escolar venezolana también se los conoce como "lapsos" (1er, 2do, 3er lapso).
 
-Este catálogo es administrable por el directivo y condiciona los períodos
-de evaluación: cada período debe estar vinculado a un momento pedagógico.
+Cada momento pedagógico (lapso) contiene MÍNIMO TRES períodos de evaluación
+(ver `EvaluationPeriod`):
+    1. Diagnóstico / Inicio
+    2. Observación Formativa / Desarrollo
+    3. Observación Calificativa / Cierre
+
+Este catálogo es administrable por la subdirección pedagógica.
 """
 
 from __future__ import annotations
@@ -35,6 +41,42 @@ class PedagogicalMoment:
             sql += " ORDER BY sort_order, name"
             cursor.execute(sql)
             return cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def get_with_periods(only_active: bool = True) -> list[dict]:
+        """
+        Devuelve los lapsos con sus períodos de evaluación anidados
+        en la clave `periods`. Útil para formularios y listados
+        jerárquicos (Lapso → 3 Períodos).
+        """
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        try:
+            sql = "SELECT * FROM pedagogical_moments"
+            if only_active:
+                sql += " WHERE is_active = 1"
+            sql += " ORDER BY sort_order, name"
+            cursor.execute(sql)
+            moments = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT * FROM evaluation_periods
+                 ORDER BY pedagogical_moment_id, sort_order, name
+            """)
+            all_periods = cursor.fetchall()
+
+            periods_by_moment: dict[int, list] = {}
+            for p in all_periods:
+                periods_by_moment.setdefault(p['pedagogical_moment_id'], []).append(p)
+
+            for m in moments:
+                m['periods'] = periods_by_moment.get(m['id'], [])
+            return moments
         finally:
             cursor.close()
             conn.close()
@@ -123,21 +165,18 @@ class PedagogicalMoment:
         try:
             cursor.execute("""
                 UPDATE pedagogical_moments
-                SET name = %s,
-                    sort_order = %s,
-                    is_active = %s
-                WHERE id = %s
+                   SET name = %s,
+                       sort_order = %s,
+                       is_active = %s
+                 WHERE id = %s
             """, (name.strip(), sort_order, 1 if is_active else 0, moment_id))
             conn.commit()
 
-            # MySQL devuelve rowcount=0 si los valores son idénticos.
-            # Verificamos que la fila exista para no reportar falso error.
             if cursor.rowcount > 0:
                 return True
 
             cursor.execute("SELECT id FROM pedagogical_moments WHERE id = %s", (moment_id,))
             return cursor.fetchone() is not None
-
         except Exception as exc:
             conn.rollback()
             print(f"[PedagogicalMoment.update] {exc}")
@@ -145,25 +184,26 @@ class PedagogicalMoment:
         finally:
             cursor.close()
             conn.close()
-        @staticmethod
-        def soft_toggle(moment_id: int, active: bool) -> bool:
-            """Activa/desactiva sin borrar (preserva históricos)."""
-            conn = get_db_connection()
-            if not conn:
-                return False
-            cursor = conn.cursor()
-            try:
-                cursor.execute("""
-                    UPDATE pedagogical_moments
-                    SET is_active = %s
-                    WHERE id = %s
-                """, (1 if active else 0, moment_id))
-                conn.commit()
-                return cursor.rowcount > 0
-            except Exception as exc:
-                conn.rollback()
-                print(f"[PedagogicalMoment.soft_toggle] {exc}")
-                return False
-            finally:
-                cursor.close()
-                conn.close()
+
+    @staticmethod
+    def soft_toggle(moment_id: int, active: bool) -> bool:
+        """Activa/desactiva sin borrar (preserva históricos)."""
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE pedagogical_moments
+                   SET is_active = %s
+                 WHERE id = %s
+            """, (1 if active else 0, moment_id))
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as exc:
+            conn.rollback()
+            print(f"[PedagogicalMoment.soft_toggle] {exc}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()

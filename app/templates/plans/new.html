@@ -49,11 +49,28 @@
                     </select>
                 </div>
 
+                {# ==================== LAPSO (momento pedagógico) ==================== #}
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Momento pedagógico</label>
-                    <input type="text" name="pedagogical_moment" class="form-control"
-                           value="{{ form.get('pedagogical_moment', '') }}"
-                           placeholder="Ej: I Momento">
+                    <label class="form-label" for="pedagogical_moment_select">
+                        <i class="bi bi-calendar3 me-1"></i>Lapso (momento pedagógico)
+                    </label>
+                    {% set selected_moment = form.get('pedagogical_moment', '') %}
+                    <select name="pedagogical_moment"
+                            id="pedagogical_moment_select"
+                            class="form-select">
+                        <option value="">-- Sin lapso específico --</option>
+                        {% for m in pedagogical_moments %}
+                            <option value="{{ m.name }}"
+                                    data-moment-id="{{ m.id }}"
+                                    {% if selected_moment == m.name %}selected{% endif %}>
+                                {{ m.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">
+                        Se administran en
+                        <a href="{{ url_for('pedagogical_moments.list_view') }}">Momentos pedagógicos</a>.
+                    </small>
                 </div>
 
                 <div class="col-md-8 mb-3">
@@ -96,15 +113,43 @@
                     </select>
                 </div>
 
+                {# ==================== PERÍODO DE EVALUACIÓN (sub-nivel del lapso) ==================== #}
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" for="academic_period">
+                        <i class="bi bi-list-check me-1"></i>Período de evaluación
+                    </label>
+                    <select name="academic_period"
+                            id="academic_period"
+                            class="form-select">
+                        <option value="">-- Seleccione un lapso primero --</option>
+                        {% for p in academic_periods %}
+                            <option value="{{ p.id }}"
+                                    data-moment-id="{{ p.pedagogical_moment_id }}"
+                                    data-start="{{ p.start_date or '' }}"
+                                    data-end="{{ p.end_date or '' }}"
+                                    {% if form.get('academic_period')|string == p.id|string %}selected{% endif %}>
+                                {{ p.name }}
+                                {% if p.start_date and p.end_date %}
+                                    ({{ p.start_date }} → {{ p.end_date }})
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">
+                        Los administra la subdirección en
+                        <a href="{{ url_for('evaluations.periods_list') }}">Períodos de evaluación</a>.
+                    </small>
+                </div>
+
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Fecha de inicio *</label>
-                    <input type="date" name="start_date" class="form-control"
+                    <input type="date" name="start_date" id="start_date" class="form-control"
                            value="{{ form.get('start_date', '') }}" required>
                 </div>
 
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Fecha de finalización *</label>
-                    <input type="date" name="end_date" class="form-control"
+                    <input type="date" name="end_date" id="end_date" class="form-control"
                            value="{{ form.get('end_date', '') }}" required>
                 </div>
             </div>
@@ -163,20 +208,125 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const select = document.getElementById('course_select');
-    const gradeInput = document.getElementById('grade_input');
-    const sectionInput = document.getElementById('section_input');
-    const enrollmentDisplay = document.getElementById('enrollment_display');
+    const courseSelect   = document.getElementById('course_select');
+    const gradeInput     = document.getElementById('grade_input');
+    const sectionInput   = document.getElementById('section_input');
+    const enrollmentDisp = document.getElementById('enrollment_display');
 
-    function updateFromSelection() {
-        const opt = select.options[select.selectedIndex];
-        gradeInput.value   = opt.dataset.grade || '';
-        sectionInput.value = opt.dataset.section || '';
-        enrollmentDisplay.value = opt.dataset.enrollment || '—';
+    const momentSelect   = document.getElementById('pedagogical_moment_select');
+    const periodSelect   = document.getElementById('academic_period');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput   = document.getElementById('end_date');
+
+    // Guarda todas las opciones originales de "Período de evaluación"
+    const allPeriodOptions = Array.from(periodSelect.options).map(function (opt) {
+        return {
+            value:      opt.value,
+            text:       opt.text,
+            momentId:   opt.dataset.momentId || '',
+            start:      opt.dataset.start    || '',
+            end:        opt.dataset.end      || '',
+            selected:   opt.selected,
+        };
+    });
+
+    // ---------- 1) Curso → grado, sección, matrícula ----------
+    function updateFromCourse() {
+        const opt = courseSelect.options[courseSelect.selectedIndex];
+        gradeInput.value     = opt.dataset.grade || '';
+        sectionInput.value   = opt.dataset.section || '';
+        enrollmentDisp.value = opt.dataset.enrollment || '—';
+    }
+    courseSelect.addEventListener('change', updateFromCourse);
+    if (courseSelect.value) updateFromCourse();
+
+    // ---------- 2) Lapso → filtra los períodos de evaluación ----------
+    function filterPeriodsByMoment() {
+        const momentOpt  = momentSelect.options[momentSelect.selectedIndex];
+        const momentId   = momentOpt ? (momentOpt.dataset.momentId || '') : '';
+
+        periodSelect.innerHTML = '';
+
+        if (!momentId) {
+            // Sin lapso → mostrar todos los períodos
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Todos los períodos --';
+            periodSelect.appendChild(placeholder);
+
+            allPeriodOptions.forEach(function (o) {
+                if (!o.value) return;
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.dataset.momentId = o.momentId;
+                opt.dataset.start    = o.start;
+                opt.dataset.end      = o.end;
+                if (o.selected) opt.selected = true;
+                periodSelect.appendChild(opt);
+            });
+            return;
+        }
+
+        // Con lapso → mostrar solo sus períodos
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '-- Seleccione un período de este lapso --';
+        periodSelect.appendChild(placeholder);
+
+        let found = false;
+        allPeriodOptions.forEach(function (o) {
+            if (!o.value) return;
+            if (String(o.momentId) === String(momentId)) {
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                opt.dataset.momentId = o.momentId;
+                opt.dataset.start    = o.start;
+                opt.dataset.end      = o.end;
+                if (o.selected) opt.selected = true;
+                periodSelect.appendChild(opt);
+                found = true;
+            }
+        });
+
+        if (!found) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- No hay períodos registrados para este lapso --';
+            opt.disabled = true;
+            periodSelect.appendChild(opt);
+        }
     }
 
-    select.addEventListener('change', updateFromSelection);
-    if (select.value) updateFromSelection();
+    // ---------- 3) Período → autocompleta fechas ----------
+    function updateFromPeriod() {
+        const opt = periodSelect.options[periodSelect.selectedIndex];
+        if (!opt) return;
+
+        const start = opt.dataset.start || '';
+        const end   = opt.dataset.end   || '';
+
+        if (start) startDateInput.value = start;
+        if (end)   endDateInput.value   = end;
+    }
+
+    momentSelect.addEventListener('change', filterPeriodsByMoment);
+    periodSelect.addEventListener('change', updateFromPeriod);
+
+    // Estado inicial (si el navegador recuerda valores tras un POST fallido)
+    if (momentSelect.value) {
+        filterPeriodsByMoment();
+        const savedPeriod = "{{ form.get('academic_period', '') }}";
+        if (savedPeriod) {
+            for (const opt of periodSelect.options) {
+                if (String(opt.value) === String(savedPeriod)) {
+                    opt.selected = true;
+                    break;
+                }
+            }
+        }
+    }
 });
 </script>
 

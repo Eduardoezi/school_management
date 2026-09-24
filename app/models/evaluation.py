@@ -1,6 +1,10 @@
 from app.utils.db import get_db_connection
 import mysql.connector
 
+# Re-export para compatibilidad con imports antiguos
+from app.models.evaluation_period import EvaluationPeriod  # noqa: F401
+
+
 class EvaluationArea:
     @staticmethod
     def get_all(only_active=True):
@@ -25,36 +29,6 @@ class EvaluationArea:
             INSERT INTO evaluation_areas (name, description, sort_order)
             VALUES (%s, %s, %s)
         """, (data['name'], data.get('description'), data.get('sort_order', 0)))
-        conn.commit()
-        new_id = cursor.lastrowid
-        cursor.close(); conn.close()
-        return new_id
-
-
-class EvaluationPeriod:
-    @staticmethod
-    def get_all():
-        conn = get_db_connection()
-        if not conn: return []
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT * FROM evaluation_periods
-            ORDER BY academic_year DESC, sort_order
-        """)
-        rows = cursor.fetchall()
-        cursor.close(); conn.close()
-        return rows
-
-    @staticmethod
-    def create(data):
-        conn = get_db_connection()
-        if not conn: return None
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO evaluation_periods (name, academic_year, start_date, end_date, sort_order)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (data['name'], data['academic_year'],
-              data.get('start_date'), data.get('end_date'), data.get('sort_order', 0)))
         conn.commit()
         new_id = cursor.lastrowid
         cursor.close(); conn.close()

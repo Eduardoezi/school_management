@@ -63,9 +63,21 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Momento pedagógico</label>
-                            <input type="text" name="pedagogical_moment" class="form-control"
-                                   value="{{ plan.pedagogical_moment or '' }}">
+                            <label class="form-label" for="pedagogical_moment_select">
+                                <i class="bi bi-calendar3 me-1"></i>Lapso (momento pedagógico)
+                            </label>
+                            {% set selected_moment = plan.pedagogical_moment or '' %}
+                            <select name="pedagogical_moment"
+                                    id="pedagogical_moment_select"
+                                    class="form-select">
+                                <option value="">-- Sin lapso específico --</option>
+                                {% for m in pedagogical_moments %}
+                                    <option value="{{ m.name }}"
+                                            {% if selected_moment == m.name %}selected{% endif %}>
+                                        {{ m.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                         </div>
 
                         <div class="col-md-4 mb-3">

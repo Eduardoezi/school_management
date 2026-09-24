@@ -31,7 +31,6 @@ Rutas:
     POST /plans/<id>/return          → devolver con observaciones
     POST /plans/<id>/comment         → agregar comentario
 """
-
 from __future__ import annotations
 
 from flask import (
@@ -46,6 +45,9 @@ from app.models.plan_area import PlanArea
 from app.models.plan_activity import PlanActivity
 from app.models.plan_review import PlanReview
 from app.models.course import Course
+from app.models.pedagogical_moment import PedagogicalMoment
+from app.models.evaluation_period import EvaluationPeriod
+
 from app.utils.decorators import role_required
 
 from app.routes.plans_helpers import (
@@ -63,6 +65,48 @@ from app.routes.plans_helpers import (
 
 
 plans_bp = Blueprint('plans', __name__, url_prefix='/plans')
+
+
+# ============================================================
+# HELPERS INTERNOS
+# ============================================================
+def _safe_model_list(model, *method_names):
+    """
+    Devuelve el resultado del primer método que exista en `model`
+    entre los nombres provistos. Si ninguno existe o falla,
+    devuelve una lista vacía (evita que la vista se rompa).
+
+    Uso:
+        _safe_model_list(PedagogicalMoment, 'get_all_active', 'get_all')
+    """
+    for name in method_names:
+        fn = getattr(model, name, None)
+        if callable(fn):
+            try:
+                result = fn()
+                if result:
+                    return result
+            except Exception as exc:
+                print(f"[plans._safe_model_list] {model.__name__}.{name} -> {exc}")
+    return []
+
+
+def _load_catalogs():
+    """
+    Carga los catálogos para el formulario de planes:
+      - pedagogical_moments: los 3 LAPSOS del año escolar
+      - academic_periods:    los ~9 períodos de evaluación
+                             (3 por lapso: Diagnóstico / Formativa / Calificativa)
+    """
+    pedagogical_moments = _safe_model_list(
+        PedagogicalMoment,
+        'get_all_active', 'get_active', 'get_all', 'list_all',
+    )
+    academic_periods = _safe_model_list(
+        EvaluationPeriod,
+        'get_all_active', 'get_all', 'list_all',
+    )
+    return pedagogical_moments, academic_periods
 
 
 # ============================================================
@@ -99,6 +143,8 @@ def create_view():
     teacher = get_current_teacher_or_403()
     assignments = get_teacher_assignments(teacher['id'], year['id'])
 
+    pedagogical_moments, academic_periods = _load_catalogs()
+
     if request.method == 'POST':
         start_date = (request.form.get('start_date') or '').strip()
         end_date = (request.form.get('end_date') or '').strip()
@@ -124,6 +170,8 @@ def create_view():
                                    year=year,
                                    teacher=teacher,
                                    assignments=assignments,
+                                   pedagogical_moments=pedagogical_moments,
+                                   academic_periods=academic_periods,
                                    form=request.form)
 
         enrollment_count = get_course_enrollment_count(course_code) if course_code else None
@@ -169,6 +217,8 @@ def create_view():
                            year=year,
                            teacher=teacher,
                            assignments=assignments,
+                           pedagogical_moments=pedagogical_moments,
+                           academic_periods=academic_periods,
                            form={})
 
 
@@ -211,6 +261,8 @@ def edit_view(plan_id):
     teacher = get_current_teacher_or_403()
     year = AcademicYear.get_by_id(plan['academic_year_id'])
     assignments = get_teacher_assignments(teacher['id'], year['id']) if year else []
+
+    pedagogical_moments, academic_periods = _load_catalogs()
 
     if request.method == 'POST':
         start_date = (request.form.get('start_date') or '').strip()
@@ -271,7 +323,9 @@ def edit_view(plan_id):
                            plan=plan,
                            areas=areas,
                            assignments=assignments,
-                           year=year)
+                           year=year,
+                           pedagogical_moments=pedagogical_moments,
+                           academic_periods=academic_periods)
 
 
 # ============================================================

@@ -73,6 +73,7 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.calendar import calendar_bp
     from app.routes.pedagogical_moments import moments_bp
 
+
     for bp in (
         documents_bp, auth_bp, main_bp, students_bp, enrollment_bp,
         teachers_bp, courses_bp, attendance_bp, schedule_bp,

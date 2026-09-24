@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if record else 'Nueva' }} anécdota{% endblock %}
+{% block content %}
+
+<h2 class="page-title">
+    <i class="bi bi-journal-text me-2"></i>
+    {{ 'Editar' if record else 'Nueva' }} anécdota
+</h2>
+
+<p class="text-muted">
+    Estudiante:
+    <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+    ({{ student.school_id }})
+</p>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fecha de observación *</label>
+                    <input type="date" name="observed_at" class="form-control" required
+                           value="{{ form.get('observed_at', record.observed_at if record else '') }}">
+                </div>
+
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Actividad del plan (opcional)</label>
+                    <select name="plan_activity_id" class="form-select">
+                        <option value="">-- Anécdota general (sin actividad) --</option>
+                        {% for a in activities %}
+                            <option value="{{ a.id }}"
+                                    {% if form.get('plan_activity_id')|string == a.id|string or (record and record.plan_activity_id == a.id) %}selected{% endif %}>
+                                {{ a.title }}
+                                {% if a.development_area_name %}· {{ a.development_area_name }}{% endif %}
+                                {% if a.plan_title %}· {{ a.plan_title }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">
+                        Solo se muestran actividades de planes <strong>aprobados o publicados</strong>.
+                    </small>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Observación *</label>
+                    <textarea name="observation" class="form-control" rows="4" required
+                              placeholder="Describe lo que observaste (avance, dificultad, logro puntual...)">{{ form.get('observation', record.observation if record else '') }}</textarea>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Recomendación pedagógica</label>
+                    <textarea name="recommendation" class="form-control" rows="3"
+                              placeholder="Sugerencia para la familia, el docente o los especialistas...">{{ form.get('recommendation', record.recommendation if record else '') }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar
+        </button>
+        <a href="{{ url_for('evaluations.anecdotal_list_by_student', student_id=student.id) }}"
+           class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+{% endblock %}

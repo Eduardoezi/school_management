@@ -7,43 +7,53 @@
     <span class="badge bg-primary ms-2">{{ periods|length }}</span>
 </h2>
 
+<p class="text-muted">
+    Cada lapso contiene al menos tres períodos: <strong>Diagnóstico</strong>,
+    <strong>Formativa</strong> y <strong>Calificativa</strong>. La subdirección
+    pedagógica puede editarlos.
+</p>
+
 <div class="d-flex justify-content-end mb-3">
     <a href="{{ url_for('evaluations.period_create') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle me-1"></i>Nuevo período
     </a>
 </div>
 
-{% if periods %}
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Año escolar</th>
-                <th>Momento pedagógico</th>
-                <th>Período</th>
-                <th>Desde</th>
-                <th>Hasta</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in periods %}
-            <tr>
-                <td>{{ p.academic_year }}</td>
-                <td>
-                    {% if p.moment_name %}
-                        <span class="badge bg-info text-dark">{{ p.moment_name }}</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Sin asignar</span>
-                    {% endif %}
-                </td>
-                <td><strong>{{ p.name }}</strong></td>
-                <td>{{ p.start_date or '-' }}</td>
-                <td>{{ p.end_date or '-' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{% if grouped %}
+    {% for group in grouped %}
+        <div class="card mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>
+                    <i class="bi bi-calendar3 me-1"></i>{{ group.moment_name }}
+                </strong>
+                <span class="badge bg-secondary">{{ group.periods|length }} períodos</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 8%;">Orden</th>
+                            <th>Período</th>
+                            <th>Desde</th>
+                            <th>Hasta</th>
+                            <th>Año escolar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in group.periods %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ p.sort_order }}</span></td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>{{ p.start_date or '—' }}</td>
+                            <td>{{ p.end_date or '—' }}</td>
+                            <td>{{ p.academic_year }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
 {% else %}
 <div class="text-center text-muted py-5">
     No hay períodos registrados.
@@ -51,7 +61,7 @@
 {% endif %}
 
 <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
-    Volver al panel
+    <i class="bi bi-arrow-left me-1"></i>Volver al panel
 </a>
 
 {% endblock %}

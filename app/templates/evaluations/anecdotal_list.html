@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Registros anecdóticos{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
+           class="small text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Volver al perfil
+        </a>
+        <h2 class="page-title mb-1 mt-2">
+            <i class="bi bi-journal-text me-2"></i>Registros anecdóticos
+        </h2>
+        <p class="text-muted mb-0">
+            <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+            · {{ student.school_id }}
+        </p>
+    </div>
+    {% if current_user.role in ['maestro', 'directivo'] %}
+    <a href="{{ url_for('evaluations.anecdotal_create', student_id=student.id) }}"
+       class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Nueva anécdota
+    </a>
+    {% endif %}
+</div>
+
+{% if filter_by_teacher %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-1"></i>
+    Mostrando solo tus anécdotas. Los directivos ven todas.
+</div>
+{% endif %}
+
+{% if records %}
+<div class="row g-3">
+    {% for r in records %}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar me-1"></i>{{ r.observed_at }}
+                    </small>
+                    {% if current_user.role == 'directivo' or r.teacher_id == current_user.teacher_id %}
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ url_for('evaluations.anecdotal_edit', record_id=r.id) }}"
+                           class="btn btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('evaluations.anecdotal_delete', record_id=r.id) }}"
+                              onsubmit="return confirm('¿Eliminar esta anécdota?');"
+                              style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if r.activity_title %}
+                <p class="small text-muted mb-2">
+                    <i class="bi bi-list-check me-1"></i>
+                    <strong>Actividad:</strong> {{ r.activity_title }}
+                </p>
+                {% endif %}
+
+                <p class="mb-2">{{ r.observation }}</p>
+
+                {% if r.recommendation %}
+                <div class="border-start border-3 border-info ps-3 mt-2">
+                    <small class="text-muted">
+                        <strong>Recomendación:</strong>
+                    </small>
+                    <p class="small mb-0">{{ r.recommendation }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light small text-muted">
+                <i class="bi bi-person-badge me-1"></i>
+                {{ r.teacher_first_name }} {{ r.teacher_last_name }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-journal-x display-4 d-block mb-2 opacity-50"></i>
+    No hay anécdotas registradas para este estudiante.
+</div>
+{% endif %}
+
+{% endblock %}
