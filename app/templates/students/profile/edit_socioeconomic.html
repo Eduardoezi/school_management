@@ -1,12 +1,12 @@
-ï»¿{% extends "base.html" %}
-{% block title %}Editar estudio socioeconÃ³mico{% endblock %}
+{% extends "base.html" %}
+{% block title %}Editar estudio socioeconómico{% endblock %}
 {% block content %}
 
 <h2 class="page-title">
-    <i class="bi bi-house-heart me-2"></i>Estudio socioeconÃ³mico
+    <i class="bi bi-house-heart me-2"></i>Estudio socioeconómico
 </h2>
 <p class="text-muted">
-    Estudiante: <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+    student: <strong>{{ student.first_name }} {{ student.last_name }}</strong>
 </p>
 
 <form method="POST">
@@ -15,19 +15,19 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Â¿Actualmente el estudiante vive con?</label>
+                    <label class="form-label">¿Actualmente el student vive con?</label>
                     <input type="text" class="form-control" name="lives_with"
                            value="{{ socioeconomic.lives_with if socioeconomic else '' }}"
                            placeholder="Padre / Madre / Tutores / Otros">
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Â¿QuÃ© otros miembros integran el grupo familiar?</label>
+                    <label class="form-label">¿Qué otros miembros integran el grupo familiar?</label>
                     <input type="text" class="form-control" name="other_family_members"
                            value="{{ socioeconomic.other_family_members if socioeconomic else '' }}">
                 </div>
 
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">Â¿CuÃ¡ntos miembros trabajan?</label>
+                    <label class="form-label">¿Cuántos miembros trabajan?</label>
                     <input type="number" class="form-control" name="working_members" min="0"
                            value="{{ socioeconomic.working_members if socioeconomic else '' }}">
                 </div>
@@ -37,12 +37,12 @@
                            value="{{ socioeconomic.monthly_income if socioeconomic else '' }}">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">Â¿CuÃ¡ntos miembros habitan el hogar?</label>
+                    <label class="form-label">¿Cuántos miembros habitan el hogar?</label>
                     <input type="number" class="form-control" name="household_members" min="0"
                            value="{{ socioeconomic.household_members if socioeconomic else '' }}">
                 </div>
                 <div class="col-md-3 mb-3">
-                    <label class="form-label">Â¿CuÃ¡ntas habitaciones tiene la vivienda?</label>
+                    <label class="form-label">¿Cuántas habitaciones tiene la vivienda?</label>
                     <input type="number" class="form-control" name="rooms_count" min="0"
                            value="{{ socioeconomic.rooms_count if socioeconomic else '' }}">
                 </div>
@@ -54,7 +54,7 @@
                            placeholder="Casa, apartamento, rancho, etc.">
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">CondiciÃ³n de la vivienda</label>
+                    <label class="form-label">Condición de la vivienda</label>
                     <input type="text" class="form-control" name="housing_condition"
                            value="{{ socioeconomic.housing_condition if socioeconomic else '' }}"
                            placeholder="Propia, alquilada, prestada, etc.">

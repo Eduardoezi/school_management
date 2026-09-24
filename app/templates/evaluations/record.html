@@ -1,58 +1,112 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Registrar Evaluación{% endblock %}
 {% block content %}
-<h2>📝 Registrar Evaluación</h2>
-<p><strong>Estudiante:</strong> {{ student.first_name }} {{ student.last_name }} ({{ student.school_id }})</p>
 
-<a href="{{ url_for('evaluations.anecdotal_list_by_student', student_id=student.id) }}"
-   class="btn btn-outline-secondary">
-    <i class="bi bi-journal-text me-1"></i>Ver registros anecdóticos
-</a>
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
+           class="small text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Volver al perfil
+        </a>
+        <h2 class="page-title mb-1 mt-2">
+            <i class="bi bi-journal-plus me-2"></i>Registrar Evaluación
+        </h2>
+        <p class="text-muted mb-0">
+            <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+            · {{ student.school_id }}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('evaluations.history', student_id=student.id) }}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history me-1"></i>Ver histórico
+        </a>
+        <a href="{{ url_for('evaluations.anecdotal_list_by_student', student_id=student.id) }}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-journal-text me-1"></i>Anécdotas
+        </a>
+    </div>
+</div>
+
+{# ---------- Escala oficial MPPE ---------- #}
+<div class="alert alert-info">
+    <strong><i class="bi bi-info-circle me-1"></i>Escala cualitativa oficial (MPPE):</strong>
+    <ul class="mb-0 small mt-1">
+        <li><strong>L — Logrado:</strong> el estudiante ejecuta la tarea con autonomía, sin apoyos.</li>
+        <li><strong>EP — En Proceso:</strong> requiere mediación pedagógica, física o verbal, pero evoluciona.</li>
+        <li><strong>PL — Por Lograr:</strong> requiere asistencia continua; sugiere reajustar el PEI.</li>
+    </ul>
+</div>
+
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="mb-3">
-        <label class="form-label">Periodo de evaluación *</label>
-        <select class="form-select" name="period_id" required>
-            <option value="">Seleccione</option>
-            {% for p in periods %}
-            <option value="{{ p.id }}">{{ p.academic_year }} - {{ p.name }}</option>
-            {% endfor %}
-        </select>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <label class="form-label">Periodo de evaluación *</label>
+            <select class="form-select" name="period_id" required>
+                <option value="">Seleccione un periodo</option>
+                {% for p in periods %}
+                    <option value="{{ p.id }}">
+                        {{ p.academic_year }} — {{ p.name }}
+                        {% if p.start_date and p.end_date %}
+                            ({{ p.start_date }} → {{ p.end_date }})
+                        {% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 
     {% for area in areas %}
     <div class="card mb-3">
-        <div class="card-header bg-light"><strong>{{ area.name }}</strong></div>
+        <div class="card-header bg-light">
+            <strong>{{ area.name }}</strong>
+            {% if area.description %}
+                <br><small class="text-muted">{{ area.description }}</small>
+            {% endif %}
+        </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-9 mb-2">
-                    <label class="form-label">Indicadores*</label>
-                    <textarea class="form-control" name="indicadores_{{ area.id }}" rows="2" required></textarea>
+                    <label class="form-label">Indicadores evaluados *</label>
+                    <textarea class="form-control" name="indicadores_{{ area.id }}"
+                              rows="2" required
+                              placeholder="Ej: Reconoce y clasifica elementos por forma y color."></textarea>
                 </div>
                 <div class="col-md-3 mb-2">
                     <label class="form-label">Literal *</label>
                     <select class="form-select" name="literal_{{ area.id }}" required>
                         <option value="">--</option>
-                        <option value="L">Logrado (L)</option>
-                        <option value="EP">En Proceso (EP)</option>
-                        <option value="EI">En Inicio (EI)</option>
-                        <option value="NL">No Logrado (NL)</option>
+                        <option value="L">L — Logrado</option>
+                        <option value="EP">EP — En Proceso</option>
+                        <option value="PL">PL — Por Lograr</option>
                     </select>
                 </div>
-                <div class="col-md-9 mb-2">
+                <div class="col-md-12 mb-2">
                     <label class="form-label">Descripción del progreso *</label>
-                    <textarea class="form-control" name="description_{{ area.id }}" rows="2" required></textarea>
+                    <textarea class="form-control" name="description_{{ area.id }}"
+                              rows="3" required
+                              placeholder="Describe los avances y dificultades observadas..."></textarea>
                 </div>
                 <div class="col-md-12">
-                    <label class="form-label">Recomendaciones para el hogar</label>
-                    <textarea class="form-control" name="recommendations_{{ area.id }}" rows="2"></textarea>
+                    <label class="form-label">Recomendaciones para el hogar y especialistas</label>
+                    <textarea class="form-control" name="recommendations_{{ area.id }}"
+                              rows="2"
+                              placeholder="Estrategias sugeridas para la familia y el equipo interdisciplinario..."></textarea>
                 </div>
             </div>
         </div>
     </div>
     {% endfor %}
 
-    <button type="submit" class="btn btn-success">Guardar evaluaciones</button>
-    <a href="{{ url_for('evaluations.history', student_id=student.id) }}" class="btn btn-secondary">Ver histórico</a>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Guardar evaluaciones
+        </button>
+        <a href="{{ url_for('student_profile.view', student_id=student.id) }}"
+           class="btn btn-secondary">Cancelar</a>
+    </div>
 </form>
+
 {% endblock %}

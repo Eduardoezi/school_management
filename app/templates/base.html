@@ -174,7 +174,7 @@
         <div class="sidebar-section">Evaluación</div>
         <ul class="nav flex-column">
             <li>
-                <a class="nav-link" href="{{ url_for('students.list_view') }}">
+                <a class="nav-link" href="{{ url_for('evaluations.index') }}">
                     <i class="bi bi-journal-bookmark-fill"></i> Rendimiento
                 </a>
             </li>
@@ -224,13 +224,11 @@
                         <i class="bi bi-calendar-range"></i> Momentos pedagógicos
                     </a>
                 </li>
-                {% if current_user.role == 'directivo' %}
-                    <li>
-                        <a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
-                            <i class="bi bi-calendar-check"></i> Períodos de evaluación
-                        </a>
-                    </li>
-                {% endif %}
+                <li>
+                    <a class="nav-link" href="{{ url_for('evaluations.periods_list') }}">
+                        <i class="bi bi-calendar-check"></i> Períodos de evaluación
+                    </a>
+                </li>
                 <li>
                     <a class="nav-link" href="{{ url_for('admin.users_list') }}">
                         <i class="bi bi-people-fill"></i> Gestión de usuarios

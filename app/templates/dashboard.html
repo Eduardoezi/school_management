@@ -1,10 +1,9 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Panel de Control{% endblock %}
 
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
-    /* ============ Stat cards (fila superior) ============ */
     .stat-card {
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -36,34 +35,16 @@
         font-size: 2.4rem;
         opacity: 0.9;
     }
-    .stat-divider {
-        width: 1px;
-        align-self: stretch;
-        background: #e2e8f0;
-        margin: 0 1.25rem;
-    }
 
-    /* ============ FullCalendar compacto ============ */
-    
     .fc {
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --fc-border-color: #e2e8f0;
         --fc-today-bg-color: #eff6ff;
     }
-    /* Contenedor con ancho mínimo y scroll si hace falta */
-    #dashboard-calendar {
-        min-width: 100%;
-        overflow-x: auto;
-    }
-    /* Evita que FullCalendar se desborde de su columna */
-    #dashboard-calendar .fc {
-        min-width: 520px;
-    }
+    #dashboard-calendar { min-width: 100%; overflow-x: auto; }
+    #dashboard-calendar .fc { min-width: 520px; }
     .fc .fc-toolbar-title { font-size: 1rem; font-weight: 600; color: #0f172a; }
-    .fc .fc-toolbar {
-        flex-wrap: wrap;
-        gap: 0.35rem;
-    }
+    .fc .fc-toolbar { flex-wrap: wrap; gap: 0.35rem; }
     .fc .fc-col-header-cell-cushion {
         color: #475569; font-weight: 600;
         text-transform: uppercase; font-size: 0.68rem;
@@ -99,7 +80,6 @@
     }
     .fc-daygrid-event-dot { display: none; }
 
-    /* ============ Action cards ============ */
     .action-card {
         border: 1px solid #e2e8f0;
         border-radius: 12px;
@@ -129,61 +109,35 @@
         line-height: 1.2;
     }
 
-    /* ============ Donut chart con conic-gradient ============ */
     .donut-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         padding: 1rem 0;
     }
     .donut {
-        width: 180px;
-        height: 180px;
-        border-radius: 50%;
+        width: 180px; height: 180px; border-radius: 50%;
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: filter 0.2s ease;
+        display: flex; align-items: center; justify-content: center;
     }
     .donut::before {
-        content: '';
-        position: absolute;
-        inset: 28px;
-        background: #fff;
-        border-radius: 50%;
+        content: ''; position: absolute; inset: 28px;
+        background: #fff; border-radius: 50%;
     }
-    .donut-center {
-        position: relative;
-        z-index: 1;
-        text-align: center;
-    }
+    .donut-center { position: relative; z-index: 1; text-align: center; }
     .donut-center .donut-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        line-height: 1;
+        font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;
     }
     .donut-center .donut-label {
-        font-size: 0.7rem;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: .05em;
+        font-size: 0.7rem; color: #64748b;
+        text-transform: uppercase; letter-spacing: .05em;
         margin-top: .25rem;
     }
     .donut-legend {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 1rem;
-        font-size: 0.8rem;
+        display: flex; justify-content: center;
+        gap: 1rem; margin-top: 1rem; font-size: 0.8rem;
     }
     .donut-legend .legend-dot {
-        display: inline-block;
-        width: 10px; height: 10px;
-        border-radius: 3px;
-        margin-right: .35rem;
-        vertical-align: middle;
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 3px; margin-right: .35rem; vertical-align: middle;
     }
 </style>
 {% endblock %}
@@ -194,7 +148,6 @@
     <i class="bi bi-speedometer2 me-2"></i>Panel de Control
 </h1>
 
-<!-- ==================== TARJETAS DE RESUMEN ==================== -->
 <div class="row g-3 mb-3">
     <div class="col-6 col-lg-3">
         <div class="stat-card">
@@ -234,9 +187,7 @@
     </div>
 </div>
 
-<!-- ==================== CALENDARIO + ACCIONES ==================== -->
 <div class="row g-3">
-    <!-- Columna izquierda: Calendario -->
     <div class="col-lg-8">
         <div class="card h-100">
             <div class="card-body overflow-hidden">
@@ -260,7 +211,6 @@
         </div>
     </div>
 
-    <!-- Columna derecha: acciones + donut -->
     <div class="col-lg-4">
         <div class="row g-2 mb-2">
             {% if current_user.role in ['directivo', 'secretario'] %}
@@ -302,7 +252,6 @@
             {% endif %}
         </div>
 
-        <!-- Donut: Asistencia de hoy -->
         <div class="card">
             <div class="card-body">
                 <h6 class="mb-2 fw-semibold text-dark">
@@ -385,7 +334,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     calendar.render();
 
-    // Fuerza recálculo del tamaño cuando el sidebar móvil cambia
     window.addEventListener('resize', function () {
         calendar.updateSize();
     });

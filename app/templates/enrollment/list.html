@@ -89,7 +89,7 @@
         <thead class="table-light">
             <tr>
                 <th data-sort="0" class="sortable">Cédula escolar</th>
-                <th data-sort="1" class="sortable">Estudiante</th>
+                <th data-sort="1" class="sortable">student</th>
                 <th data-sort="2" class="sortable">Curso</th>
                 <th data-sort="3" class="sortable">Año académico</th>
                 <th data-sort="4" class="sortable">Fecha inscripción</th>
@@ -156,7 +156,7 @@
                         {% if e.student_id %}
                             <a href="{{ url_for('student_profile.view', student_id=e.student_id) }}"
                                class="btn btn-outline-info"
-                               title="Ver estudiante">
+                               title="Ver student">
                                 <i class="bi bi-person-badge"></i>
                             </a>
                         {% endif %}

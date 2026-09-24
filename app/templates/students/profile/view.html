@@ -1,20 +1,20 @@
-﻿{% extends "base.html" %}
-{% block title %}Perfil del Estudiante{% endblock %}
+{% extends "base.html" %}
+{% block title %}Perfil del student{% endblock %}
 {% block content %}
 
 {#
     =========================================================================
-    PERFIL DEL ESTUDIANTE — Vista con autorización granular (SEG-005)
+    PERFIL DEL student — Vista con autorización granular (SEG-005)
 
     Recibe del backend:
-        student         → datos del estudiante (dict)
-        details         → StudentDetail o None
-        family          → lista de FamilyMember (vacía si sin permiso)
-        medical         → MedicalInfo o None (None si sin permiso)
-        socioeconomic   → SocioeconomicInfo o None (None si sin permiso)
-        enrollments     → lista de inscripciones (vacía si sin permiso)
-        representative  → datos del representante o None
-        can_view        → dict con flags de visibilidad:
+        student         ? datos del student (dict)
+        details         ? StudentDetail o None
+        family          ? lista de FamilyMember (vacía si sin permiso)
+        medical         ? MedicalInfo o None (None si sin permiso)
+        socioeconomic   ? SocioeconomicInfo o None (None si sin permiso)
+        enrollments     ? lista de inscripciones (vacía si sin permiso)
+        representative  ? datos del representante o None
+        can_view        ? dict con flags de visibilidad:
             {
                 'family':        bool,
                 'medical':       bool,
@@ -121,7 +121,7 @@
 {# ==================== PESTAÑAS (con permisos) ==================== #}
 <ul class="nav nav-tabs mb-3" role="tablist">
 
-    {# --- Datos personales: siempre visible para quien puede ver al estudiante --- #}
+    {# --- Datos personales: siempre visible para quien puede ver al student --- #}
     <li class="nav-item" role="presentation">
         <button class="nav-link active"
                 data-bs-toggle="tab"
@@ -380,7 +380,7 @@
                 {% else %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-1"></i>
-                    Este estudiante no tiene un representante registrado.
+                    Este student no tiene un representante registrado.
                     {% if current_user.role in ['directivo', 'secretario'] %}
                         <a href="{{ url_for('students.edit_view', student_id=student.id) }}">
                             Asignar representante

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Histórico de Rendimiento{% endblock %}
 {% block content %}
 <h2>📘 Histórico de Rendimiento</h2>
@@ -39,8 +39,8 @@
                             <td>
                                 {% if e.literal == 'L' %}<span class="badge bg-success">Logrado</span>
                                 {% elif e.literal == 'EP' %}<span class="badge bg-info">En Proceso</span>
-                                {% elif e.literal == 'EI' %}<span class="badge bg-warning text-dark">En Inicio</span>
-                                {% else %}<span class="badge bg-danger">No Logrado</span>{% endif %}
+                                {% elif e.literal == 'PL' %}<span class="badge bg-warning text-dark">Por Lograr</span>
+                                {% else %}<span class="badge bg-danger">{{ e.literal }}</span>{% endif %}
                             </td>
                             <td>{{ e.description }}</td>
                             <td>{{ e.recommendations or '-' }}</td>

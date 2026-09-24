@@ -1,10 +1,10 @@
-ï»¿{% extends "base.html" %}
-{% block title %}{{ 'Editar' if enrollment else 'Nueva' }} InscripciÃ³n{% endblock %}
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if enrollment else 'Nueva' }} Inscripción{% endblock %}
 {% block content %}
 
 <h2 class="page-title">
     <i class="bi bi-clipboard-check me-2"></i>
-    {{ 'Editar' if enrollment else 'Nueva' }} InscripciÃ³n
+    {{ 'Editar' if enrollment else 'Nueva' }} Inscripción
 </h2>
 
 <form method="POST">
@@ -15,18 +15,18 @@
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title mb-3">
-                <i class="bi bi-person-vcard me-2 text-primary"></i>Datos de la inscripciÃ³n
+                <i class="bi bi-person-vcard me-2 text-primary"></i>Datos de la inscripción
             </h5>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="school_id" class="form-label">Estudiante *</label>
+                    <label for="school_id" class="form-label">student *</label>
                     <select class="form-select" id="school_id" name="school_id" required>
-                        <option value="">-- Seleccionar estudiante --</option>
+                        <option value="">-- Seleccionar student --</option>
                         {% for s in students %}
                         <option value="{{ s.school_id }}"
                             {% if enrollment and enrollment.school_id == s.school_id %}selected{% endif %}>
-                            {{ s.school_id }} â€” {{ s.first_name }} {{ s.last_name }}
+                            {{ s.school_id }} — {{ s.first_name }} {{ s.last_name }}
                         </option>
                         {% endfor %}
                     </select>
@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label for="enrollment_date" class="form-label">Fecha de inscripciÃ³n</label>
+                    <label for="enrollment_date" class="form-label">Fecha de inscripción</label>
                     <input type="date" class="form-control" id="enrollment_date" name="enrollment_date"
                            value="{{ enrollment.enrollment_date if enrollment else '' }}">
                 </div>
@@ -66,19 +66,19 @@
                     <label for="egreso_date" class="form-label">Fecha de egreso</label>
                     <input type="date" class="form-control" id="egreso_date" name="egreso_date"
                            value="{{ enrollment.egreso_date if enrollment else '' }}">
-                    <small class="text-muted">Aplica si el estudiante egresÃ³ o se retirÃ³.</small>
+                    <small class="text-muted">Aplica si el student egresó o se retiró.</small>
                 </div>
             </div>
         </div>
     </div>
 
     {# ============================================================
-       VIDA ACADÃ‰MICA
+       VIDA ACADÉMICA
        ============================================================ #}
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title mb-3">
-                <i class="bi bi-mortarboard me-2 text-primary"></i>Vida acadÃ©mica
+                <i class="bi bi-mortarboard me-2 text-primary"></i>Vida académica
             </h5>
 
             <div class="row">
@@ -103,25 +103,25 @@
                 </div>
 
                 <div class="col-12 mb-3">
-                    <label for="observations" class="form-label">Observaciones acadÃ©micas</label>
+                    <label for="observations" class="form-label">Observaciones académicas</label>
                     <textarea class="form-control" id="observations" name="observations" rows="3"
-                              placeholder="Notas sobre el desempeÃ±o, adaptaciones curriculares, etc.">{{ enrollment.observations if enrollment else '' }}</textarea>
+                              placeholder="Notas sobre el desempeño, adaptaciones curriculares, etc.">{{ enrollment.observations if enrollment else '' }}</textarea>
                 </div>
             </div>
         </div>
     </div>
 
     {# ============================================================
-       LOPNA (autorizaciÃ³n legal)
+       LOPNA (autorización legal)
        ============================================================ #}
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title mb-3">
-                <i class="bi bi-shield-check me-2 text-primary"></i>AutorizaciÃ³n LOPNA
+                <i class="bi bi-shield-check me-2 text-primary"></i>Autorización LOPNA
             </h5>
             <p class="text-muted small">
-                Complete solo si existe una autorizaciÃ³n especial por la LOPNA
-                (Ley OrgÃ¡nica para la ProtecciÃ³n de NiÃ±os, NiÃ±as y Adolescentes).
+                Complete solo si existe una autorización especial por la LOPNA
+                (Ley Orgánica para la Protección de Niños, Niñas y Adolescentes).
             </p>
 
             <div class="row">
@@ -133,19 +133,19 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label for="lopna_authorized_cedula" class="form-label">CÃ©dula de quien autoriza</label>
+                    <label for="lopna_authorized_cedula" class="form-label">Cédula de quien autoriza</label>
                     <input type="text" class="form-control" id="lopna_authorized_cedula" name="lopna_authorized_cedula"
                            value="{{ enrollment.lopna_authorized_cedula if enrollment else '' }}">
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label for="lopna_tutor_cedula" class="form-label">CÃ©dula del tutor</label>
+                    <label for="lopna_tutor_cedula" class="form-label">Cédula del tutor</label>
                     <input type="text" class="form-control" id="lopna_tutor_cedula" name="lopna_tutor_cedula"
                            value="{{ enrollment.lopna_tutor_cedula if enrollment else '' }}">
                 </div>
 
                 <div class="col-12 mb-3">
-                    <label for="lopna_reason" class="form-label">Motivo de la autorizaciÃ³n</label>
+                    <label for="lopna_reason" class="form-label">Motivo de la autorización</label>
                     <textarea class="form-control" id="lopna_reason" name="lopna_reason" rows="2"
                               placeholder="Detalle del motivo">{{ enrollment.lopna_reason if enrollment else '' }}</textarea>
                 </div>

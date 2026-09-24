@@ -36,6 +36,46 @@ from app.security.helpers import get_student_or_403
 
 evaluations_bp = Blueprint('evaluations', __name__, url_prefix='/evaluations')
 
+# ============================================================
+# ÍNDICE DE EVALUACIONES
+# Lista de estudiantes para elegir cuál evaluar.
+# Respeta el rol: maestro ve sus cursos, especialista ve todos,
+# directivo/secretario ven todos.
+# ============================================================
+@evaluations_bp.route('/')
+@login_required
+@role_required('maestro', 'directivo', 'secretario')
+def index():
+    if current_user.role == 'maestro':
+        teacher = Teacher.get_by_user_id(current_user.id)
+        if not teacher:
+            flash('Tu usuario no está vinculado a un docente.', 'danger')
+            return redirect(url_for('main.dashboard'))
+
+        from app.models.staff_detail import StaffDetail
+        details = StaffDetail.get_by_teacher(teacher['id'])
+        is_specialist = bool(
+            details
+            and details.get('specialist_type')
+            and details['specialist_type'] != 'ninguno'
+        )
+
+        if is_specialist:
+            students = Student.get_all_with_details(status='activo')
+            view_mode = 'specialist'
+        else:
+            students = Student.get_by_teacher_course(teacher['id'])
+            view_mode = 'teacher'
+    else:
+        view_mode = request.args.get('view', 'enrolled')
+        if view_mode == 'all':
+            students = Student.get_all_with_details(status=None)
+        else:
+            students = Student.get_all_with_details(status='activo')
+
+    return render_template('evaluations/index.html',
+                           students=students,
+                           view_mode=view_mode)
 
 # ============================================================
 # CONFIGURACIÓN DE ÁREAS (solo directivo)

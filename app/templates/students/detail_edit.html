@@ -11,7 +11,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="POST" action="{{ url_for('students.edit_view', student_id=student.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <h4>Datos del Estudiante</h4>
             <div class="row">

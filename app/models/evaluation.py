@@ -20,6 +20,97 @@ class EvaluationArea:
         cursor.close(); conn.close()
         return rows
 
+# ============================================================
+# Conteos de uso (para el panel de áreas)
+# ============================================================
+
+    @staticmethod
+    def count_plans_using(area_id: int) -> int:
+        """Cuántos planes usan esta área (plan_areas.development_area_id)."""
+        conn = get_db_connection()
+        if not conn:
+            return 0
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT COUNT(*) FROM plan_areas WHERE development_area_id = %s",
+                (area_id,)
+            )
+            row = cursor.fetchone()
+            return int(row[0]) if row else 0
+        finally:
+            cursor.close()
+            conn.close()
+
+
+    @staticmethod
+    def count_evaluations_using(area_id: int) -> int:
+        """Cuántas evaluaciones usan esta área."""
+        conn = get_db_connection()
+        if not conn:
+            return 0
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT COUNT(*) FROM evaluations WHERE area_id = %s",
+                (area_id,)
+            )
+            row = cursor.fetchone()
+            return int(row[0]) if row else 0
+        finally:
+            cursor.close()
+            conn.close()
+
+
+    @staticmethod
+    def get_by_id(area_id: int):
+        """Devuelve un área por su ID."""
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute(
+                "SELECT * FROM evaluation_areas WHERE id = %s", (area_id,)
+            )
+            return cursor.fetchone()
+        finally:
+            cursor.close()
+            conn.close()
+
+
+    @staticmethod
+    def update(area_id: int, name: str, description: str = '',
+            sort_order: int = 0, active: bool = True) -> bool:
+        """Actualiza un área."""
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE evaluation_areas
+                SET name = %s,
+                    description = %s,
+                    sort_order = %s,
+                    active = %s
+                WHERE id = %s
+            """, (name.strip(), (description or '').strip(),
+                sort_order, 1 if active else 0, area_id))
+            conn.commit()
+
+            if cursor.rowcount > 0:
+                return True
+            cursor.execute("SELECT id FROM evaluation_areas WHERE id = %s", (area_id,))
+            return cursor.fetchone() is not None
+        except Exception as exc:
+            conn.rollback()
+            print(f"[EvaluationArea.update] {exc}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
     @staticmethod
     def create(data):
         conn = get_db_connection()

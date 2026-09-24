@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% from "_macros.html" import csrf_field %}
 {% block title %}Lista de Estudiantes{% endblock %}
 {% block content %}
@@ -65,7 +65,6 @@
             <div class="col-md-3">
                 <select id="course-filter" class="form-select">
                     <option value="">📚 Todos los cursos</option>
-                    {# Opciones se cargan dinámicamente con JS #}
                 </select>
             </div>
             <div class="col-md-2">
@@ -152,6 +151,7 @@
                                 <i class="bi bi-journal-plus"></i>
                             </a>
                         {% endif %}
+
                         {% if current_user.role in ['directivo', 'secretario', 'maestro'] %}
                             <a href="{{ url_for('documents.constancia_estudio', student_id=student.id) }}"
                             class="btn btn-outline-primary btn-sm">
@@ -171,7 +171,6 @@
             </tr>
             {% endfor %}
 
-            {# Fila para "sin resultados" (oculta por defecto) #}
             <tr id="no-results" style="display:none;">
                 <td colspan="7" class="text-center text-muted py-4">
                     <i class="bi bi-search display-6 d-block mb-2 opacity-50"></i>
@@ -195,24 +194,16 @@
         user-select: none;
         white-space: nowrap;
     }
-    th.sortable:hover {
-        background-color: #e2e8f0;
-    }
+    th.sortable:hover { background-color: #e2e8f0; }
     th.sortable::after {
-        content: '\F282';  /* bootstrap-icons: chevron-expand */
+        content: '\F282';
         font-family: 'bootstrap-icons';
         font-size: 0.75rem;
         margin-left: 0.35rem;
         opacity: 0.35;
     }
-    th.sortable.sort-asc::after {
-        content: '\F235';  /* chevron-up */
-        opacity: 1;
-    }
-    th.sortable.sort-desc::after {
-        content: '\F229';  /* chevron-down */
-        opacity: 1;
-    }
+    th.sortable.sort-asc::after { content: '\F235'; opacity: 1; }
+    th.sortable.sort-desc::after { content: '\F229'; opacity: 1; }
 </style>
 
 <script>
@@ -230,22 +221,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const counter = document.getElementById('counter');
     const noResults = document.getElementById('no-results');
 
-    // ---------- 1. Normalizador (sin acentos, sin guiones, minúsculas) ----------
     function normalize(text) {
         return (text || '')
             .toString()
             .toLowerCase()
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')   // quita acentos
-            .replace(/[-\s]/g, '');            // quita guiones y espacios
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[-\s]/g, '');
     }
 
-    // ---------- 2. Precargar índice de búsqueda por fila ----------
     rows.forEach(row => {
         row.dataset.searchText = normalize(row.textContent);
     });
 
-    // ---------- 3. Poblar dropdown de cursos ----------
     const cursos = new Set();
     rows.forEach(row => {
         const c = (row.dataset.course || '').trim();
@@ -258,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function () {
         courseFilter.appendChild(opt);
     });
 
-    // ---------- 4. Aplicar filtros ----------
     function applyFilters() {
         const q = normalize(searchInput.value);
         const course = courseFilter.value;
@@ -280,7 +267,6 @@ document.addEventListener('DOMContentLoaded', function () {
         noResults.style.display = visibles === 0 ? '' : 'none';
     }
 
-    // ---------- 5. Eventos de filtros ----------
     searchInput.addEventListener('input', applyFilters);
     courseFilter.addEventListener('change', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
@@ -293,7 +279,6 @@ document.addEventListener('DOMContentLoaded', function () {
         searchInput.focus();
     });
 
-    // ---------- 6. Ordenamiento por columnas ----------
     const tbody = table.querySelector('tbody');
     let currentSort = { idx: null, dir: 'asc' };
 
@@ -302,13 +287,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const idx = parseInt(th.dataset.sort, 10);
             const dir = (currentSort.idx === idx && currentSort.dir === 'asc') ? 'desc' : 'asc';
 
-            // Actualizar clases visuales
             table.querySelectorAll('th.sortable').forEach(h => {
                 h.classList.remove('sort-asc', 'sort-desc');
             });
             th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
 
-            // Ordenar filas
             rows.sort((a, b) => {
                 const aCell = (a.cells[idx]?.textContent || '').trim();
                 const bCell = (b.cells[idx]?.textContent || '').trim();
@@ -317,24 +300,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     : bCell.localeCompare(aCell, 'es', { sensitivity: 'base', numeric: true });
             });
 
-            // Reinsertar en el DOM
             rows.forEach(r => tbody.appendChild(r));
-
-            // Mantener "no results" al final
             if (noResults) tbody.appendChild(noResults);
 
             currentSort = { idx, dir };
         });
     });
 
-    // ---------- 7. Atajos de teclado ----------
-    // Escape limpia la búsqueda
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && document.activeElement === searchInput) {
             searchInput.value = '';
             applyFilters();
         }
-        // Ctrl+K enfoca la búsqueda
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             searchInput.focus();
@@ -342,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ---------- 8. Ejecutar filtros iniciales ----------
     applyFilters();
 });
 </script>

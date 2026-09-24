@@ -1,4 +1,4 @@
-ï»¿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Editar datos personales{% endblock %}
 {% block content %}
 
@@ -6,7 +6,7 @@
     <i class="bi bi-person-vcard me-2"></i>Editar datos personales
 </h2>
 <p class="text-muted">
-    Estudiante: <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+    student: <strong>{{ student.first_name }} {{ student.last_name }}</strong>
     ({{ student.school_id }})
 </p>
 
@@ -45,7 +45,7 @@
                            value="{{ details.shirt_size if details else '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Talla pantalÃ³n</label>
+                    <label class="form-label">Talla pantalón</label>
                     <input type="text" class="form-control" name="pants_size"
                            value="{{ details.pants_size if details else '' }}">
                 </div>
@@ -56,13 +56,13 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">NÃºmero de contacto</label>
+                    <label class="form-label">Número de contacto</label>
                     <input type="text" class="form-control" name="contact_phone"
                            value="{{ details.contact_phone if details else '' }}">
                 </div>
 
                 <div class="col-md-12 mb-3">
-                    <label class="form-label">DirecciÃ³n actual</label>
+                    <label class="form-label">Dirección actual</label>
                     <input type="text" class="form-control" name="address"
                            value="{{ details.address if details else '' }}">
                 </div>
