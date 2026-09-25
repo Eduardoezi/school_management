@@ -1,31 +1,19 @@
 """
 Servidor de producción con Waitress.
 
-Reemplaza a `run.py` (Werkzeug) en producción. Waitress es:
-
-    - Multiplataforma (Windows, Linux, macOS).
-    - Puro Python, sin dependencias del sistema.
-    - Robusto: soporta múltiples hilos, keep-alive.
-    - Recomendado por la propia documentación de Flask y Django
-      para producción.
-
-IMPORTANTE: Waitress NO hace SSL. En producción se coloca detrás de
-Apache (o Nginx) como reverse proxy que maneja el certificado y los
-headers de seguridad. Ver `docs/DEPLOY.md`.
+Waitress NO hace SSL. En producción se coloca detrás de Apache (o Nginx)
+como reverse proxy que maneja el certificado y los headers de seguridad.
 
 Uso:
-
     python serve.py
 
-Para desarrollo local, usa `python run.py` (Werkzeug, con reloader).
-
 Variables de entorno relevantes (.env):
-    HOST, PORT,
-    WAITRESS_THREADS, WAITRESS_CONNECTION_LIMIT, WAITRESS_CHANNEL_TIMEOUT
+    HOST, PORT, BEHIND_PROXY,
+    WAITRESS_THREADS, WAITRESS_CONNECTION_LIMIT, WAITRESS_CHANNEL_TIMEOUT,
+    PUBLIC_URL (opcional, solo para el log de arranque)
 """
 
 import os
-import socket
 import sys
 from pathlib import Path
 
@@ -43,10 +31,6 @@ BASE_DIR = Path(__file__).resolve().parent
 # Detectar si estamos detrás de un reverse proxy
 # ============================================================
 def _behind_proxy() -> bool:
-    """
-    True si hay un proxy adelante (Apache/Nginx).
-    Cuando hay proxy, Waitress NO maneja SSL y solo escucha en localhost.
-    """
     return os.getenv('BEHIND_PROXY', 'true').lower() in ('1', 'true', 'yes', 'on')
 
 
@@ -54,14 +38,6 @@ def _behind_proxy() -> bool:
 # Aplicar ProxyFix para que Flask confíe en headers del proxy
 # ============================================================
 def _apply_proxy_fix(app):
-    """
-    Cuando Apache reenvía peticiones a Waitress, agrega headers
-    X-Forwarded-For, X-Forwarded-Proto, etc. Werkzeug los ignora por
-    defecto. ProxyFix le dice a Flask que confíe en esos headers.
-
-    Sin esto, Flask cree que todas las peticiones vienen por HTTP
-    (y rompe url_for con _external=True, redirects, cookies secure, etc.).
-    """
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(
         app.wsgi_app,
@@ -88,15 +64,19 @@ def main():
     behind_proxy = _behind_proxy()
 
     if behind_proxy:
-        # Cuando hay proxy, aplicar ProxyFix
         _apply_proxy_fix(app)
         scheme_public = 'https'
-        print('[serve] Modo proxy: aplicando ProxyFix y esperando HTTP en ',
-              f'{host}:{port}')
+        print(f'[serve] Modo proxy: aplicando ProxyFix y esperando HTTP en {host}:{port}')
     else:
         scheme_public = 'http'
-        print('[serve] Modo directo (sin proxy): sirviendo en ',
-              f'{host}:{port}')
+        print(f'[serve] Modo directo (sin proxy): sirviendo en {host}:{port}')
+
+    # URL pública informativa — sin dominio hardcodeado.
+    # Prioridad: PUBLIC_URL explícita > construida desde PUBLIC_HOST/PORT.
+    public_url = os.getenv('PUBLIC_URL')
+    if not public_url:
+        public_host = os.getenv('PUBLIC_HOST', host)
+        public_url = f'{scheme_public}://{public_host}:{port}'
 
     print('=' * 60)
     print('  Sistema Escolar — Servidor de producción (Waitress)')
@@ -107,7 +87,7 @@ def main():
     print(f'  Connection limit: {connection_limit}')
     print(f'  Channel timeout:  {channel_timeout}s')
     print(f'  Behind proxy:     {behind_proxy}')
-    print(f'  URL pública:      {scheme_public}://gestionescolar.duckdns.org:5000')
+    print(f'  URL pública:      {public_url}')
     print('=' * 60)
     print('  Ctrl+C para detener')
     print('=' * 60)

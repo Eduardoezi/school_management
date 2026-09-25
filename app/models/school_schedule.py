@@ -1,4 +1,7 @@
+import logging
 from app.utils.db import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 class SchoolSchedule:
     @staticmethod
@@ -50,7 +53,8 @@ class SchoolSchedule:
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
-            print(e); return None
+            logger.exception("Error en create de la clase SchoolSchedule: %s", e)
+            return None
         finally:
             cursor.close(); conn.close()
 
@@ -69,7 +73,8 @@ class SchoolSchedule:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(e); return False
+            logger.exception("Error en update de la clase SchoolSchedule: %s", e)
+            return False
         finally:
             cursor.close(); conn.close()
 
@@ -83,6 +88,7 @@ class SchoolSchedule:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(e); return False
+            logger.exception("Error en delete de la clase SchoolSchedule: %s", e)
+            return False
         finally:
             cursor.close(); conn.close()

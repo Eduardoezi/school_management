@@ -1,5 +1,13 @@
+# app/utils/db.py
+import logging
+
 import mysql.connector
+
 from app.config import Config
+
+
+logger = logging.getLogger(__name__)
+
 
 def get_db_connection():
     """Devuelve una conexión a MySQL usando la configuración."""
@@ -16,5 +24,5 @@ def get_db_connection():
         )
         return conn
     except mysql.connector.Error as err:
-        print(f"Error de conexión: {err}")
+        logger.exception("Error de conexión a MySQL: %s", err)
         return None

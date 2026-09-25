@@ -1,9 +1,18 @@
 # app/routes/webauthn_auth.py
+"""
+WebAuthn para marcado de entrada/salida del personal.
+
+REGLA DE ORO:
+    El RP ID y el Origin que el servidor declara al navegador
+    vienen SIEMPRE de la configuración (.env), NUNCA del Host
+    que manda el cliente. Derivarlos del request permite
+    Host-spoofing / DNS-rebinding contra el kiosco.
+"""
 import base64
 
 from flask import (
     Blueprint, request, jsonify,
-    session, current_app
+    session, current_app, abort,
 )
 from flask_login import login_required, current_user
 
@@ -30,24 +39,78 @@ webauthn_bp = Blueprint('webauthn_auth', __name__, url_prefix='/webauthn')
 
 
 # ============================================================
-# HELPERS DINÁMICOS (soporta localhost, IP LAN o dominio público)
+# CONFIGURACIÓN — siempre desde .env, nunca desde el request
 # ============================================================
-def _rp_name():
+def _is_production() -> bool:
+    return bool(current_app.config.get('IS_PRODUCTION'))
+
+
+def _rp_name() -> str:
     return current_app.config.get('WEBAUTHN_RP_NAME', 'Sistema Escolar')
 
 
-def _rp_id():
-    """RP ID = hostname sin puerto (ej: 'gestionescolar.duckdns.org')."""
+def _rp_id() -> str:
+    """
+    RP ID autorizado.
+    - Producción: obligatorio en .env (config.py ya lo valida al arrancar).
+    - Desarrollo: si no está configurado, se cae al host del request
+      para no romper el flujo local. En producción NO hay fallback.
+    """
+    configured = current_app.config.get('WEBAUTHN_RP_ID')
+    if configured:
+        return configured
+    if _is_production():
+        raise RuntimeError(
+            "WEBAUTHN_RP_ID no está configurado. La app no debería "
+            "haber arrancado en producción sin esta variable."
+        )
+    # Solo en dev:
     return request.host.split(':', 1)[0]
 
 
-def _origin():
-    """Origin completo tal como lo ve el navegador."""
-    # Si hay un proxy inverso (Nginx, Cloudflare), usa el esquema real
+def _origin() -> str:
+    """
+    Origin autorizado.
+    - Producción: obligatorio en .env.
+    - Desarrollo: fallback al request.
+    """
+    configured = current_app.config.get('WEBAUTHN_ORIGIN')
+    if configured:
+        return configured
+    if _is_production():
+        raise RuntimeError(
+            "WEBAUTHN_ORIGIN no está configurado en producción."
+        )
+    # Solo en dev:
     scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
     return f"{scheme}://{request.host}"
 
 
+def _check_host() -> None:
+    """
+    Rechaza peticiones cuyo Host no coincida con WEBAUTHN_RP_ID.
+
+    En producción esto evita que un cliente con acceso directo al
+    puerto interno del servidor (LAN, kiosco comprometido) fuerce
+    un RP ID falso manipulando el header Host.
+
+    En desarrollo, si WEBAUTHN_RP_ID no está definido, no aplica.
+    """
+    allowed = current_app.config.get('WEBAUTHN_RP_ID')
+    if not allowed:
+        return  # modo dev sin configuración explícita
+    host = request.host.split(':', 1)[0]
+    if host != allowed:
+        current_app.logger.warning(
+            "[webauthn] Host no autorizado: %r (esperado %r)",
+            host, allowed,
+        )
+        abort(400, description='Host no autorizado para WebAuthn.')
+
+
+# ============================================================
+# HELPERS base64url
+# ============================================================
 def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b'=').decode('ascii')
 
@@ -62,6 +125,19 @@ def _b64url_decode(data: str) -> bytes:
 # ============================================================
 @webauthn_bp.route('/diagnostics', methods=['GET'])
 def diagnostics():
+    """
+    Endpoint informativo. NO valida Host a propósito: sirve para
+    diagnosticar problemas desde cualquier equipo de la LAN.
+    """
+    try:
+        rp_id = _rp_id()
+        origin = _origin()
+        config_error = None
+    except RuntimeError as exc:
+        rp_id = None
+        origin = None
+        config_error = str(exc)
+
     host = request.host.split(':', 1)[0]
     is_localhost = host in ('localhost', '127.0.0.1', '::1')
     is_https = request.scheme == 'https'
@@ -71,12 +147,13 @@ def diagnostics():
         'secure_context': secure,
         'scheme': request.scheme,
         'host': host,
-        'rp_id': _rp_id(),
-        'origin': _origin(),
+        'rp_id': rp_id,
+        'origin': origin,
+        'config_error': config_error,
         'message': (
             'Contexto seguro: WebAuthn disponible.' if secure
             else 'WebAuthn requiere HTTPS. Accede por https:// o usa localhost.'
-        )
+        ),
     })
 
 
@@ -86,6 +163,8 @@ def diagnostics():
 @webauthn_bp.route('/register/begin', methods=['POST'])
 @login_required
 def register_begin():
+    _check_host()
+
     teacher = Teacher.get_by_user_id(current_user.id)
     if not teacher:
         return jsonify({'error': 'Usuario no vinculado a un docente.'}), 400
@@ -119,6 +198,8 @@ def register_begin():
 @webauthn_bp.route('/register/complete', methods=['POST'])
 @login_required
 def register_complete():
+    _check_host()
+
     challenge_b64 = session.pop('webauthn_register_challenge', None)
     teacher_id = session.pop('webauthn_register_teacher_id', None)
 
@@ -134,7 +215,7 @@ def register_complete():
             expected_rp_id=_rp_id(),
         )
     except Exception as e:
-        print(f"[register_complete] Error: {e}")
+        current_app.logger.exception("[register_complete] Error: %s", e)
         return jsonify({'error': 'No se pudo verificar el registro biométrico.'}), 400
 
     credential_data = {
@@ -159,6 +240,8 @@ def register_complete():
 @webauthn_bp.route('/authenticate/begin', methods=['POST'])
 def auth_begin():
     """Paso 1: el kiosco pide la cédula, el servidor busca sus credenciales."""
+    _check_host()
+
     cedula = (request.get_json() or {}).get('cedula', '').strip()
 
     if not cedula or not cedula.isdigit():
@@ -168,7 +251,6 @@ def auth_begin():
     if not teacher:
         return jsonify({'error': 'Credenciales no válidas.'}), 401
 
-    # Verificar que aún no tenga entrada hoy: si ya la tiene, no hace falta biometría
     record = TeacherAttendance.get_today(teacher['id'])
     if record and record.get('check_in'):
         return jsonify({
@@ -203,9 +285,10 @@ def auth_begin():
 def auth_complete():
     """
     Paso 2: verifica la firma y marca ENTRADA.
-    Este endpoint es exclusivamente para el flujo de entrada.
-    La salida tiene su propio endpoint sin biometría.
+    Endpoint exclusivo del flujo de entrada; la salida no usa biometría.
     """
+    _check_host()
+
     challenge_b64 = session.pop('webauthn_auth_challenge', None)
     teacher_id = session.pop('webauthn_auth_teacher_id', None)
 
@@ -232,12 +315,11 @@ def auth_complete():
             credential_current_sign_count=credential['sign_count'],
         )
     except Exception as e:
-        print(f"[auth_complete] Error: {e}")
+        current_app.logger.exception("[auth_complete] Error: %s", e)
         return jsonify({'error': 'Verificación biométrica fallida.'}), 401
 
     WebAuthnCredential.update_sign_count(credential_id, verification.new_sign_count)
 
-    # Doble check: si por algún motivo ya tenía entrada hoy, devolver ya-marcada
     existing = TeacherAttendance.get_today(teacher_id)
     if existing and existing.get('check_in'):
         return jsonify({

@@ -15,7 +15,34 @@
     <div class="card public-light-card">
         <div class="card-body p-4">
 
-            <div id="step-cedula">
+            {# ========================================== #}
+            {# VISTA EXCLUSIVA PARA PC (OCULTA EN MÓVIL) #}
+            {# ========================================== #}
+            <div id="step-pc-warning" class="d-none text-center">
+                <div class="mb-3">
+                    <i class="bi bi-phone-fill text-primary" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="mb-2">Usa tu teléfono móvil</h5>
+                <p class="text-muted small mb-3">
+                    Para registrar tu asistencia biométrica (huella o Face ID), por favor abre esta misma página en tu teléfono celular.
+                </p>
+                
+                {# Aquí se generará el QR dinámicamente con JS #}
+                <div id="qr-container" class="d-flex justify-content-center mb-3"></div>
+                
+                <p class="small text-muted">
+                    Escanea este código QR con la cámara de tu teléfono para abrir la vista móvil.
+                </p>
+                <hr>
+                <small class="text-muted">
+                    Una vez en el celular, ingresa tu cédula y confirma con tu huella.
+                </small>
+            </div>
+
+            {# ========================================== #}
+            {# VISTA EXCLUSIVA PARA MÓVIL (OCULTA EN PC)  #}
+            {# ========================================== #}
+            <div id="step-cedula" class="d-none">
                 <label for="cedula" class="form-label fw-semibold">Ingresa tu cédula</label>
                 <input type="text" inputmode="numeric" pattern="[0-9]*"
                        class="form-control form-control-lg text-center mb-3"
@@ -28,7 +55,7 @@
                             onclick="marcarEntrada()">
                         <i class="bi bi-box-arrow-in-right me-2"></i>Marcar ENTRADA
                         <small class="d-block fw-normal opacity-75" style="font-size:.72rem;">
-                            Requiere huella / Use su Telefono
+                            Requiere huella / Face ID
                         </small>
                     </button>
 
@@ -42,6 +69,9 @@
                 </div>
             </div>
 
+            {# ========================================== #}
+            {# PANTALLA DE ESPERA BIOMÉTRICA (MÓVIL)     #}
+            {# ========================================== #}
             <div id="step-bio" class="d-none text-center py-3">
                 <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Esperando biometría...</span>
@@ -49,9 +79,7 @@
                 <p class="mb-2">Confirma tu identidad en tu dispositivo...</p>
                 <p class="small text-muted px-3">
                     <i class="bi bi-info-circle me-1"></i>
-                    Si Windows te pide insertar una llave USB, selecciona la opción 
-                    <strong>"Usar un dispositivo diferente"</strong> o <strong>"Usar un teléfono"</strong> 
-                    en la ventana que aparece en tu navegador. Luego escanea el código QR con tu celular.
+                    Toca el sensor de huella o usa Face ID para validar tu entrada.
                 </p>
             </div>
 
@@ -72,6 +100,48 @@
 </div>
 
 <script>
+// ============================================================
+// DETECCIÓN DE DISPOSITIVO (PC vs MÓVIL)
+// ============================================================
+function esDispositivoMovil() {
+    // Detecta si es un móvil o tablet basado en el User-Agent
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && /Mac|iPad/.test(navigator.userAgent));
+}
+
+function configurarVistaSegunDispositivo() {
+    const esMovil = esDispositivoMovil();
+    const stepCedula = document.getElementById('step-cedula');
+    const stepPcWarning = document.getElementById('step-pc-warning');
+
+    if (esMovil) {
+        // Si es móvil, mostrar el formulario de asistencia normal
+        stepCedula.classList.remove('d-none');
+        stepPcWarning.classList.add('d-none');
+        
+        // Enfocar el input automáticamente
+        const inputCedula = document.getElementById('cedula');
+        if (inputCedula) inputCedula.focus();
+    } else {
+        // Si es PC, ocultar el formulario y mostrar la advertencia con QR
+        stepCedula.classList.add('d-none');
+        stepPcWarning.classList.remove('d-none');
+        
+        // Generar el código QR dinámicamente apuntando a esta misma URL
+        const urlActual = window.location.href;
+        // Usamos un servicio de generación de QR gratuito y confiable
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(urlActual)}`;
+        
+        const qrContainer = document.getElementById('qr-container');
+        if (qrContainer) {
+            qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="Escanear QR" class="img-fluid rounded shadow-sm border p-1 bg-white" style="max-width: 220px;">`;
+        }
+    }
+}
+
+// Ejecutar la configuración de vista al cargar el DOM
+document.addEventListener('DOMContentLoaded', configurarVistaSegunDispositivo);
+
 // ============================================================
 // Helpers
 // ============================================================
@@ -369,6 +439,5 @@ document.getElementById('cedula').addEventListener('keydown', e => {
         marcarEntrada();
     }
 });
-document.getElementById('cedula').focus();
 </script>
 {% endblock %}

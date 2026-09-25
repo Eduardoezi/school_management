@@ -1,5 +1,8 @@
+import logging
 from app.utils.db import get_db_connection
 import mysql.connector
+
+logger = logging.getLogger(__name__)
 
 class DailyAttendanceStat:
     @staticmethod
@@ -28,9 +31,11 @@ class DailyAttendanceStat:
             conn.commit()
             return True
         except Exception as e:
-            print(e); return False
+            logger.exception("Error en get_or_create de la clase DailyAttendanceStat: %s", e)
+            return False
         finally:
-            cursor.close(); conn.close()
+            cursor.close() 
+            conn.close()
 
     @staticmethod
     def get_by_course_and_date(course_code, stat_date):

@@ -1,9 +1,11 @@
+import logging
 from app.utils.db import get_db_connection
 import mysql.connector
 
 # Re-export para compatibilidad con imports antiguos
 from app.models.evaluation_period import EvaluationPeriod  # noqa: F401
 
+logger = logging.getLogger(__name__)
 
 class EvaluationArea:
     @staticmethod
@@ -187,7 +189,8 @@ class Evaluation:
             conn.commit()
             return True
         except Exception as e:
-            print(e); return False
+            logger.exception("Error en Evaluation save de la base de datos: %s", e)
+            return False
         finally:
             cursor.close(); conn.close()
 

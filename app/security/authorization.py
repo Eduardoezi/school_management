@@ -15,9 +15,14 @@ Las reglas ABAC viven en _RESOURCE_CHECKERS, indexadas por permiso.
 Cada checker recibe (user, resource) y devuelve bool.
 """
 
+import logging
+
 from flask import g, has_request_context
 from flask_login import current_user
 from app.security.permissions import Permission
+
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -227,6 +232,7 @@ def _cached_is_in_teacher_courses(student_id: int, teacher_id: int) -> bool:
     setattr(g, cache_key, result)
     return result
 
+
 # ------------------------------------------------------------
 # Checker unificado de acceso a un curso
 # ------------------------------------------------------------
@@ -308,7 +314,7 @@ def _query_is_teacher_of_course(course_code: str, teacher_id: int) -> bool:
         row = cursor.fetchone()
         return bool(row and row[0])
     except Exception as e:
-        print(f"[_query_is_teacher_of_course] {e}")
+        logger.exception("[_query_is_teacher_of_course] %s", e)
         return False
     finally:
         cursor.close()

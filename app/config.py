@@ -11,10 +11,17 @@ Reglas:
       ser HTTPS en producción) también corre al arrancar.
 """
 
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -118,8 +125,8 @@ class Config:
         _required('MYSQL_USER', MYSQL_USER)
         _required('MYSQL_PASSWORD', MYSQL_PASSWORD)
         if MYSQL_USER == 'root' and ENV == 'production':
-            print(
-                '⚠️  ADVERTENCIA: MYSQL_USER=root en producción. '
+            logger.warning(
+                'ADVERTENCIA: MYSQL_USER=root en producción. '
                 'Crea un usuario dedicado para la app.'
             )
 
@@ -213,10 +220,11 @@ class Config:
 
         # 4) ProxyFix coherente con el modo de despliegue
         if BEHIND_PROXY and HOST not in ('127.0.0.1', 'localhost'):
-            print(
-                f'⚠️  ADVERTENCIA: BEHIND_PROXY=true pero HOST={HOST}. '
-                f'Si hay proxy, Waitress debería escuchar solo en '
-                f'127.0.0.1 para no exponerse directamente.'
+            logger.warning(
+                'BEHIND_PROXY=true pero HOST=%s. '
+                'Si hay proxy, Waitress debería escuchar solo en '
+                '127.0.0.1 para no exponerse directamente.',
+                HOST,
             )
 
     # ============================================================
@@ -233,14 +241,14 @@ class Config:
     # LOG DE ARRANQUE (sin exponer secretos)
     # ============================================================
     if DEBUG:
-        print('─' * 60)
-        print(f'  Config cargada — ENV={ENV}')
-        print(f'  HOST={HOST}  PORT={PORT}  DEBUG={DEBUG}')
-        print(f'  BEHIND_PROXY={BEHIND_PROXY}')
-        print(f'  WEBAUTHN_RP_ID={WEBAUTHN_RP_ID}')
-        print(f'  WEBAUTHN_ORIGIN={WEBAUTHN_ORIGIN}')
-        print(f'  SESSION_COOKIE_SECURE={SESSION_COOKIE_SECURE}')
-        print(f'  SSL_CERT definido: {bool(SSL_CERT)}')
-        print(f'  SSL_KEY  definido: {bool(SSL_KEY)}')
-        print(f'  SECRET_KEY definida: {bool(SECRET_KEY)}')
-        print('─' * 60)
+        logger.info('─' * 60)
+        logger.info('  Config cargada — ENV=%s', ENV)
+        logger.info('  HOST=%s  PORT=%s  DEBUG=%s', HOST, PORT, DEBUG)
+        logger.info('  BEHIND_PROXY=%s', BEHIND_PROXY)
+        logger.info('  WEBAUTHN_RP_ID=%s', WEBAUTHN_RP_ID)
+        logger.info('  WEBAUTHN_ORIGIN=%s', WEBAUTHN_ORIGIN)
+        logger.info('  SESSION_COOKIE_SECURE=%s', SESSION_COOKIE_SECURE)
+        logger.info('  SSL_CERT definido: %s', bool(SSL_CERT))
+        logger.info('  SSL_KEY  definido: %s', bool(SSL_KEY))
+        logger.info('  SECRET_KEY definida: %s', bool(SECRET_KEY))
+        logger.info('─' * 60)

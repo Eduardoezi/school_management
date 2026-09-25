@@ -3,16 +3,14 @@ Servidor de DESARROLLO (Werkzeug).
 
     ⚠️  NO USAR EN PRODUCCIÓN.
 
-Werkzeug sirve para desarrollo porque:
-    - Tiene reloader automático (útil mientras programas).
-    - Tiene debugger interactivo (útil para ver errores).
-    - NO es seguro ni eficiente para usuarios reales.
-
 Para producción usa:
 
     python serve.py
 
-El servidor de producción (Waitress) no tiene reloader ni debugger.
+Variables relevantes (.env):
+    HOST, PORT, SSL_CERT, SSL_KEY
+    PUBLIC_MDNS_NAME (opcional, nombre .local anunciado por zeroconf;
+                       por defecto 'sistema-escolar.local')
 """
 
 import os
@@ -26,6 +24,8 @@ app = create_app()
 
 BASE_DIR = Path(__file__).resolve().parent
 
+DEFAULT_MDNS_NAME = 'sistema-escolar.local'
+
 
 def _get_local_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -38,18 +38,19 @@ def _get_local_ip() -> str:
         s.close()
 
 
-def _register_mdns(ip: str, port: int):
+def _register_mdns(ip: str, port: int, mdns_name: str):
     try:
         from zeroconf import ServiceInfo, Zeroconf
     except ImportError:
         return None, None
+
     info = ServiceInfo(
         '_https._tcp.local.',
         'Sistema Escolar._https._tcp.local.',
         addresses=[socket.inet_aton(ip)],
         port=port,
         properties={'path': '/'},
-        server='gestionescolar.local.',
+        server=f'{mdns_name}.',
     )
     zc = Zeroconf()
     zc.register_service(info)
@@ -73,15 +74,20 @@ if __name__ == '__main__':
     if ssl_cert and ssl_key and os.path.exists(ssl_cert) and os.path.exists(ssl_key):
         ssl_context = (ssl_cert, ssl_key)
 
+    # Nombre mDNS: configurable, sin dominio hardcodeado.
+    mdns_name = os.getenv('PUBLIC_MDNS_NAME', DEFAULT_MDNS_NAME)
+
     zc, info = (None, None)
     if ssl_context:
-        zc, info = _register_mdns(_get_local_ip(), port)
+        zc, info = _register_mdns(_get_local_ip(), port, mdns_name)
 
-    scheme = 'https' if ssl_context else 'http'
-    public_url = (
-        f'{scheme}://gestionescolar.local:{port}'
-        if ssl_context else f'{scheme}://{host}:{port}'
-    )
+    # URL pública para el log
+    public_url = os.getenv('PUBLIC_URL')
+    if not public_url:
+        if ssl_context:
+            public_url = f'https://{mdns_name}:{port}'
+        else:
+            public_url = f'http://{host}:{port}'
 
     print(f'  Servidor de desarrollo en {public_url}  (debug={debug})')
 
