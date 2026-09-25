@@ -95,7 +95,7 @@ def login():
                 return render_template('login.html')
 
             # Crear la sesión de Flask-Login.
-            login_user(user)
+            login_user(user, remember=bool(request.form.get('remember')))
 
             # Registrar la sesión en la base de datos.
             session['session_id'] = str(uuid.uuid4())

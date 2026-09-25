@@ -1,0 +1,20 @@
+-r requirements.in
+
+# Testing
+pytest
+pytest-cov
+pytest-flask
+
+# Datos falsos para tests
+faker
+
+# Calidad de código
+ruff
+black
+mypy
+
+# Comodidad en consola
+ipython
+
+# Git hooks
+pre-commit

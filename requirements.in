@@ -1,0 +1,32 @@
+# Framework web
+Flask
+
+# Servidor WSGI de producción
+waitress
+
+# Autenticación y sesiones
+Flask-Login
+Flask-WTF
+bcrypt
+
+# Base de datos
+mysql-connector-python
+
+# Variables de entorno
+python-dotenv
+
+# Procesamiento de imágenes
+Pillow
+
+# Cifrado
+cryptography
+
+# Autenticación biométrica
+webauthn
+
+# Descubrimiento local (mDNS)
+zeroconf
+
+# Generación de PDF
+xhtml2pdf
+

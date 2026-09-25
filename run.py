@@ -1,17 +1,30 @@
-# run.py
+"""
+Servidor de DESARROLLO (Werkzeug).
+
+    ⚠️  NO USAR EN PRODUCCIÓN.
+
+Werkzeug sirve para desarrollo porque:
+    - Tiene reloader automático (útil mientras programas).
+    - Tiene debugger interactivo (útil para ver errores).
+    - NO es seguro ni eficiente para usuarios reales.
+
+Para producción usa:
+
+    python serve.py
+
+El servidor de producción (Waitress) no tiene reloader ni debugger.
+"""
+
 import os
 import socket
+from pathlib import Path
 
 from app import create_app
 
-try:
-    from zeroconf import ServiceInfo, Zeroconf
-    HAS_ZEROCONF = True
-except ImportError:
-    HAS_ZEROCONF = False
-
 
 app = create_app()
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 def _get_local_ip() -> str:
@@ -26,17 +39,17 @@ def _get_local_ip() -> str:
 
 
 def _register_mdns(ip: str, port: int):
-    if not HAS_ZEROCONF:
-        print("i  zeroconf no instalado. Los clientes deberan usar el dominio directamente.")
+    try:
+        from zeroconf import ServiceInfo, Zeroconf
+    except ImportError:
         return None, None
-
     info = ServiceInfo(
-        "_https._tcp.local.",
-        "Sistema Escolar._https._tcp.local.",
+        '_https._tcp.local.',
+        'Sistema Escolar._https._tcp.local.',
         addresses=[socket.inet_aton(ip)],
         port=port,
         properties={'path': '/'},
-        server="gestionescolar.duckdns.org.",
+        server='gestionescolar.local.',
     )
     zc = Zeroconf()
     zc.register_service(info)
@@ -44,12 +57,17 @@ def _register_mdns(ip: str, port: int):
 
 
 if __name__ == '__main__':
-    host  = app.config.get('HOST', '0.0.0.0')
-    port  = app.config.get('PORT', 5000)
-    debug = app.config.get('DEBUG', False)
+    print('=' * 60)
+    print('  ⚠️  SERVIDOR DE DESARROLLO — NO USAR EN PRODUCCIÓN')
+    print('  Para producción ejecuta:  python serve.py')
+    print('=' * 60)
+
+    host = app.config.get('HOST', '0.0.0.0')
+    port = int(app.config.get('PORT', 5000))
+    debug = app.config.get('DEBUG', True)
 
     ssl_cert = app.config.get('SSL_CERT')
-    ssl_key  = app.config.get('SSL_KEY')
+    ssl_key = app.config.get('SSL_KEY')
 
     ssl_context = None
     if ssl_cert and ssl_key and os.path.exists(ssl_cert) and os.path.exists(ssl_key):
@@ -57,27 +75,20 @@ if __name__ == '__main__':
 
     zc, info = (None, None)
     if ssl_context:
-        local_ip = _get_local_ip()
-        zc, info = _register_mdns(local_ip, port)
+        zc, info = _register_mdns(_get_local_ip(), port)
 
     scheme = 'https' if ssl_context else 'http'
-    public_url = f"{scheme}://gestionescolar.duckdns.org:{port}" if ssl_context \
-                 else f"{scheme}://{host}:{port}"
+    public_url = (
+        f'{scheme}://gestionescolar.local:{port}'
+        if ssl_context else f'{scheme}://{host}:{port}'
+    )
 
-    print(f"Servidor iniciado en {public_url}  (debug={debug})")
-    if ssl_context:
-        print("HTTPS activo con certificados de Let's Encrypt.")
-    else:
-        print("Sin HTTPS. WebAuthn NO funcionara.")
-        print(f"   Acceso local:   http://127.0.0.1:{port}")
-        print(f"   Acceso en red:  http://<tu-ip-local>:{port}")
+    print(f'  Servidor de desarrollo en {public_url}  (debug={debug})')
 
     try:
         app.run(
-            host=host,
-            port=port,
-            debug=debug,
-            ssl_context=ssl_context,
+            host=host, port=port, debug=debug,
+            ssl_context=ssl_context, use_reloader=True,
         )
     finally:
         if zc and info:

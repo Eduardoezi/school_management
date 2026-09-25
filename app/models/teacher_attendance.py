@@ -5,7 +5,33 @@ import mysql.connector
 
 class TeacherAttendance:
     GRACE_MINUTES = 10
+    AUTO_CLOSE_BUFFER_MINUTES = 30   # cierre automático: end_time + 30 min
+    AUTO_CLOSE_FALLBACK_TIME = '17:00:00'
 
+    # ============================================================
+    # HELPERS DE FORMATO
+    # ============================================================
+    @staticmethod
+    def format_time(value):
+        """
+        Convierte TIME de MySQL (datetime.timedelta) o datetime.time
+        a string 'HH:MM:SS' listo para JSON. Devuelve None si value is None.
+        """
+        if value is None:
+            return None
+        if isinstance(value, timedelta):
+            total = int(value.total_seconds())
+            hh = total // 3600
+            mm = (total % 3600) // 60
+            ss = total % 60
+            return f"{hh:02d}:{mm:02d}:{ss:02d}"
+        if hasattr(value, 'strftime'):
+            return value.strftime('%H:%M:%S')
+        return str(value)
+
+    # ============================================================
+    # HORARIO Y ESTADO
+    # ============================================================
     @staticmethod
     def _get_today_schedule():
         from app.models.school_schedule import SchoolSchedule
@@ -24,23 +50,29 @@ class TeacherAttendance:
         limite = start_dt + timedelta(minutes=TeacherAttendance.GRACE_MINUTES)
         return 'late' if check_in_time > limite.time() else 'present'
 
+    # ============================================================
+    # CONSULTAS
+    # ============================================================
     @staticmethod
     def get_today(teacher_id):
         conn = get_db_connection()
-        if not conn: return None
+        if not conn:
+            return None
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             SELECT * FROM teacher_attendance
             WHERE teacher_id = %s AND attendance_date = CURDATE()
         """, (teacher_id,))
         row = cursor.fetchone()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return row
 
     @staticmethod
     def get_by_id(attendance_id):
         conn = get_db_connection()
-        if not conn: return None
+        if not conn:
+            return None
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             SELECT ta.*, t.first_name, t.last_name
@@ -49,7 +81,8 @@ class TeacherAttendance:
             WHERE ta.id = %s
         """, (attendance_id,))
         row = cursor.fetchone()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return row
 
     @staticmethod
@@ -57,7 +90,8 @@ class TeacherAttendance:
         if not date_str:
             date_str = date.today().strftime('%Y-%m-%d')
         conn = get_db_connection()
-        if not conn: return []
+        if not conn:
+            return []
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             SELECT ta.*, t.first_name, t.last_name
@@ -67,13 +101,34 @@ class TeacherAttendance:
             ORDER BY t.last_name
         """, (date_str,))
         rows = cursor.fetchall()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return rows
 
     @staticmethod
+    def get_by_date_range(teacher_id, from_date, to_date):
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT * FROM teacher_attendance
+            WHERE teacher_id = %s AND attendance_date BETWEEN %s AND %s
+            ORDER BY attendance_date DESC
+        """, (teacher_id, from_date, to_date))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return rows
+
+    # ============================================================
+    # MARCAR ENTRADA / SALIDA
+    # ============================================================
+    @staticmethod
     def check_in(teacher_id):
         conn = get_db_connection()
-        if not conn: return {'success': False, 'error': 'Error de conexión'}
+        if not conn:
+            return {'success': False, 'error': 'Error de conexión'}
         cursor = conn.cursor(dictionary=True)
         try:
             now = datetime.now().time()
@@ -90,38 +145,47 @@ class TeacherAttendance:
             row = TeacherAttendance.get_today(teacher_id)
             return {'success': True, 'record': row}
         except Exception as e:
-            print(e); return {'success': False, 'error': str(e)}
+            print(f"[check_in] {e}")
+            return {'success': False, 'error': str(e)}
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
 
     @staticmethod
     def check_out(teacher_id):
         conn = get_db_connection()
-        if not conn: return {'success': False, 'error': 'Error de conexión'}
+        if not conn:
+            return {'success': False, 'error': 'Error de conexión'}
         cursor = conn.cursor()
         try:
             cursor.execute("""
                 UPDATE teacher_attendance
-                SET check_out = CURTIME()
-                WHERE teacher_id = %s AND attendance_date = CURDATE()
+                   SET check_out = CURTIME()
+                 WHERE teacher_id = %s
+                   AND attendance_date = CURDATE()
+                   AND check_in IS NOT NULL
+                   AND check_out IS NULL
             """, (teacher_id,))
             conn.commit()
             if cursor.rowcount == 0:
-                return {'success': False, 'error': 'No hay registro de entrada para hoy.'}
+                return {'success': False, 'error': 'No hay entrada pendiente de salida para hoy.'}
             return {'success': True}
         except Exception as e:
-            print(e); return {'success': False, 'error': str(e)}
+            print(f"[check_out] {e}")
+            return {'success': False, 'error': str(e)}
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
 
     @staticmethod
     def update(attendance_id, data):
         conn = get_db_connection()
-        if not conn: return False
+        if not conn:
+            return False
         cursor = conn.cursor()
-        sql = """UPDATE teacher_attendance SET
-                 check_in=%s, check_out=%s, status=%s, remarks=%s
-                 WHERE id=%s"""
+        sql = """UPDATE teacher_attendance
+                    SET check_in=%s, check_out=%s, status=%s, remarks=%s
+                  WHERE id=%s"""
         values = (data.get('check_in'), data.get('check_out'),
                   data.get('status'), data.get('remarks'), attendance_id)
         try:
@@ -129,14 +193,134 @@ class TeacherAttendance:
             conn.commit()
             return True
         except Exception as e:
-            print(e); return False
+            print(f"[update] {e}")
+            return False
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
 
+    # ============================================================
+    # AUTO-CIERRE DE SALIDAS
+    # ============================================================
+    @staticmethod
+    def auto_close_pending(target_date=None):
+        """
+        Cierra automáticamente las salidas pendientes (check_in sin check_out)
+        para la fecha indicada. La hora de salida se toma del horario del día;
+        si no hay horario, usa 17:00.
+        """
+        if target_date is None:
+            target_date = date.today()
+        if isinstance(target_date, str):
+            try:
+                target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
+            except ValueError:
+                return 0
+
+        close_time_str = TeacherAttendance.AUTO_CLOSE_FALLBACK_TIME
+        try:
+            from app.models.school_schedule import SchoolSchedule
+            schedule = SchoolSchedule.get_by_day(target_date.isoweekday())
+            if schedule and schedule.get('end_time'):
+                close_time_str = TeacherAttendance.format_time(schedule['end_time'])
+        except Exception as exc:
+            print(f"[auto_close_pending] schedule lookup: {exc}")
+
+        conn = get_db_connection()
+        if not conn:
+            return 0
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE teacher_attendance
+                   SET check_out = %s,
+                       remarks = CONCAT(
+                           COALESCE(remarks, ''),
+                           CASE WHEN COALESCE(remarks, '') = '' THEN '' ELSE ' | ' END,
+                           'Salida registrada automáticamente'
+                       )
+                 WHERE attendance_date = %s
+                   AND check_in IS NOT NULL
+                   AND check_out IS NULL
+            """, (close_time_str, target_date))
+            conn.commit()
+            return cursor.rowcount
+        except Exception as e:
+            print(f"[auto_close_pending] {e}")
+            conn.rollback()
+            return 0
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def auto_close_all_past():
+        """Cierra salidas pendientes de fechas anteriores a hoy (una sola vez)."""
+        conn = get_db_connection()
+        if not conn:
+            return 0
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE teacher_attendance
+                   SET check_out = %s,
+                       remarks = CONCAT(
+                           COALESCE(remarks, ''),
+                           CASE WHEN COALESCE(remarks, '') = '' THEN '' ELSE ' | ' END,
+                           'Salida auto-registrada (olvido)'
+                       )
+                 WHERE attendance_date < CURDATE()
+                   AND check_in IS NOT NULL
+                   AND check_out IS NULL
+            """, (TeacherAttendance.AUTO_CLOSE_FALLBACK_TIME,))
+            conn.commit()
+            return cursor.rowcount
+        except Exception as e:
+            print(f"[auto_close_all_past] {e}")
+            conn.rollback()
+            return 0
+        finally:
+            cursor.close()
+            conn.close()
+
+    @staticmethod
+    def maybe_auto_close_today():
+        """
+        Cierra las salidas pendientes de HOY solo si ya pasó la hora de salida
+        del horario + buffer. Se llama de forma perezosa al abrir la vista admin.
+        """
+        now = datetime.now()
+        try:
+            schedule = TeacherAttendance._get_today_schedule()
+        except Exception as exc:
+            print(f"[maybe_auto_close_today] {exc}")
+            return 0
+
+        if not schedule or not schedule.get('end_time'):
+            return 0
+
+        end_t = schedule['end_time']
+        if isinstance(end_t, timedelta):
+            end_time = (datetime.min + end_t).time()
+        else:
+            end_time = end_t
+
+        end_dt = datetime.combine(date.today(), end_time) + \
+                 timedelta(minutes=TeacherAttendance.AUTO_CLOSE_BUFFER_MINUTES)
+
+        if now < end_dt:
+            return 0
+
+        return TeacherAttendance.auto_close_pending(date.today())
+
+    # ============================================================
+    # REPORTES
+    # ============================================================
     @staticmethod
     def get_report(filters):
         conn = get_db_connection()
-        if not conn: return []
+        if not conn:
+            return []
         cursor = conn.cursor(dictionary=True)
         sql = """
             SELECT ta.*, t.first_name, t.last_name
@@ -160,13 +344,15 @@ class TeacherAttendance:
         sql += " ORDER BY ta.attendance_date DESC, t.last_name"
         cursor.execute(sql, params)
         rows = cursor.fetchall()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return rows
 
     @staticmethod
     def get_summary_by_teacher(filters):
         conn = get_db_connection()
-        if not conn: return []
+        if not conn:
+            return []
         cursor = conn.cursor(dictionary=True)
         sql = """
             SELECT
@@ -189,58 +375,45 @@ class TeacherAttendance:
         sql += " GROUP BY t.id, t.first_name, t.last_name ORDER BY t.last_name"
         cursor.execute(sql, params)
         rows = cursor.fetchall()
-        cursor.close(); conn.close()
-        return rows
-
-    @staticmethod
-    def get_by_date_range(teacher_id, from_date, to_date):
-        conn = get_db_connection()
-        if not conn: return []
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT * FROM teacher_attendance
-            WHERE teacher_id = %s AND attendance_date BETWEEN %s AND %s
-            ORDER BY attendance_date DESC
-        """, (teacher_id, from_date, to_date))
-        rows = cursor.fetchall()
-        cursor.close(); conn.close()
+        cursor.close()
+        conn.close()
         return rows
 
     @staticmethod
     def justify(attendance_id, user_id, reason):
         conn = get_db_connection()
-        if not conn: return False
+        if not conn:
+            return False
         cursor = conn.cursor()
         try:
             cursor.execute("""
                 UPDATE teacher_attendance
-                SET status = 'justified',
-                    justified_by = %s,
-                    justification_reason = %s,
-                    justification_date = NOW()
-                WHERE id = %s
+                   SET status = 'justified',
+                       justified_by = %s,
+                       justification_reason = %s,
+                       justification_date = NOW()
+                 WHERE id = %s
             """, (user_id, reason, attendance_id))
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(e); return False
+            print(f"[justify] {e}")
+            return False
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
+
     # ============================================================
-    # CARGA MANUAL POR EL DIRECTIVO
+    # CARGA MANUAL
     # ============================================================
     @staticmethod
     def get_all_teachers_for_date(attendance_date):
-        """
-        Devuelve la lista de todos los docentes activos con su registro
-        actual (si existe) para una fecha específica.
-        """
         conn = get_db_connection()
         if not conn:
             return []
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT 
+            SELECT
                 t.id AS teacher_id,
                 t.first_name,
                 t.last_name,
@@ -256,7 +429,7 @@ class TeacherAttendance:
                 u.username AS loaded_by_username,
                 abl.created_at AS batch_created_at
             FROM teachers t
-            LEFT JOIN teacher_attendance ta 
+            LEFT JOIN teacher_attendance ta
                 ON ta.teacher_id = t.id AND ta.attendance_date = %s
             LEFT JOIN attendance_batch_loads abl ON ta.batch_id = abl.id
             LEFT JOIN users u ON abl.loaded_by = u.id
@@ -270,16 +443,11 @@ class TeacherAttendance:
 
     @staticmethod
     def save_manual(teacher_id, attendance_date, data, batch_id, source='manual_director'):
-        """
-        Crea o actualiza un registro de asistencia cargado manualmente.
-        Devuelve el ID del registro o None si falla.
-        """
         conn = get_db_connection()
         if not conn:
             return None
         cursor = conn.cursor()
         try:
-            # ON DUPLICATE actualiza si ya existía uno (por la unique teacher_id + date)
             cursor.execute("""
                 INSERT INTO teacher_attendance
                     (teacher_id, attendance_date, check_in, check_out,
@@ -301,7 +469,7 @@ class TeacherAttendance:
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
-            print(f"[TeacherAttendance.save_manual] {e}")
+            print(f"[save_manual] {e}")
             return None
         finally:
             cursor.close()

@@ -1,36 +1,72 @@
 {% extends "base.html" %}
 {% block title %}Asistencia de Docentes{% endblock %}
 {% block content %}
-<h2>📋 Asistencia de Docentes - Hoy</h2>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Cédula</th>
-            <th>Docente</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Estado</th>
-            <th>Observaciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for a in attendance_list %}
-        <tr>
-            <td>{{ a.teacher_id }}</td>
-            <td>{{ a.first_name }} {{ a.last_name }}</td>
-            <td>{{ a.check_in or '-' }}</td>
-            <td>{{ a.check_out or '-' }}</td>
-            <td>
-                {% if a.status == 'present' %}<span class="badge bg-success">Presente</span>
-                {% elif a.status == 'late' %}<span class="badge bg-warning text-dark">Tarde</span>
-                {% elif a.status == 'absent' %}<span class="badge bg-danger">Ausente</span>
-                {% else %}<span class="badge bg-secondary">Justificado</span>{% endif %}
-            </td>
-            <td>{{ a.remarks or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="6" class="text-center">No hay registros hoy.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="mb-0">
+        <i class="bi bi-list-check me-2"></i>Asistencia de Docentes — Hoy
+    </h2>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('attendance.auto_close') }}"
+              onsubmit="return confirm('¿Cerrar automáticamente las salidas pendientes? Se usarán las horas de salida del horario.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="scope" value="both">
+            <button type="submit" class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-clock-history me-1"></i>Cerrar salidas pendientes
+            </button>
+        </form>
+        <a href="{{ url_for('attendance.manual_load') }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-calendar-plus me-1"></i>Carga manual
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Docente</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in attendance_list %}
+                    <tr>
+                        <td>{{ a.teacher_id }}</td>
+                        <td>{{ a.first_name }} {{ a.last_name }}</td>
+                        <td>
+                            {% if a.check_in %}
+                                {{ a.check_in }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if a.check_out %}
+                                {{ a.check_out }}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.status == 'present' %}<span class="badge bg-success">Presente</span>
+                            {% elif a.status == 'late' %}<span class="badge bg-warning text-dark">Tarde</span>
+                            {% elif a.status == 'absent' %}<span class="badge bg-danger">Ausente</span>
+                            {% else %}<span class="badge bg-secondary">Justificado</span>{% endif %}
+                        </td>
+                        <td>{{ a.remarks or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No hay registros hoy.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

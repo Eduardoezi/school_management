@@ -4,6 +4,7 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <style>
+    /* ===== Tarjetas de estadística ===== */
     .stat-card {
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -36,50 +37,110 @@
         opacity: 0.9;
     }
 
-    .fc {
+    /* ===== FullCalendar dentro del dashboard ===== */
+    #dashboard-calendar {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+    #dashboard-calendar .fc {
+        width: 100% !important;
+        min-width: 0 !important;
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --fc-border-color: #e2e8f0;
         --fc-today-bg-color: #eff6ff;
     }
-    #dashboard-calendar { min-width: 100%; overflow-x: auto; }
-    #dashboard-calendar .fc { min-width: 520px; }
-    .fc .fc-toolbar-title { font-size: 1rem; font-weight: 600; color: #0f172a; }
-    .fc .fc-toolbar { flex-wrap: wrap; gap: 0.35rem; }
-    .fc .fc-col-header-cell-cushion {
-        color: #475569; font-weight: 600;
-        text-transform: uppercase; font-size: 0.68rem;
-        letter-spacing: .04em; padding: .35rem 0;
+    #dashboard-calendar .fc .fc-scrollgrid,
+    #dashboard-calendar .fc .fc-scrollgrid table {
+        width: 100% !important;
+        table-layout: fixed !important;
     }
-    .fc .fc-daygrid-day-number {
-        color: #334155; font-weight: 500;
-        font-size: 0.78rem; padding: 2px 6px;
+    #dashboard-calendar .fc .fc-col-header-cell,
+    #dashboard-calendar .fc .fc-daygrid-day {
+        min-width: 0;
     }
-    .fc .fc-daygrid-day.fc-day-today { background-color: #eff6ff; }
-    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-        color: #1d4ed8; font-weight: 700;
+    #dashboard-calendar .fc .fc-col-header-cell-cushion {
+        white-space: nowrap;
+        padding: .3rem 0;
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+        letter-spacing: .04em;
     }
-    .fc .fc-daygrid-day.fc-day-other { background-color: #f8fafc; }
-    .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number { color: #94a3b8; }
-    .fc .fc-button {
-        background: #fff; border: 1px solid #cbd5e1; color: #334155;
-        font-weight: 500; font-size: 0.72rem; padding: .25rem .55rem;
-        border-radius: 7px; text-transform: capitalize; box-shadow: none;
+    #dashboard-calendar .fc .fc-toolbar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0f172a;
     }
-    .fc .fc-button:hover { background: #f1f5f9; border-color: #94a3b8; color: #0f172a; }
-    .fc .fc-button-primary:not(:disabled).fc-button-active,
-    .fc .fc-button-primary:not(:disabled):active {
-        background: #3b82f6; border-color: #3b82f6; color: #fff;
+    #dashboard-calendar .fc .fc-toolbar {
+        flex-wrap: wrap;
+        gap: 0.35rem;
     }
-    .fc .fc-button-primary:disabled {
-        background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;
+    #dashboard-calendar .fc .fc-daygrid-day-number {
+        color: #334155;
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 2px 4px;
     }
-    .fc-event {
-        border: none !important; border-radius: 4px !important;
-        padding: 0 5px; font-size: 0.7rem; font-weight: 500;
-        cursor: pointer; margin-bottom: 1px;
+    #dashboard-calendar .fc .fc-daygrid-day.fc-day-today {
+        background-color: #eff6ff;
     }
-    .fc-daygrid-event-dot { display: none; }
+    #dashboard-calendar .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+    #dashboard-calendar .fc .fc-daygrid-day.fc-day-other {
+        background-color: #f8fafc;
+    }
+    #dashboard-calendar .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+        color: #94a3b8;
+    }
+    #dashboard-calendar .fc .fc-button {
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-weight: 500;
+        font-size: 0.72rem;
+        padding: .25rem .55rem;
+        border-radius: 7px;
+        text-transform: capitalize;
+        box-shadow: none;
+    }
+    #dashboard-calendar .fc .fc-button:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+    #dashboard-calendar .fc .fc-button-primary:not(:disabled).fc-button-active,
+    #dashboard-calendar .fc .fc-button-primary:not(:disabled):active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+    }
+    #dashboard-calendar .fc .fc-button-primary:disabled {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+    }
+    #dashboard-calendar .fc .fc-event {
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 0 4px;
+        font-size: 0.68rem;
+        font-weight: 500;
+        cursor: pointer;
+        margin-bottom: 1px;
+    }
+    #dashboard-calendar .fc .fc-daygrid-event-dot { display: none; }
+    #dashboard-calendar .fc .fc-daygrid-more-link {
+        font-size: 0.68rem;
+        color: #3b82f6;
+        font-weight: 600;
+    }
 
+    /* ===== Action cards ===== */
     .action-card {
         border: 1px solid #e2e8f0;
         border-radius: 12px;
@@ -105,39 +166,63 @@
     }
     .action-card i { font-size: 1.75rem; line-height: 1; }
     .action-card .action-label {
-        font-size: 0.8rem; font-weight: 500; color: #334155;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #334155;
         line-height: 1.2;
     }
 
+    /* ===== Donut de asistencia ===== */
     .donut-wrapper {
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         padding: 1rem 0;
     }
     .donut {
-        width: 180px; height: 180px; border-radius: 50%;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
         position: relative;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .donut::before {
-        content: ''; position: absolute; inset: 28px;
-        background: #fff; border-radius: 50%;
+        content: '';
+        position: absolute;
+        inset: 28px;
+        background: #fff;
+        border-radius: 50%;
     }
     .donut-center { position: relative; z-index: 1; text-align: center; }
     .donut-center .donut-value {
-        font-size: 1.5rem; font-weight: 700; color: #0f172a; line-height: 1;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1;
     }
     .donut-center .donut-label {
-        font-size: 0.7rem; color: #64748b;
-        text-transform: uppercase; letter-spacing: .05em;
+        font-size: 0.7rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .05em;
         margin-top: .25rem;
     }
     .donut-legend {
-        display: flex; justify-content: center;
-        gap: 1rem; margin-top: 1rem; font-size: 0.8rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        font-size: 0.8rem;
     }
     .donut-legend .legend-dot {
-        display: inline-block; width: 10px; height: 10px;
-        border-radius: 3px; margin-right: .35rem; vertical-align: middle;
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        margin-right: .35rem;
+        vertical-align: middle;
     }
 </style>
 {% endblock %}
@@ -264,7 +349,7 @@
                 {% set pct_round = pct | round(1) %}
 
                 <div class="donut-wrapper">
-                    <div class="donut" style="background: conic-gradient(#3b82f6 0% {{ pct_round }}%, #ef4444 {{ pct_round }}% 100%);">
+                    <div class="donut" style="--presentes-pct: {{ pct_round }}%; background: conic-gradient(#3b82f6 0% var(--presentes-pct), #ef4444 var(--presentes-pct) 100%);">
                         <div class="donut-center">
                             <div class="donut-value">{{ pct_round }}%</div>
                             <div class="donut-label">Presentes</div>
@@ -291,6 +376,7 @@
 
 {% block scripts %}
 {% if calendar %}
+<script type="application/json" id="dashboard-events">{{ events_json | safe }}</script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
 <script>
@@ -304,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
         firstDay: 1,
         height: 'auto',
         contentHeight: 'auto',
-        expandRows: false,
+        expandRows: true,
         dayMaxEvents: 2,
         handleWindowResize: true,
         headerToolbar: {
@@ -313,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
             right: 'dayGridMonth,timeGridWeek'
         },
         buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana' },
-        events: {{ events_json | safe }},
+        events: JSON.parse(document.getElementById('dashboard-events').textContent),
         eventClick: function (info) {
             if (info.event.url) {
                 info.jsEvent.preventDefault();
@@ -332,11 +418,16 @@ document.addEventListener('DOMContentLoaded', function () {
             info.el.setAttribute('title', tip);
         }
     });
+
     calendar.render();
 
-    window.addEventListener('resize', function () {
-        calendar.updateSize();
-    });
+    requestAnimationFrame(function () { calendar.updateSize(); });
+    setTimeout(function () { calendar.updateSize(); }, 250);
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(function () { calendar.updateSize(); }).observe(el);
+    }
+    window.addEventListener('resize', function () { calendar.updateSize(); });
 });
 </script>
 {% endif %}

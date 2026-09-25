@@ -1,8 +1,8 @@
-﻿﻿﻿{% extends "base_public.html" %}
+﻿﻿{% extends "base_public.html" %}
 {% block title %}Marcar Asistencia{% endblock %}
 
 {% block content %}
-<div class="container py-4" style="max-width: 520px;">
+<div class="container py-4" style="max-width: 560px;">
 
     <div class="text-center mb-4">
         <div id="live-clock" style="font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;">--:--:--</div>
@@ -20,33 +20,61 @@
                 <input type="text" inputmode="numeric" pattern="[0-9]*"
                        class="form-control form-control-lg text-center mb-3"
                        id="cedula" placeholder="Ingresa aquí" maxlength="10"
+                       autocomplete="off"
                        style="font-size: 1.5rem; letter-spacing: 2px;">
-                <button type="button" class="btn btn-primary w-100 btn-lg"
-                        id="btn-validar"
-                        onclick="iniciarBiometria()">
-                    <i class="bi bi-fingerprint me-2"></i>Validar con biometría
-                </button>
-                <small class="text-muted d-block text-center mt-2">
-                    Usa tu huella o Face ID para confirmar tu identidad.
-                </small>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success btn-lg" id="btn-in"
+                            onclick="marcarEntrada()">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Marcar ENTRADA
+                        <small class="d-block fw-normal opacity-75" style="font-size:.72rem;">
+                            Requiere huella / Use su Telefono
+                        </small>
+                    </button>
+
+                    <button type="button" class="btn btn-warning btn-lg" id="btn-out"
+                            onclick="marcarSalida()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Marcar SALIDA
+                        <small class="d-block fw-normal opacity-75" style="font-size:.72rem;">
+                            Solo con cédula
+                        </small>
+                    </button>
+                </div>
             </div>
 
             <div id="step-bio" class="d-none text-center py-3">
                 <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Esperando biometría...</span>
                 </div>
-                <p class="mb-0">Confirma tu identidad en tu teléfono...</p>
+                <p class="mb-2">Confirma tu identidad en tu dispositivo...</p>
+                <p class="small text-muted px-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Si Windows te pide insertar una llave USB, selecciona la opción 
+                    <strong>"Usar un dispositivo diferente"</strong> o <strong>"Usar un teléfono"</strong> 
+                    en la ventana que aparece en tu navegador. Luego escanea el código QR con tu celular.
+                </p>
             </div>
-            <a href="{{ url_for('main.index') }}" class="back-btn" title="Volver al inicio">
-                    <i class="bi bi-house"></i></a>
+
+            <a href="{{ url_for('main.index') }}" class="back-btn d-block text-center mt-3" title="Volver al inicio">
+                <i class="bi bi-house"></i>
+            </a>
         </div>
+    </div>
+
+    <div id="insecure-warning" class="alert alert-warning d-none mt-3" role="alert">
+        <strong><i class="bi bi-shield-exclamation me-1"></i>WebAuthn no disponible aquí</strong>
+        <div class="small mt-1">
+            La validación por huella requiere HTTPS. Accede desde
+            <code>https://</code> o desde <code>localhost</code>.
+        </div>
+        <div class="small mt-2" id="diagnostics-info"></div>
     </div>
 </div>
 
 <script>
-// ------------------------------------------------------------
+// ============================================================
 // Helpers
-// ------------------------------------------------------------
+// ============================================================
 function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.content : '';
@@ -68,16 +96,43 @@ function bufToB64url(buf) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function showMessage(msg, type = 'info') {
+function showMessage(html, type = 'info') {
     const el = document.getElementById('status-message');
     el.className = `alert alert-${type}`;
-    el.textContent = msg;
+    el.innerHTML = html;
     el.classList.remove('d-none');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ------------------------------------------------------------
+function hideMessage() {
+    document.getElementById('status-message').classList.add('d-none');
+}
+
+function lockButtons() {
+    document.getElementById('btn-in').disabled = true;
+    document.getElementById('btn-out').disabled = true;
+}
+
+function unlockButtons() {
+    document.getElementById('btn-in').disabled = false;
+    document.getElementById('btn-out').disabled = false;
+}
+
+function getCedula() {
+    return document.getElementById('cedula').value.trim();
+}
+
+function validarCedula(cedula) {
+    if (!cedula || !/^\d{5,10}$/.test(cedula)) {
+        showMessage('Ingresa una cédula válida (5 a 10 dígitos).', 'warning');
+        return false;
+    }
+    return true;
+}
+
+// ============================================================
 // Reloj en vivo
-// ------------------------------------------------------------
+// ============================================================
 function updateClock() {
     const now = new Date();
     document.getElementById('live-clock').textContent =
@@ -88,109 +143,232 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// ------------------------------------------------------------
-// Flujo biométrico
-// ------------------------------------------------------------
-async function iniciarBiometria() {
-    const cedula = document.getElementById('cedula').value.trim();
-    const csrfToken = getCsrfToken();
-    const btn = document.getElementById('btn-validar');
-
-    if (!cedula || !/^\d{5,10}$/.test(cedula)) {
-        showMessage('Ingresa una cédula válida.', 'warning');
-        return;
+// ============================================================
+// Diagnóstico
+// ============================================================
+async function checkDiagnostics() {
+    const warning = document.getElementById('insecure-warning');
+    if (!window.isSecureContext) {
+        warning.classList.remove('d-none');
+        document.getElementById('diagnostics-info').innerHTML =
+            'Contexto actual: <code>' + window.location.origin + '</code>';
     }
-
-    if (!csrfToken) {
-        showMessage('Error: token de seguridad no encontrado. Recarga la página.', 'danger');
-        return;
-    }
-
-    document.getElementById('step-cedula').classList.add('d-none');
-    document.getElementById('step-bio').classList.remove('d-none');
-    btn.disabled = true;
-
     try {
-        // 1. Pedir opciones al servidor
-        const res = await fetch('/webauthn/authenticate/begin', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ cedula })
-        });
+        const res = await fetch('/webauthn/diagnostics');
+        const data = await res.json();
+        if (!data.secure_context) {
+            warning.classList.remove('d-none');
+            document.getElementById('diagnostics-info').innerHTML =
+                `Origin: <code>${data.origin}</code> · RP ID: <code>${data.rp_id}</code>`;
+        }
+    } catch (e) { /* silencioso */ }
+}
+checkDiagnostics();
 
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || 'Error al iniciar biometría.');
+// ============================================================
+// Fetch de estado
+// ============================================================
+async function fetchStatus(cedula) {
+    const res = await fetch(`/attendance/api/teacher-status/${cedula}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.found) {
+        throw new Error(data.error || 'No encontramos esa cédula.');
+    }
+    return data;
+}
+
+// ============================================================
+// ENTRADA — con biometría
+// ============================================================
+async function marcarEntrada() {
+    hideMessage();
+    const cedula = getCedula();
+    if (!validarCedula(cedula)) return;
+
+    lockButtons();
+    try {
+        // 1) Validar estado actual
+        const status = await fetchStatus(cedula);
+        if (status.has_in) {
+            showMessage(
+                `<i class="bi bi-info-circle me-1"></i>` +
+                `<strong>${status.first_name} ${status.last_name}</strong> ya registró su entrada hoy a las ` +
+                `<strong>${status.check_in}</strong>.`,
+                'info'
+            );
+            return;
         }
 
-        const options = await res.json();
-        options.challenge = b64urlToBuf(options.challenge);
-        if (options.allowCredentials) {
-            options.allowCredentials = options.allowCredentials.map(c => ({
-                ...c,
-                id: b64urlToBuf(c.id)
-            }));
-        }
+        // 2) Biometría
+        showMessage(
+            `<i class="bi bi-fingerprint me-1"></i>Esperando biometría para ` +
+            `<strong>${status.first_name} ${status.last_name}</strong>...`,
+            'info'
+        );
 
-        // 2. Pedir biometría al navegador
+        const options = await pedirOpcionesBiometricas(cedula);
         const assertion = await navigator.credentials.get({ publicKey: options });
+        if (!assertion) throw new Error('No se obtuvo respuesta del autenticador.');
 
-        // 3. Enviar firma al servidor
-        const payload = {
-            id: assertion.id,
-            rawId: bufToB64url(assertion.rawId),
-            type: assertion.type,
-            response: {
-                clientDataJSON: bufToB64url(assertion.response.clientDataJSON),
-                authenticatorData: bufToB64url(assertion.response.authenticatorData),
-                signature: bufToB64url(assertion.response.signature),
-                userHandle: assertion.response.userHandle
-                    ? bufToB64url(assertion.response.userHandle) : null
-            },
-            action: 'in'
-        };
+        const result = await enviarFirmaAlServidor(assertion);
 
-        const verifyRes = await fetch('/webauthn/authenticate/complete', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await verifyRes.json();
-
-        if (verifyRes.ok) {
-            showMessage(result.message || 'Asistencia registrada.', 'success');
-            document.getElementById('cedula').value = '';
-        } else {
-            showMessage(result.error || 'Error al verificar.', 'danger');
+        if (result.already) {
+            showMessage(`<i class="bi bi-info-circle me-1"></i>${result.message}`, 'info');
+            return;
         }
+
+        showMessage(
+            `<i class="bi bi-check-circle-fill me-1"></i>` +
+            `<strong>ENTRADA registrada.</strong> ` +
+            `${status.first_name} ${status.last_name}<br>` +
+            `<small>Entrada: <strong>${result.check_in || '—'}</strong> · Salida: ${result.check_out || '—'}</small>`,
+            'success'
+        );
+        document.getElementById('cedula').value = '';
     } catch (err) {
         console.error(err);
-        showMessage(err.message || 'Error en la validación biométrica.', 'danger');
+        if (err.name === 'NotAllowedError') {
+            showMessage('Operación cancelada o no permitida por el navegador.', 'warning');
+        } else {
+            showMessage(err.message || 'Error en la validación biométrica.', 'danger');
+        }
     } finally {
-        document.getElementById('step-bio').classList.add('d-none');
-        document.getElementById('step-cedula').classList.remove('d-none');
-        btn.disabled = false;
+        unlockButtons();
         document.getElementById('cedula').focus();
     }
 }
 
-// Enter para enviar
+async function pedirOpcionesBiometricas(cedula) {
+    const res = await fetch('/webauthn/authenticate/begin', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ cedula })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const e = new Error(data.error || 'Error al iniciar biometría.');
+        e.already = data.already;
+        throw e;
+    }
+    data.challenge = b64urlToBuf(data.challenge);
+    if (data.allowCredentials) {
+        data.allowCredentials = data.allowCredentials.map(c => ({
+            ...c, id: b64urlToBuf(c.id)
+        }));
+    }
+    return data;
+}
+
+async function enviarFirmaAlServidor(assertion) {
+    const payload = {
+        id: assertion.id,
+        rawId: bufToB64url(assertion.rawId),
+        type: assertion.type,
+        response: {
+            clientDataJSON: bufToB64url(assertion.response.clientDataJSON),
+            authenticatorData: bufToB64url(assertion.response.authenticatorData),
+            signature: bufToB64url(assertion.response.signature),
+            userHandle: assertion.response.userHandle
+                ? bufToB64url(assertion.response.userHandle) : null
+        }
+    };
+    const res = await fetch('/webauthn/authenticate/complete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && !data.already) {
+        throw new Error(data.error || 'Error al verificar la firma.');
+    }
+    return data;
+}
+
+// ============================================================
+// SALIDA — sin biometría
+// ============================================================
+async function marcarSalida() {
+    hideMessage();
+    const cedula = getCedula();
+    if (!validarCedula(cedula)) return;
+
+    lockButtons();
+    try {
+        // 1) Validar estado actual
+        const status = await fetchStatus(cedula);
+        if (!status.has_in) {
+            showMessage(
+                `<i class="bi bi-exclamation-triangle me-1"></i>` +
+                `<strong>${status.first_name} ${status.last_name}</strong> no ha marcado entrada hoy. ` +
+                `Primero debe marcar la entrada.`,
+                'warning'
+            );
+            return;
+        }
+        if (status.has_out) {
+            showMessage(
+                `<i class="bi bi-info-circle me-1"></i>` +
+                `Ya registró su salida hoy a las <strong>${status.check_out}</strong>.`,
+                'info'
+            );
+            return;
+        }
+
+        // 2) POST directo
+        const res = await fetch('/attendance/api/mark-exit', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ cedula })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok && !data.already) {
+            throw new Error(data.error || 'No se pudo registrar la salida.');
+        }
+
+        showMessage(
+            `<i class="bi bi-check-circle-fill me-1"></i>` +
+            `<strong>SALIDA registrada.</strong> ` +
+            `${status.first_name} ${status.last_name}<br>` +
+            `<small>Entrada: ${data.check_in || status.check_in || '—'} · ` +
+            `Salida: <strong>${data.check_out || '—'}</strong></small>`,
+            'success'
+        );
+        document.getElementById('cedula').value = '';
+    } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Error al registrar la salida.', 'danger');
+    } finally {
+        unlockButtons();
+        document.getElementById('cedula').focus();
+    }
+}
+
+// ============================================================
+// Enter = marcar entrada (la acción más común)
+// ============================================================
 document.getElementById('cedula').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
         e.preventDefault();
-        iniciarBiometria();
+        marcarEntrada();
     }
 });
+document.getElementById('cedula').focus();
 </script>
 {% endblock %}

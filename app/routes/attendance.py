@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.models.teacher import Teacher
 from app.models.teacher_attendance import TeacherAttendance
 from app.models.school_schedule import SchoolSchedule
@@ -14,83 +14,83 @@ attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 
 
 # ============================================================
-# PÚBLICO: marcar entrada/salida (kiosco)
+# HELPERS
 # ============================================================
-@attendance_bp.route('/clock', methods=['GET', 'POST'])
+def _time_to_str(value):
+    """Wrapper local que reusa el helper del modelo (evita duplicar lógica)."""
+    return TeacherAttendance.format_time(value)
+
+
+# ============================================================
+# PÚBLICO: kiosco (vista)
+# ============================================================
+@attendance_bp.route('/clock')
 def clock():
-    # Horario del día actual (1=Lunes ... 7=Domingo)
     day_today = datetime.now().isoweekday()
     schedule = SchoolSchedule.get_by_day(day_today)
-
-    if request.method == 'POST':
-        cedula = request.form.get('teacher_id', '').strip()
-        action = request.form.get('action')
-
-        # --- Validación 1: cédula vacía ---
-        if not cedula:
-            flash(MSG.CEDULA_VACIA, 'danger')
-            return render_template('attendance/clock.html', schedule=schedule)
-
-        # --- Validación 2: cédula no numérica ---
-        if not cedula.isdigit():
-            flash(MSG.CEDULA_INVALIDA, 'danger')
-            return render_template('attendance/clock.html', schedule=schedule)
-
-        # --- Validación 3: cédula no registrada como docente ---
-        teacher = Teacher.get_by_id(int(cedula))
-        if not teacher:
-            flash(MSG.CEDULA_NO_ENCONTRADA.format(cedula=cedula), 'danger')
-            return render_template('attendance/clock.html', schedule=schedule)
-
-        # --- Registro del día (si ya existe) ---
-        record = TeacherAttendance.get_today(teacher['id'])
-
-        # --- Validación 4: acción desconocida ---
-        if action not in ('in', 'out'):
-            flash('Acción no válida.', 'danger')
-            return render_template('attendance/clock.html',
-                                   record=record, teacher=teacher, schedule=schedule)
-
-        # --- MARCAR ENTRADA ---
-        if action == 'in':
-            if record and record.get('check_in'):
-                flash(MSG.ENTRADA_YA_REGISTRADA.format(hora=record['check_in']), 'warning')
-                return render_template('attendance/clock.html',
-                                       record=record, teacher=teacher, schedule=schedule)
-
-            result = TeacherAttendance.check_in(teacher['id'])
-
-        # --- MARCAR SALIDA ---
-        else:  # action == 'out'
-            if not record or not record.get('check_in'):
-                flash(MSG.SALIDA_SIN_ENTRADA, 'danger')
-                return render_template('attendance/clock.html',
-                                       teacher=teacher, schedule=schedule)
-
-            if record.get('check_out'):
-                flash(MSG.SALIDA_YA_REGISTRADA.format(hora=record['check_out']), 'warning')
-                return render_template('attendance/clock.html',
-                                       record=record, teacher=teacher, schedule=schedule)
-
-            result = TeacherAttendance.check_out(teacher['id'])
-
-        # --- Resultado ---
-        if result.get('success'):
-            flash(f'✅ {teacher["first_name"]} {teacher["last_name"]}: operación registrada.', 'success')
-            record = TeacherAttendance.get_today(teacher['id'])
-            return render_template('attendance/clock.html',
-                                   record=record, teacher=teacher, schedule=schedule)
-
-        flash(result.get('error', 'Error desconocido.'), 'danger')
-        return render_template('attendance/clock.html',
-                               record=record, teacher=teacher, schedule=schedule)
-
-    # GET
     return render_template('attendance/clock.html', schedule=schedule)
 
 
 # ============================================================
-# API AJAX: buscar docente por cédula (para previsualización)
+# PÚBLICO: kiosco (compatibilidad con POST tradicional)
+# ============================================================
+@attendance_bp.route('/clock/legacy', methods=['POST'])
+def clock_legacy():
+    day_today = datetime.now().isoweekday()
+    schedule = SchoolSchedule.get_by_day(day_today)
+
+    cedula = request.form.get('teacher_id', '').strip()
+    action = request.form.get('action')
+
+    if not cedula:
+        flash(MSG.CEDULA_VACIA, 'danger')
+        return render_template('attendance/clock.html', schedule=schedule)
+    if not cedula.isdigit():
+        flash(MSG.CEDULA_INVALIDA, 'danger')
+        return render_template('attendance/clock.html', schedule=schedule)
+
+    teacher = Teacher.get_by_id(int(cedula))
+    if not teacher:
+        flash(MSG.CEDULA_NO_ENCONTRADA.format(cedula=cedula), 'danger')
+        return render_template('attendance/clock.html', schedule=schedule)
+
+    record = TeacherAttendance.get_today(teacher['id'])
+
+    if action not in ('in', 'out'):
+        flash('Acción no válida.', 'danger')
+        return render_template('attendance/clock.html',
+                               record=record, teacher=teacher, schedule=schedule)
+
+    if action == 'in':
+        if record and record.get('check_in'):
+            flash(MSG.ENTRADA_YA_REGISTRADA.format(hora=_time_to_str(record['check_in'])), 'warning')
+            return render_template('attendance/clock.html',
+                                   record=record, teacher=teacher, schedule=schedule)
+        result = TeacherAttendance.check_in(teacher['id'])
+    else:
+        if not record or not record.get('check_in'):
+            flash(MSG.SALIDA_SIN_ENTRADA, 'danger')
+            return render_template('attendance/clock.html',
+                                   teacher=teacher, schedule=schedule)
+        if record.get('check_out'):
+            flash(MSG.SALIDA_YA_REGISTRADA.format(hora=_time_to_str(record['check_out'])), 'warning')
+            return render_template('attendance/clock.html',
+                                   record=record, teacher=teacher, schedule=schedule)
+        result = TeacherAttendance.check_out(teacher['id'])
+
+    if result.get('success'):
+        flash(f'✅ {teacher["first_name"]} {teacher["last_name"]}: operación registrada.', 'success')
+        record = TeacherAttendance.get_today(teacher['id'])
+        return render_template('attendance/clock.html',
+                               record=record, teacher=teacher, schedule=schedule)
+
+    flash(result.get('error', 'Error desconocido.'), 'danger')
+    return render_template('attendance/clock.html',
+                           record=record, teacher=teacher, schedule=schedule)
+
+
+# ============================================================
+# API: buscar docente por cédula (solo nombre)
 # ============================================================
 @attendance_bp.route('/api/teacher/<cedula>')
 def api_teacher(cedula):
@@ -108,23 +108,151 @@ def api_teacher(cedula):
 
 
 # ============================================================
-# ADMIN: listado del día
+# API: estado del docente hoy (JSON, timedelta-safe)
+# ============================================================
+@attendance_bp.route('/api/teacher-status/<cedula>')
+def api_teacher_status(cedula):
+    if not cedula.isdigit():
+        return jsonify({'found': False, 'error': 'Cédula inválida.'}), 400
+
+    teacher = Teacher.get_by_id(int(cedula))
+    if not teacher:
+        return jsonify({'found': False, 'error': 'Docente no encontrado.'}), 404
+
+    record = TeacherAttendance.get_today(teacher['id'])
+    has_in = bool(record and record.get('check_in'))
+    has_out = bool(record and record.get('check_out'))
+
+    if not has_in:
+        next_action = 'in'
+    elif not has_out:
+        next_action = 'out'
+    else:
+        next_action = 'done'
+
+    return jsonify({
+        'found': True,
+        'teacher_id': teacher['id'],
+        'first_name': teacher['first_name'],
+        'last_name': teacher['last_name'],
+        'check_in':  _time_to_str(record.get('check_in'))  if record else None,
+        'check_out': _time_to_str(record.get('check_out')) if record else None,
+        'has_in': has_in,
+        'has_out': has_out,
+        'next_action': next_action,
+    })
+
+
+# ============================================================
+# API: marcar SALIDA sin biometría
+# ============================================================
+@attendance_bp.route('/api/mark-exit', methods=['POST'])
+def mark_exit():
+    """
+    Marca salida sin biometría. Solo requiere la cédula.
+    Validaciones en servidor:
+      - Docente existe
+      - Tiene entrada hoy
+      - No tiene salida hoy
+    """
+    data = request.get_json(silent=True) or {}
+    cedula = (data.get('cedula') or '').strip()
+
+    if not cedula or not cedula.isdigit():
+        return jsonify({'error': 'Cédula inválida.'}), 400
+
+    teacher = Teacher.get_by_id(int(cedula))
+    if not teacher:
+        return jsonify({'error': 'Docente no encontrado.'}), 404
+
+    record = TeacherAttendance.get_today(teacher['id'])
+    if not record or not record.get('check_in'):
+        return jsonify({'error': 'Debes marcar tu entrada primero.'}), 400
+    if record.get('check_out'):
+        return jsonify({
+            'success': True,
+            'already': True,
+            'message': 'Ya registraste tu salida hoy.',
+            'check_in':  _time_to_str(record.get('check_in')),
+            'check_out': _time_to_str(record.get('check_out')),
+        }), 200
+
+    result = TeacherAttendance.check_out(teacher['id'])
+    if not result.get('success'):
+        return jsonify({'error': result.get('error', 'Error desconocido.')}), 500
+
+    new_record = TeacherAttendance.get_today(teacher['id'])
+    return jsonify({
+        'success': True,
+        'action': 'out',
+        'message': f"Salida registrada para {teacher['first_name']} {teacher['last_name']}.",
+        'check_in':  _time_to_str(new_record.get('check_in'))  if new_record else None,
+        'check_out': _time_to_str(new_record.get('check_out')) if new_record else None,
+    }), 200
+
+
+# ============================================================
+# ADMIN: listado del día (con auto-cierre perezoso)
 # ============================================================
 @attendance_bp.route('/')
 @login_required
 @role_required('directivo', 'secretario')
 def index():
+    # Auto-cierre perezoso: si ya pasó la hora de salida + buffer, cerrar hoy.
+    # Y cerrar todos los pendientes de días anteriores.
+    try:
+        closed_past = TeacherAttendance.auto_close_all_past()
+        closed_today = TeacherAttendance.maybe_auto_close_today()
+        if closed_past or closed_today:
+            total = closed_past + closed_today
+            flash(
+                f'Se registraron automáticamente {total} salidas pendientes '
+                f'({closed_past} de días anteriores, {closed_today} de hoy).',
+                'info'
+            )
+    except Exception as exc:
+        print(f"[attendance.index] auto-close: {exc}")
+
     attendance_list = TeacherAttendance.get_all_by_date()
     return render_template('attendance/admin_view.html', attendance_list=attendance_list)
 
 
 # ============================================================
-# API para consultar estado actual
+# ADMIN: cerrar salidas manualmente
+# ============================================================
+@attendance_bp.route('/auto-close', methods=['POST'])
+@login_required
+@role_required('directivo', 'secretario')
+def auto_close():
+    scope = request.form.get('scope', 'past')  # 'past' | 'today' | 'both'
+    closed_past = 0
+    closed_today = 0
+
+    if scope in ('past', 'both'):
+        closed_past = TeacherAttendance.auto_close_all_past()
+    if scope in ('today', 'both'):
+        closed_today = TeacherAttendance.auto_close_pending(date_module.today())
+
+    flash(
+        f'Cierre ejecutado: {closed_past} de días anteriores, {closed_today} de hoy.',
+        'success'
+    )
+    return redirect(url_for('attendance.index'))
+
+
+# ============================================================
+# API: estado (JSON, timedelta-safe)
 # ============================================================
 @attendance_bp.route('/api/status/<int:teacher_id>')
 def api_status(teacher_id):
     record = TeacherAttendance.get_today(teacher_id)
-    return jsonify(record or {})
+    if not record:
+        return jsonify({})
+    return jsonify({
+        **record,
+        'check_in':  _time_to_str(record.get('check_in')),
+        'check_out': _time_to_str(record.get('check_out')),
+    })
 
 
 # ============================================================
@@ -207,29 +335,32 @@ def report_csv():
     writer = csv.writer(si)
     writer.writerow(['Cédula', 'Docente', 'Fecha', 'Entrada', 'Salida', 'Estado', 'Observaciones'])
     for r in records:
-        writer.writerow([r['teacher_id'], f"{r['first_name']} {r['last_name']}",
-                         r['attendance_date'], r['check_in'] or '', r['check_out'] or '',
-                         r['status'], r['remarks'] or ''])
+        writer.writerow([
+            r['teacher_id'],
+            f"{r['first_name']} {r['last_name']}",
+            r['attendance_date'],
+            _time_to_str(r['check_in']) or '',
+            _time_to_str(r['check_out']) or '',
+            r['status'],
+            r['remarks'] or ''
+        ])
 
     return Response(si.getvalue(), mimetype='text/csv',
                     headers={'Content-Disposition': 'attachment;filename=reporte_asistencia.csv'})
 
-# ============================================================
-# CARGA MANUAL DE ASISTENCIA (directivo / secretario)
-# ============================================================
 
-
+# ============================================================
+# CARGA MANUAL DE ASISTENCIA
+# ============================================================
 @attendance_bp.route('/manual-load', methods=['GET', 'POST'])
 @login_required
 @role_required('directivo', 'secretario')
 def manual_load():
     today = date_module.today()
     today_str = today.strftime('%Y-%m-%d')
-
-    # Fecha seleccionada (GET: puede venir de query, POST: del form)
     selected_date = request.args.get('date') or request.form.get('attendance_date')
 
-# Validación 1: no futuras, no hoy, no más de 30 días
+    days_ago = 0
     if selected_date:
         if selected_date > today_str:
             flash('No puedes cargar asistencia de fechas futuras.', 'danger')
@@ -238,14 +369,12 @@ def manual_load():
             flash('Para la asistencia de hoy usa el kiosco. Solo puedes cargar fechas pasadas.', 'warning')
             return redirect(url_for('attendance.manual_load'))
 
-        # Calcular días transcurridos
         try:
             d_sel = dt_module.strptime(selected_date, '%Y-%m-%d').date()
             days_ago = (today - d_sel).days
         except Exception:
             days_ago = 0
 
-        # Bloquear mayor a 30 días
         if days_ago > 30:
             flash(
                 f'No se puede cargar asistencia con más de 30 días de antigüedad. '
@@ -255,19 +384,15 @@ def manual_load():
             )
             return redirect(url_for('attendance.manual_load'))
 
-    # GET sin fecha: mostrar formulario para elegirla
     if request.method == 'GET' and not selected_date:
-        return render_template('attendance/manual_load_pick_date.html',
-                               today=today_str)
+        return render_template('attendance/manual_load_pick_date.html', today=today_str)
 
-    # POST: procesar la carga
     if request.method == 'POST':
         reason = (request.form.get('reason') or '').strip()
         if not reason:
             flash('Debes indicar la razón por la cual cargas la asistencia manualmente.', 'danger')
             return redirect(url_for('attendance.manual_load', date=selected_date))
 
-        # Verificar que no exista un lote previo para esta fecha
         existing_batch = AttendanceBatchLoad.get_by_attendance_date(selected_date)
         if existing_batch and request.form.get('confirm_overwrite') != 'yes':
             flash(
@@ -278,14 +403,12 @@ def manual_load():
             )
             return redirect(url_for('attendance.manual_load', date=selected_date))
 
-        # Recolectar los registros del formulario
         teachers = Teacher.get_all()
         source = 'manual_director' if current_user.role == 'directivo' else 'manual_secretary'
         records_to_save = []
 
         for t in teachers:
             tid = t['id']
-            # Solo procesamos si el checkbox "incluir" está marcado
             if request.form.get(f'include_{tid}') != 'on':
                 continue
 
@@ -294,11 +417,9 @@ def manual_load():
             check_out = request.form.get(f'check_out_{tid}') or None
             remarks = request.form.get(f'remarks_{tid}') or None
 
-            # Validaciones
             if status in ('absent', 'justified'):
-                # No requiere check_in
                 pass
-            elif status == 'present' or status == 'late':
+            elif status in ('present', 'late'):
                 if not check_in:
                     flash(f'Falta la hora de entrada para {t["first_name"]} {t["last_name"]}.', 'danger')
                     return redirect(url_for('attendance.manual_load', date=selected_date))
@@ -319,7 +440,6 @@ def manual_load():
             flash('No marcaste ningún docente para incluir en la carga.', 'warning')
             return redirect(url_for('attendance.manual_load', date=selected_date))
 
-        # Crear el lote (marcando si es tardío)
         batch = AttendanceBatchLoad.create_v2(
             attendance_date=selected_date,
             reason=reason,
@@ -331,7 +451,6 @@ def manual_load():
             flash('Error al crear el lote de carga manual.', 'danger')
             return redirect(url_for('attendance.manual_load', date=selected_date))
 
-        # Guardar cada registro
         saved = 0
         for rec in records_to_save:
             ok = TeacherAttendance.save_manual(
@@ -348,16 +467,8 @@ def manual_load():
         )
         return redirect(url_for('attendance.manual_load_detail', batch_id=batch['id']))
 
-    # GET con fecha: mostrar el formulario de carga
     teachers_list = TeacherAttendance.get_all_teachers_for_date(selected_date)
     existing_batch = AttendanceBatchLoad.get_by_attendance_date(selected_date)
-
-    # Días de antigüedad
-    try:
-        d_sel = dt_module.strptime(selected_date, '%Y-%m-%d').date()
-        days_ago = (today - d_sel).days
-    except Exception:
-        days_ago = 0
 
     return render_template('attendance/manual_load.html',
                            selected_date=selected_date,
@@ -376,7 +487,6 @@ def manual_load_detail(batch_id):
         flash('Lote no encontrado.', 'danger')
         return redirect(url_for('attendance.manual_load'))
 
-    # Registros del lote
     conn = get_db_connection()
     records = []
     if conn:
@@ -402,12 +512,9 @@ def manual_load_detail(batch_id):
 @role_required('directivo', 'secretario')
 def manual_load_history():
     batches = AttendanceBatchLoad.get_all(limit=200)
-    return render_template('attendance/manual_load_history.html',
-                           batches=batches)
+    return render_template('attendance/manual_load_history.html', batches=batches)
 
-# ============================================================
-# EDITAR JUSTIFICACIÓN DEL LOTE
-# ============================================================
+
 @attendance_bp.route('/manual-load/<int:batch_id>/edit-reason', methods=['GET', 'POST'])
 @login_required
 @role_required('directivo', 'secretario')
@@ -431,9 +538,6 @@ def manual_load_edit_reason(batch_id):
     return render_template('attendance/manual_load_edit_reason.html', batch=batch)
 
 
-# ============================================================
-# EDITAR OBSERVACIÓN INDIVIDUAL DE UN DOCENTE
-# ============================================================
 @attendance_bp.route('/manual-load/record/<int:attendance_id>/edit-remarks', methods=['POST'])
 @login_required
 @role_required('directivo', 'secretario')

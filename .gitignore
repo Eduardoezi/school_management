@@ -130,3 +130,49 @@ htmlcov/
 *.tmp
 *.swp
 .cache/
+
+# Entorno virtual
+venv/
+.venv/
+env/
+
+# Variables de entorno (NUNCA subir)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Logs y backups (se generan solos)
+logs/
+backups/
+
+# Certificados SSL
+*.pem
+*.key
+*.crt
+
+# Uploads de usuarios (datos privados)
+app/static/uploads/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Bases de datos locales
+*.sqlite
+*.db
+
+# Docker
+mysql_data/

@@ -39,6 +39,7 @@ def create_app(config_object=Config):
 
     csrf.init_app(app)
     login_manager.init_app(app)
+    
 
     _register_blueprints(app)
     _register_error_handlers(app)
@@ -72,10 +73,12 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.academic_years import academic_years_bp
     from app.routes.calendar import calendar_bp
     from app.routes.pedagogical_moments import moments_bp
+    from app.routes.health import health_bp
     
 
 
     for bp in (
+        health_bp,
         documents_bp, auth_bp, main_bp, students_bp, enrollment_bp,
         teachers_bp, courses_bp, attendance_bp, schedule_bp,
         daily_stats_bp, evaluations_bp, admin_bp, profile_bp, calendar_bp,
@@ -84,7 +87,7 @@ def _register_blueprints(app: Flask) -> None:
     ):
         app.register_blueprint(bp)
 
-
+    csrf.exempt(health_bp)
 # ============================================================
 # Manejadores de errores
 # ============================================================

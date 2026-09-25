@@ -52,8 +52,7 @@ def dashboard():
     published = SchoolCalendar.get_current_published()
 
     if current_user.role == 'directivo':
-        all_cal = SchoolCalendar.get_all()
-        calendar_record = all_cal[0] if all_cal else published
+        calendar_record = published or (SchoolCalendar.get_all() or [None])[0]
     else:
         calendar_record = published
 
