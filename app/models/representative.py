@@ -1,5 +1,11 @@
 from app.utils.db import get_db_connection
 import mysql.connector
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class Representative:
     @staticmethod
@@ -51,7 +57,7 @@ class Representative:
             conn.commit()
             return data['cedula_id']
         except mysql.connector.IntegrityError as e:
-            print(f"Error al crear representante: {e}")
+            logger.exception("Error en el metodo get_or_create de la clase Representative: %s", e)
             return None
         finally:
             cursor.close(); conn.close()

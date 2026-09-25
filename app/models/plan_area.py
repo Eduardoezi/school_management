@@ -10,6 +10,12 @@ from __future__ import annotations
 from typing import Optional
 
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class PlanArea:
@@ -88,7 +94,7 @@ class PlanArea:
             return cursor.lastrowid
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanArea.create] {exc}")
+            logger.exception("Error en el metodo create de la clase PlanArea: %s", exc)
             return None
         finally:
             cursor.close()
@@ -125,7 +131,7 @@ class PlanArea:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanArea.update] {exc}")
+            logger.exception("Error en el metodo update de la clase PlanArea: %s", exc)
             return False
         finally:
             cursor.close()
@@ -144,7 +150,7 @@ class PlanArea:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanArea.delete] {exc}")
+            logger.exception("Error en el metodo delete de la clase PlanArea: %s", exc)
             return False
         finally:
             cursor.close()

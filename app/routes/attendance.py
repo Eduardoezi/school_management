@@ -10,6 +10,12 @@ from app.models.attendance_batch_load import AttendanceBatchLoad
 from datetime import date as date_module, datetime as dt_module
 from app.utils.db import get_db_connection
 
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 
 
@@ -211,7 +217,8 @@ def index():
                 'info'
             )
     except Exception as exc:
-        print(f"[attendance.index] auto-close: {exc}")
+        logger.exception("[attendance.index] auto-close")
+
 
     attendance_list = TeacherAttendance.get_all_by_date()
     return render_template('attendance/admin_view.html', attendance_list=attendance_list)

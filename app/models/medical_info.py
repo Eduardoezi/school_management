@@ -1,4 +1,10 @@
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class MedicalInfo:
@@ -68,7 +74,7 @@ class MedicalInfo:
             conn.commit()
             return True
         except Exception as e:
-            print(f"[MedicalInfo.save] {e}")
+            logger.exception("Error en el metodo save de la clase MedicalInfo: %s", e)
             return False
         finally:
             cursor.close(); conn.close()

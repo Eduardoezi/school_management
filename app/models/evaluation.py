@@ -107,7 +107,7 @@ class EvaluationArea:
             return cursor.fetchone() is not None
         except Exception as exc:
             conn.rollback()
-            print(f"[EvaluationArea.update] {exc}")
+            logger.exception("Error en el metodo update de la clase EvaluationArea: %s", exc)
             return False
         finally:
             cursor.close()

@@ -14,6 +14,14 @@ from app.models.course import Course
 from app.models.teacher_attendance import TeacherAttendance
 from app.utils.db import get_db_connection
 
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
+
+
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
 
 AVATAR_MAX_SIZE = (400, 400)
@@ -34,7 +42,7 @@ def _delete_existing_avatars(user_id):
             try:
                 os.remove(ruta)
             except OSError as e:
-                print(f"[avatar] No se pudo borrar {ruta}: {e}")
+                logger.exception("[avatar] No se pudo borrar %s", ruta)
 
 
 def _process_and_save(file_storage, user_id):
@@ -108,7 +116,7 @@ def index():
                     current_user.teacher_id, from_date, to_date
                 )
             except Exception as e:
-                print(f"[profile] Error attendance: {e}")
+                logger.exception("[profile] Error attendance")
 
     return render_template('profile/index.html',
                            teacher=teacher,
@@ -193,7 +201,7 @@ def change_password():
             conn.commit()
             flash('Contraseña actualizada correctamente.', 'success')
         except Exception as e:
-            print(f"[change_password] {e}")
+            logger.exception("[change_password] Error cambiando contraseña")
             flash('Error al cambiar la contraseña.', 'danger')
         finally:
             cursor.close()

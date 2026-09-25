@@ -15,13 +15,15 @@ Este catálogo es administrable por la subdirección pedagógica.
 """
 
 from __future__ import annotations
-
 from typing import Optional
-
 import mysql.connector
-
 from app.utils.db import get_db_connection
+import logging
 
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class PedagogicalMoment:
 
@@ -150,7 +152,7 @@ class PedagogicalMoment:
             return None
         except Exception as exc:
             conn.rollback()
-            print(f"[PedagogicalMoment.create] {exc}")
+            logger.exception("Error en el metodo create de la clase PedagogicalMoment: %s", exc)
             return None
         finally:
             cursor.close()
@@ -179,7 +181,7 @@ class PedagogicalMoment:
             return cursor.fetchone() is not None
         except Exception as exc:
             conn.rollback()
-            print(f"[PedagogicalMoment.update] {exc}")
+            logger.exception("Error en el metodo update de la clase PedagogicalMoment: %s", exc)
             return False
         finally:
             cursor.close()
@@ -202,7 +204,7 @@ class PedagogicalMoment:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[PedagogicalMoment.soft_toggle] {exc}")
+            logger.exception("Error en el metodo soft_toggle de la clase PedagogicalMoment: %s", exc)
             return False
         finally:
             cursor.close()

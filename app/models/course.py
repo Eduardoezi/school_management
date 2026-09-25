@@ -10,13 +10,15 @@ Nota: los cursos con código NI-* son especiales (sin curso asignado).
 """
 
 from __future__ import annotations
-
 from typing import Optional
-
 import mysql.connector
-
 from app.utils.db import get_db_connection
+import logging
 
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class Course:
     """Representa un curso (grado + sección + año)."""
@@ -250,7 +252,7 @@ class Course:
             conn.commit()
             return True
         except Exception as exc:
-            print(f'[Course.assign_teacher] {exc}')
+            logger.exception("Error en el Metodo assing_teacher de la clase Course: %s", exc)
             return False
         finally:
             cursor.close()
@@ -271,7 +273,7 @@ class Course:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[Course.unassign_teacher] {exc}')
+            logger.exception("Error en el metodo unassign_teacher de la clase Course: %s", exc)
             return False
         finally:
             cursor.close()

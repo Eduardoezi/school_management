@@ -15,6 +15,12 @@ import mysql.connector
 from flask_login import UserMixin
 
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -268,7 +274,7 @@ class User(UserMixin):
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[User.update_role] {exc}')
+            logger.exception("Error en el metodo update_role de la clase User: %s", exc)
             return False
         finally:
             cursor.close()
@@ -289,7 +295,7 @@ class User(UserMixin):
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[User.update_avatar] {exc}')
+            logger.exception("Error en el metodo update_avatar de la clase User: %s", exc)
             return False
         finally:
             cursor.close()
@@ -311,7 +317,7 @@ class User(UserMixin):
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[User.update_password] {exc}')
+            logger.exception("Error en el metodo update_password de la clase User: %s", exc)
             return False
         finally:
             cursor.close()
@@ -331,7 +337,7 @@ class User(UserMixin):
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[User.deactivate] {exc}')
+            logger.exception("Error en el metodo deactivate de la clase User: %s", exc)
             return False
         finally:
             cursor.close()
@@ -351,7 +357,7 @@ class User(UserMixin):
             conn.commit()
             return cursor.rowcount > 0
         except Exception as exc:
-            print(f'[User.reactivate] {exc}')
+            logger.exception("Error en el metodo reactivate de la clase User: %s", exc)
             return False
         finally:
             cursor.close()

@@ -11,15 +11,13 @@ Reglas:
     - Si se elimina la actividad referenciada, la anécdota se conserva
       (plan_activity_id queda NULL).
 """
-
 from __future__ import annotations
-
+import logging
 from typing import Optional
-
 import mysql.connector
-
 from app.utils.db import get_db_connection
 
+logger = logging.getLogger(__name__)
 
 class AnecdotalRecord:
 
@@ -177,11 +175,11 @@ class AnecdotalRecord:
             return cursor.lastrowid
         except mysql.connector.IntegrityError as exc:
             conn.rollback()
-            print(f"[AnecdotalRecord.create] {exc}")
+            logger.exception("Error de integridad en AnecdotalRecord.create: %s", exc)
             return None
         except Exception as exc:
             conn.rollback()
-            print(f"[AnecdotalRecord.create] {exc}")
+            logger.exception("Error en AnecdotalRecord.create: %s", exc)
             return None
         finally:
             cursor.close()
@@ -212,7 +210,7 @@ class AnecdotalRecord:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[AnecdotalRecord.update] {exc}")
+            logger.exception("Error en AnecdotalRecord.update: %s", exc)
             return False
         finally:
             cursor.close()
@@ -230,7 +228,7 @@ class AnecdotalRecord:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[AnecdotalRecord.delete] {exc}")
+            logger.exception("Error en AnecdotalRecord.delete: %s", exc)
             return False
         finally:
             cursor.close()

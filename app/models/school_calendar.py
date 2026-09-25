@@ -6,6 +6,12 @@ import json
 from threading import Lock
 
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class SchoolCalendar:
@@ -148,7 +154,7 @@ class SchoolCalendar:
                 return True
             except Exception as exc:
                 conn.rollback()
-                print(f"[SchoolCalendar.ensure_schema] {exc}")
+                logger.exception("Error en el metodo ensure_schema de la clase SchoolCalendar: %s", exc)
                 return False
             finally:
                 cursor.close()
@@ -200,7 +206,7 @@ class SchoolCalendar:
             return calendar_id
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.create] {exc}")
+            logger.exception("Error en el metodo create de la clase SchoolCalendar: %s", exc)
             return None
         finally:
             cursor.close()
@@ -314,7 +320,7 @@ class SchoolCalendar:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.publish] {exc}")
+            logger.exception("Error en el metodo publish de la clase SchoolCalendar: %s", exc)
             return False
         finally:
             cursor.close()
@@ -392,7 +398,7 @@ class SchoolCalendar:
             return event_id
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.create_event] {exc}")
+            logger.exception("Error en el metodo create_event de la clase SchoolCalendar: %s", exc)
             return None
         finally:
             cursor.close()
@@ -434,7 +440,7 @@ class SchoolCalendar:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.update_event] {exc}")
+            logger.exception("Error en el metodo update_event de la clase SchoolCalendar: %s", exc)
             return False
         finally:
             cursor.close()
@@ -463,7 +469,7 @@ class SchoolCalendar:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.delete_event] {exc}")
+            logger.exception("Error en el metodo delete_event de la clase SchoolCalendar: %s", exc)
             return False
         finally:
             cursor.close()
@@ -514,7 +520,7 @@ class SchoolCalendar:
             return import_id
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.create_import] {exc}")
+            logger.exception("Error en el metodo create_import de la clase SchoolCalendar: %s", exc)
             return None
         finally:
             cursor.close()
@@ -594,7 +600,7 @@ class SchoolCalendar:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[SchoolCalendar.confirm_import] {exc}")
+            logger.exception("Error en el metodo confirm_import de la clase SchoolCalendar: %s", exc)
             return False
         finally:
             cursor.close()

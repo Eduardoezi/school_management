@@ -1,6 +1,12 @@
 from app.utils.db import get_db_connection
 from datetime import date, datetime, timedelta
 import mysql.connector
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class TeacherAttendance:
@@ -145,7 +151,7 @@ class TeacherAttendance:
             row = TeacherAttendance.get_today(teacher_id)
             return {'success': True, 'record': row}
         except Exception as e:
-            print(f"[check_in] {e}")
+            logger.exception("Error en el metodo check_in de la clase TeacherAttendance: %s", e)
             return {'success': False, 'error': str(e)}
         finally:
             cursor.close()
@@ -171,7 +177,7 @@ class TeacherAttendance:
                 return {'success': False, 'error': 'No hay entrada pendiente de salida para hoy.'}
             return {'success': True}
         except Exception as e:
-            print(f"[check_out] {e}")
+            logger.exception("Error en el metodo check_out de la clase TeacherAttendance: %s", e)
             return {'success': False, 'error': str(e)}
         finally:
             cursor.close()
@@ -193,7 +199,7 @@ class TeacherAttendance:
             conn.commit()
             return True
         except Exception as e:
-            print(f"[update] {e}")
+            logger.exception("Error en el metodo update de la clase TeacherAttendance: %s", e)
             return False
         finally:
             cursor.close()
@@ -224,7 +230,7 @@ class TeacherAttendance:
             if schedule and schedule.get('end_time'):
                 close_time_str = TeacherAttendance.format_time(schedule['end_time'])
         except Exception as exc:
-            print(f"[auto_close_pending] schedule lookup: {exc}")
+            logger.exception("Error en el metodo auto_close_pending schedule lookup de la clase TeacherAttendance: %s", exc)
 
         conn = get_db_connection()
         if not conn:
@@ -246,7 +252,7 @@ class TeacherAttendance:
             conn.commit()
             return cursor.rowcount
         except Exception as e:
-            print(f"[auto_close_pending] {e}")
+            logger.exception("Error en el metodo auto_clase_pending de la clase TeacherAttendance: %s", e)
             conn.rollback()
             return 0
         finally:
@@ -276,7 +282,7 @@ class TeacherAttendance:
             conn.commit()
             return cursor.rowcount
         except Exception as e:
-            print(f"[auto_close_all_past] {e}")
+            logger.exception("Error en el metodo auto_close_all_past de la clase TeacherAttendance: %s", e)
             conn.rollback()
             return 0
         finally:
@@ -293,7 +299,8 @@ class TeacherAttendance:
         try:
             schedule = TeacherAttendance._get_today_schedule()
         except Exception as exc:
-            print(f"[maybe_auto_close_today] {exc}")
+            logger.exception("Error en el metodo maybe_auto_close_today de la clase TeacherAttendance: %s", exc)
+            
             return 0
 
         if not schedule or not schedule.get('end_time'):
@@ -397,7 +404,7 @@ class TeacherAttendance:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"[justify] {e}")
+            logger.exception("Error en el metodo justify de la clase TeacherAttendance: %s", e)
             return False
         finally:
             cursor.close()
@@ -469,7 +476,7 @@ class TeacherAttendance:
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
-            print(f"[save_manual] {e}")
+            logger.exception("Error en el metodo save_manual de la clase TeacherAttendance: %s", e)
             return None
         finally:
             cursor.close()

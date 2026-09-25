@@ -15,6 +15,12 @@ from app.models.document_log import DocumentLog
 from app.models.enrollment import Enrollment
 from app.utils.decorators import role_required
 
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 documents_bp = Blueprint('documents', __name__, url_prefix='/documents')
 
 
@@ -39,7 +45,7 @@ def _logo_base64(institution):
         mime = 'image/png' if ext == 'png' else 'image/jpeg'
         return f"data:{mime};base64,{data}"
     except Exception as e:
-        print(f"[_logo_base64] {e}")
+        logger.exception("[_logo_base64] Error generando logo base64")
         return None
 
 

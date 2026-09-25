@@ -1,4 +1,10 @@
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class SocioeconomicInfo:
@@ -47,7 +53,7 @@ class SocioeconomicInfo:
             conn.commit()
             return True
         except Exception as e:
-            print(f"[SocioeconomicInfo.save] {e}")
+            logger.exception("Error en el metodo save de la clase SocioeconomicInfo: %s", e)
             return False
         finally:
             cursor.close(); conn.close()

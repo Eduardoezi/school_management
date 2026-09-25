@@ -1,6 +1,11 @@
 from app.utils.db import get_db_connection
 import mysql.connector
+import logging
 
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class FamilyMember:
     ROLES = ['madre', 'padre', 'tutor', 'otro']
@@ -51,7 +56,7 @@ class FamilyMember:
             conn.commit()
             return cursor.lastrowid
         except mysql.connector.IntegrityError as e:
-            print(f"[FamilyMember.create] {e}")
+            logger.exception("Error en el Metodo create de la clase FamilyMember: %s", e)
             return None
         finally:
             cursor.close(); conn.close()
@@ -79,7 +84,7 @@ class FamilyMember:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"[FamilyMember.update] {e}")
+            logger.exception("Error en el metodo update de la clase FamilyMember: %s", e)
             return False
         finally:
             cursor.close(); conn.close()

@@ -1,6 +1,12 @@
 # app/models/webauthn_credential.py
 import json
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class WebAuthnCredential:
@@ -37,7 +43,7 @@ class WebAuthnCredential:
             conn.commit()
             return cur.rowcount > 0
         except Exception as e:
-            print(f"[WebAuthnCredential.create] {e}")
+            logger.exception("Error en el metodo create de la clase WebAuthnCredential: %s", e)
             return False
         finally:
             cur.close()

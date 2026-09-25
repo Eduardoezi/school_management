@@ -125,20 +125,25 @@ def test_inf04_cookie_secure_no_esta_hardcodeada():
 # INF-05 — Migraciones / versionado de esquema
 # ===================================================================
 def test_inf05_existe_carpeta_migraciones():
-    """CHECK BLANDO: existe migrations/ o database/migrations/ con archivos."""
-    candidatos = [
-        RAIZ / 'migrations',
-        RAIZ / 'database' / 'migrations',
-        RAIZ / 'db' / 'migrations',
-        RAIZ / 'sql' / 'migrations',
-    ]
-    for d in candidatos:
-        if d.exists() and d.is_dir() and any(d.iterdir()):
-            return
-    pytest.fail(
-        "[INF-05] no hay carpeta de migraciones con archivos. "
-        f"Revisado: {[str(c.relative_to(RAIZ)) for c in candidatos]}"
-    )
+    """CHECK FUERTE: hay carpeta de migraciones + runner + README."""
+    mig = RAIZ / 'database' / 'migrations'
+    assert mig.exists() and mig.is_dir(), \
+        "[INF-05] falta database/migrations/"
+
+    sqls = sorted(mig.glob('*.sql'))
+    assert sqls, "[INF-05] database/migrations/ está vacía"
+
+    # Debe haber al menos una 001_*
+    assert any(s.name.startswith('001_') for s in sqls), \
+        "[INF-05] falta una migración inicial 001_*.sql"
+
+    # Debe existir el runner
+    runner = RAIZ / 'database' / 'migrate.py'
+    assert runner.exists(), "[INF-05] falta database/migrate.py"
+
+    # Debe existir README
+    readme = RAIZ / 'database' / 'README.md'
+    assert readme.exists(), "[INF-05] falta database/README.md"
 
 
 # ===================================================================

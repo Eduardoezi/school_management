@@ -5,6 +5,12 @@ from __future__ import annotations
 from typing import Optional
 
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class PlanReview:
@@ -34,7 +40,7 @@ class PlanReview:
             return cursor.lastrowid
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanReview.create] {exc}")
+            logger.exception("Error en el metodo create de la clase Planreview: %s", exc)
             return None
         finally:
             cursor.close()

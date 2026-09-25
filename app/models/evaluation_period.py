@@ -13,13 +13,15 @@ fechas y orden. El sistema los usa para:
 """
 
 from __future__ import annotations
-
 from typing import Optional
-
 import mysql.connector
-
 from app.utils.db import get_db_connection
+import logging
 
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class EvaluationPeriod:
 
@@ -116,11 +118,11 @@ class EvaluationPeriod:
             return cursor.lastrowid
         except mysql.connector.IntegrityError as exc:
             conn.rollback()
-            print(f"[EvaluationPeriod.create] Integridad: {exc}")
+            logger.exception("Error en el metodo create de la clase EvaluationPeriod Integridad: %s",  exc)
             return None
         except Exception as exc:
             conn.rollback()
-            print(f"[EvaluationPeriod.create] {exc}")
+            logger.exception("Error en el metodo create de la clase EvaluationPeriod: %s", exc)
             return None
         finally:
             cursor.close()

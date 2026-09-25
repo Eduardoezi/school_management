@@ -1,5 +1,11 @@
 from app.utils.db import get_db_connection
 from datetime import datetime, timedelta
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class UserSession:
@@ -19,7 +25,7 @@ class UserSession:
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
-            print(f"Error al crear sesión: {e}")
+            logger.exception("Error en el metodo create de la clase UserSession: %s", e)
             return None
         finally:
             cursor.close()

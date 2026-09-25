@@ -1,6 +1,8 @@
 from app.utils.db import get_db_connection
 from datetime import date
+import logging
 
+logger = logging.getLogger(__name__)
 
 class AttendanceBatchLoad:
     PREFIX = 'AL'
@@ -47,7 +49,7 @@ class AttendanceBatchLoad:
                 'sequence': seq
             }
         except Exception as e:
-            print(f"[AttendanceBatchLoad.create] {e}")
+            logger.exception("Error en AttendanceBatchLoad.create: %s", e)
             return None
         finally:
             cursor.close()
@@ -131,7 +133,7 @@ class AttendanceBatchLoad:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"[AttendanceBatchLoad.update_reason] {e}")
+            logger.exception("Error en AttendanceBatchLoad.update_reason: %s", e)
             return False
         finally:
             cursor.close()
@@ -172,7 +174,7 @@ class AttendanceBatchLoad:
                 'is_late_load': bool(is_late)
             }
         except Exception as e:
-            print(f"[AttendanceBatchLoad.create_v2] {e}")
+            logger.exception("Error en AttendanceBatchLoad.create_v2: %s", e)
             return None
         finally:
             cursor.close()
@@ -194,7 +196,7 @@ class AttendanceBatchLoad:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"[AttendanceBatchLoad.update_teacher_remarks] {e}")
+            logger.exception("Error en AttendanceBatchLoad.update_teacher_remarks: %s", e)
             return False
         finally:
             cursor.close()

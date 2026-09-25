@@ -6,6 +6,14 @@ from app.utils.decorators import role_required
 from app.models.institution_data import InstitutionData
 from app.models.teacher import Teacher
 
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
+
+
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
@@ -111,7 +119,7 @@ def reset_password(user_id):
                 cursor.close()
                 conn.close()
         except Exception as e:
-            print(f"[reset_password] Error cerrando sesiones: {e}")
+            logger.exception("Error en la ruta [reset_password] cerrando sesiones")
 
         flash(
             f'Contraseña de "{user.username}" restablecida correctamente. '

@@ -1,4 +1,10 @@
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class InstitutionData:
@@ -80,7 +86,7 @@ class InstitutionData:
             conn.commit()
             return True
         except Exception as e:
-            print(f"[InstitutionData.save] {e}")
+            logger.exception("Error en el metodo save de la clase InstitutionData: %s", e)
             return False
         finally:
             cursor.close()

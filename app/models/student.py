@@ -1,6 +1,12 @@
 from app.utils.db import get_db_connection
 from datetime import datetime
 import mysql.connector
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 class Student:
     @staticmethod
@@ -36,7 +42,7 @@ class Student:
             row = cursor.fetchone()
             return bool(row and row[0])
         except Exception as e:
-            print(f"[Student.is_in_teacher_courses] {e}")
+            logger.exception("Error en el metodo is_in_teacher_courses de la clase Student: %s", e)
             return False
         finally:
             cursor.close()
@@ -160,11 +166,11 @@ class Student:
             conn.commit()
             return school_id
         except mysql.connector.IntegrityError as e:
-            print(f"Error de integridad: {e}")
+            logger.exception("Error de integridad del metodo create de la clase Student: %s", e)
             conn.rollback()
             return None
         except Exception as e:
-            print(f"Error al crear estudiante: {e}")
+            logger.exception("Error en el metodo create de la clase Student: %s", e)
             conn.rollback()
             return None
         finally:
@@ -256,7 +262,7 @@ class Student:
             conn.commit()
             return True
         except Exception as e:
-            print(f"Error al actualizar estudiante: {e}")
+            logger.exception("Error en el metodo update_full de la clase Student: %s", e)
             conn.rollback()
             return False
         finally:
@@ -273,7 +279,7 @@ class Student:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(e)
+            logger.exception("Error en el metodo delete de la clase Student: %s", e)
             return False
         finally:
             cursor.close(); conn.close()

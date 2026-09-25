@@ -1,5 +1,11 @@
 from app.utils.db import get_db_connection
 from datetime import date
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class DocumentLog:
@@ -64,7 +70,7 @@ class DocumentLog:
                 'sequence': seq,
             }
         except Exception as e:
-            print(f"[DocumentLog.issue] {e}")
+            logger.exception("Error en el metodo issue de la clase DocumentLog: %s", e)
             return None
         finally:
             cursor.close()
@@ -135,7 +141,7 @@ class DocumentLog:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"[DocumentLog.mark_printed] {e}")
+            logger.exception("Error en el metodo mark_printed de la clase DocumentLog: %s", e)
             return False
         finally:
             cursor.close()

@@ -6,10 +6,14 @@ el plan pasa a estado 'publicado' (Fase 6).
 """
 
 from __future__ import annotations
-
 from typing import Optional
-
 from app.utils.db import get_db_connection
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class PlanActivity:
@@ -111,7 +115,7 @@ class PlanActivity:
             return cursor.lastrowid
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanActivity.create] {exc}")
+            logger.exception("Error en el metodo create: %s", exc)
             return None
         finally:
             cursor.close()
@@ -156,7 +160,7 @@ class PlanActivity:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanActivity.update] {exc}")
+            logger.exception("Error en el metodo update de la clase PlanActivity:%s", exc)
             return False
         finally:
             cursor.close()
@@ -176,7 +180,7 @@ class PlanActivity:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[PlanActivity.delete] {exc}")
+            logger.exception("Error en el metodo delete de la clase PlanActivity: %s", exc)
             return False
         finally:
             cursor.close()

@@ -7,15 +7,13 @@ Reglas de negocio:
     - Al activar un año, el anterior se desactiva automáticamente.
     - No se permite eliminar un año con planes asociados.
 """
-
 from __future__ import annotations
-
+import logging
 from typing import Optional
-
 import mysql.connector
-
 from app.utils.db import get_db_connection
 
+logger = logging.getLogger(__name__)
 
 class AcademicYear:
 
@@ -109,11 +107,11 @@ class AcademicYear:
             conn.commit()
             return cursor.lastrowid
         except mysql.connector.IntegrityError as exc:
-            print(f"[AcademicYear.create] {exc}")
+            logger.exception("Error de integridad en AcademicYear.create: %s", exc)
             return None
         except Exception as exc:
             conn.rollback()
-            print(f"[AcademicYear.create] {exc}")
+            logger.exception("Error en AcademicYear.create: %s", exc)
             return None
         finally:
             cursor.close()
@@ -152,7 +150,7 @@ class AcademicYear:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[AcademicYear.activate] {exc}")
+            logger.exception("Error en AcademicYear.activate: %s", exc)
             return False
         finally:
             cursor.close()
@@ -189,7 +187,7 @@ class AcademicYear:
             return True
         except Exception as exc:
             conn.rollback()
-            print(f"[AcademicYear.mark_as_next] {exc}")
+            logger.exception("Error en AcademicYear.mark_as_next: %s", exc)
             return False
         finally:
             cursor.close()
@@ -237,7 +235,7 @@ def delete(year_id: int) -> bool:
         return cursor.rowcount > 0
     except Exception as exc:
         conn.rollback()
-        print(f"[AcademicYear.delete] {exc}")
+        logger.exception("Error en AcademicYear.delete: %s", exc)
         return False
     finally:
         cursor.close()

@@ -1,5 +1,11 @@
 from app.utils.db import get_db_connection
 import mysql.connector
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class Teacher:
@@ -79,10 +85,11 @@ class Teacher:
             conn.commit()
             return data['id']
         except mysql.connector.IntegrityError as e:
-            print(f"Error de integridad: {e}")
+            logger.exception("Error de integridad en el metodo create de la clase Teacher: %s", e)
+
             return None
         except Exception as e:
-            print(f"Error al crear docente: {e}")
+            logger.exception("Error en el metodo create de la clase Teacher: %s", e)
             return None
         finally:
             cursor.close()
@@ -104,7 +111,7 @@ class Teacher:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error al actualizar docente: {e}")
+            logger.exception("Error en el metodo update de la clase Teacher: %s", e)
             return False
         finally:
             cursor.close()
@@ -121,7 +128,7 @@ class Teacher:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error al desactivar docente: {e}")
+            logger.exception("Error en el metodo deactivate de la clase Teacher: %s", e)
             return False
         finally:
             cursor.close()
@@ -138,7 +145,7 @@ class Teacher:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error al reactivar docente: {e}")
+            logger.exception("Error en el metodo reactivate de la clase Teacher: %s", e)
             return False
         finally:
             cursor.close()
@@ -157,7 +164,7 @@ class Teacher:
         except mysql.connector.IntegrityError:
             return False, 'El docente tiene registros vinculados (cursos, asistencias, etc.)'
         except Exception as e:
-            print(f"Error al eliminar docente: {e}")
+            logger.exception("Error en el metodo delete_hard de la clase Teacher: %s", e)
             return False, str(e)
         finally:
             cursor.close()

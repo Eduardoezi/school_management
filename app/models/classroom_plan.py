@@ -23,6 +23,9 @@ from typing import Optional
 import mysql.connector
 
 from app.utils.db import get_db_connection
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -216,11 +219,11 @@ class ClassroomPlan:
             return cursor.lastrowid
         except mysql.connector.IntegrityError as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.create] {exc}")
+            logger.exception("Error en create de la clase Classroomplan; %s", exc)
             return None
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.create] {exc}")
+            logger.exception("Error en create de la clase Classroomplan; %s", exc)
             return None
         finally:
             cursor.close()
@@ -275,7 +278,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.update] {exc}")
+            logger.exception("Error en el Metodo update de la clase Classroomplan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -322,7 +325,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.submit_for_review] {exc}")
+            logger.exception("Error en el metodo submit_for_review de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -347,7 +350,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.approve] {exc}")
+            logger.exception("Error en el Metodo approve de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -371,7 +374,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.return_for_correction] {exc}")
+            logger.exception("Error en el Metodo return_for_correction de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -395,7 +398,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.publish] {exc}")
+            logger.exception("Error en el metodo publish de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -417,7 +420,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.archive] {exc}")
+            logger.exception("Error en el Metodo archive de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()
@@ -439,7 +442,7 @@ class ClassroomPlan:
             return cursor.rowcount > 0
         except Exception as exc:
             conn.rollback()
-            print(f"[ClassroomPlan.soft_delete] {exc}")
+            logger.exception("Error en el metodo soft_delete de la clase ClassroomPlan: %s", exc)
             return False
         finally:
             cursor.close()

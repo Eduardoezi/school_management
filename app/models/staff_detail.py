@@ -1,5 +1,11 @@
 from app.utils.db import get_db_connection
 from app.utils.crypto import encrypt_str
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 
 class StaffDetail:
@@ -103,7 +109,7 @@ class StaffDetail:
             conn.commit()
             return True
         except Exception as e:
-            print(f"[StaffDetail.save] {e}")
+            logger.exception("Error en el metodo save de la clase StaffDetail: %s", e)
             return False
         finally:
             cursor.close()

@@ -63,6 +63,12 @@ from app.routes.plans_helpers import (
     activity_access_required,
 )
 
+import logging
+
+# ============================================================
+# Logger del módulo
+# ============================================================
+logger = logging.getLogger(__name__)
 
 plans_bp = Blueprint('plans', __name__, url_prefix='/plans')
 
@@ -87,7 +93,7 @@ def _safe_model_list(model, *method_names):
                 if result:
                     return result
             except Exception as exc:
-                print(f"[plans._safe_model_list] {model.__name__}.{name} -> {exc}")
+                logger.exception("[plans._safe_model_list] %s.%s", model.__name__, name)
     return []
 
 
