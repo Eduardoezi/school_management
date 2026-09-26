@@ -165,15 +165,23 @@ class Config:
     REMEMBER_COOKIE_DURATION = 30 * 24 * 3600   # 30 días en segundos
 
     # ============================================================
-    # SUBIDA DE ARCHIVOS
+    # SUBIDA DE ARCHIVOS (SEC-04: fuera de static/)
+    # ============================================================
+    # Los archivos privados viven en `private_uploads/`, FUERA de
+    # `app/static/`. Flask NO los sirve automáticamente; se sirven
+    # por endpoints autenticados con send_file().
     # ============================================================
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2 MB
-    UPLOAD_FOLDER = str(BASE_DIR / 'app' / 'static' / 'uploads')
-    ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
-    CALENDAR_UPLOAD_FOLDER = str(
-        BASE_DIR / 'app' / 'static' / 'uploads' / 'calendars'
-    )
+    # Raíz de uploads privados
+    PRIVATE_UPLOADS_FOLDER = str(BASE_DIR / 'private_uploads')
+
+    # Subcarpetas (una por tipo de recurso)
+    AVATAR_FOLDER          = str(BASE_DIR / 'private_uploads' / 'avatars')
+    CALENDAR_UPLOAD_FOLDER = str(BASE_DIR / 'private_uploads' / 'calendars')
+    STUDENT_PHOTO_FOLDER   = str(BASE_DIR / 'private_uploads' / 'student_photos')
+
+    ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
     # ============================================================
     # WEB AUTHN
@@ -226,6 +234,13 @@ class Config:
                 '127.0.0.1 para no exponerse directamente.',
                 HOST,
             )
+
+        # ============================================================
+        # RATE LIMITING (SEC-01)
+        # ============================================================
+        RATELIMIT_STORAGE_URI = os.getenv('RATELIMIT_STORAGE_URI', 'memory://')
+        RATELIMIT_DEFAULT = []          # sin límites globales
+        RATELIMIT_HEADERS_ENABLED = True
 
     # ============================================================
     # RESOLUCIÓN DE RUTAS RELATIVAS

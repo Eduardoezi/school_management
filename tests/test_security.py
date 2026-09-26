@@ -165,27 +165,41 @@ def test_sec03_logout_es_post():
 # ===================================================================
 def test_sec04_upload_folder_fuera_de_static():
     """
-    Los archivos subidos NO deben vivir bajo app/static/, porque
-    Flask los sirve públicamente sin autenticación.
+    Los archivos subidos NO deben vivir bajo app/static/.
 
-    OJO: UPLOAD_FOLDER está indentado dentro de la clase Config,
-    por eso el regex permite espacios al inicio.
+    Acepta cualquiera de los nombres actuales o históricos del
+    setting (UPLOAD_FOLDER, AVATAR_FOLDER, PRIVATE_UPLOADS_FOLDER),
+    siempre que la ruta no contenga 'static'.
     """
     config = APP / 'config.py'
     if not config.exists():
         pytest.skip("config.py no existe")
 
     texto = _leer(config)
-    # Permitir indentación antes del nombre
-    m = re.search(r'^\s*UPLOAD_FOLDER\s*=\s*(.+)$', texto, re.MULTILINE)
-    assert m, "[SEC-04] No se encontró UPLOAD_FOLDER en config.py"
 
-    expr = m.group(1).strip()
-    assert 'static' not in expr, (
-        f"[SEC-04] UPLOAD_FOLDER apunta a static/:\n"
-        f"    {expr}\n"
-        "Mover a `private_uploads/` (fuera de static/) y servir los "
-        "archivos por un endpoint autenticado con send_file()."
+    # Buscamos cualquiera de los nombres usados para la carpeta de uploads
+    patrones = [
+        r'^\s*UPLOAD_FOLDER\s*=\s*(.+)$',
+        r'^\s*AVATAR_FOLDER\s*=\s*(.+)$',
+        r'^\s*PRIVATE_UPLOADS_FOLDER\s*=\s*(.+)$',
+        r'^\s*STUDENT_PHOTO_FOLDER\s*=\s*(.+)$',
+    ]
+    encontrados = []
+    for pat in patrones:
+        for m in re.finditer(pat, texto, re.MULTILINE):
+            encontrados.append(m.group(1).strip())
+
+    assert encontrados, (
+        "[SEC-04] No se encontró ningún setting de uploads en config.py. "
+        "Se esperaba UPLOAD_FOLDER, AVATAR_FOLDER o PRIVATE_UPLOADS_FOLDER."
+    )
+
+    problematicos = [expr for expr in encontrados if 'static' in expr]
+    assert not problematicos, (
+        f"[SEC-04] Algunos settings de uploads apuntan a static/:\n  "
+        + "\n  ".join(problematicos) +
+        "\nMover a `private_uploads/` (fuera de static/) y servir los "
+        "archivos por endpoints autenticados con send_file()."
     )
 
 

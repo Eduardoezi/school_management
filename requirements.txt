@@ -158,3 +158,5 @@ yarl==1.25.1
     # via aiohttp
 zeroconf==0.151.3
     # via -r requirements.in
+flask-limiter==3.12.0
+    # via flask-limiter

@@ -89,10 +89,17 @@ class User(UserMixin):
 
     @property
     def avatar_url(self) -> Optional[str]:
-        """URL pública del avatar o None."""
+        """
+        URL autenticada del avatar (SEC-04).
+
+        Ya NO apunta a /static/uploads/... porque esa carpeta era
+        pública. Ahora pasa por el endpoint autenticado
+        `profile.serve_avatar`.
+        """
         if not self.avatar:
             return None
-        return f'/static/{self.avatar}'
+        from flask import url_for
+        return url_for('profile.serve_avatar', user_id=self.id)
 
     @property
     def role_label(self) -> str:

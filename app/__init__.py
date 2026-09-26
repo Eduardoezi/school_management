@@ -8,6 +8,7 @@ from flask_wtf.csrf import CSRFProtect
 from app.config import Config
 from app.models.user import User
 from app.utils.db import get_db_connection
+from app.security.rate_limit import limiter
 
 
 # ---------- Extensiones ----------
@@ -39,7 +40,7 @@ def create_app(config_object=Config):
 
     csrf.init_app(app)
     login_manager.init_app(app)
-    
+    limiter.init_app(app)          # <-- NUEVA LÍNEA (SEC-01)
 
     _register_blueprints(app)
     _register_error_handlers(app)
@@ -111,6 +112,17 @@ def _register_error_handlers(app: Flask) -> None:
 # ============================================================
 def _register_request_hooks(app: Flask) -> None:
     @app.before_request
+    def _block_legacy_uploads():
+        """
+        Bloquea accesos a /static/uploads/* — esa carpeta ya no
+        existe (SEC-04). Devolvemos 410 Gone para que los navegadores
+        no mantengan la URL en caché.
+        """
+        if request.path.startswith('/static/uploads/'):
+            from flask import abort
+            abort(410)
+    
+    @app.before_request
     def update_last_seen():
         if request.endpoint == 'static' or not current_user.is_authenticated:
             return
@@ -145,6 +157,7 @@ def _register_request_hooks(app: Flask) -> None:
             except Exception:
                 pass
             conn.close()
+        
 
 
 # ============================================================

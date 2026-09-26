@@ -37,14 +37,16 @@
                     <label for="password" class="form-label">Contraseña <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <input type="password" class="form-control" id="password" name="password"
-                               required autocomplete="new-password" minlength="6">
+                               required autocomplete="new-password" minlength="12" required placeholder="Ej: kR9#4vN2!7wP">
                         <button class="btn btn-outline-secondary" type="button"
                                 id="toggle-password" tabindex="-1"
                                 aria-label="Mostrar u ocultar contraseña">
                             <i class="bi bi-eye" id="toggle-icon"></i>
                         </button>
                     </div>
-                    <small class="form-text text-muted">Mínimo 6 caracteres.</small>
+                    <small class="form-text text-muted">
+                        Mínimo 12 caracteres, con al menos una mayúscula, una minúscula y un número.
+                    </small>
                 </div>
 
                 <div class="alert alert-info">

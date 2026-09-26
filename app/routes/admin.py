@@ -5,7 +5,7 @@ from app.models.user_session import UserSession
 from app.utils.decorators import role_required
 from app.models.institution_data import InstitutionData
 from app.models.teacher import Teacher
-
+from app.security.passwords import validate_password
 import logging
 
 # ============================================================
@@ -101,8 +101,10 @@ def reset_password(user_id):
         flash('Debes indicar la nueva contraseña.', 'danger')
         return redirect(url_for('admin.users_list'))
 
-    if len(new_password) < 6:
-        flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+    ok, errores = validate_password(new_password)
+    if not ok:
+        for error in errores:
+            flash(error, 'danger')
         return redirect(url_for('admin.users_list'))
 
     if User.update_password(user_id, new_password):

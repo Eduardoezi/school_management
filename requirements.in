@@ -30,3 +30,4 @@ zeroconf
 # Generación de PDF
 xhtml2pdf
 
+Flask-Limiter
