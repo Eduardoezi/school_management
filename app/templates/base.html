@@ -271,11 +271,16 @@
             {% if current_user.is_authenticated %}
                 <span class="d-none d-md-inline">{{ display_name }}</span>
                 <span class="role-badge">{{ role_label }}</span>
-                <a href="{{ url_for('auth.logout') }}"
-                   class="btn btn-sm btn-outline-secondary"
-                   title="Cerrar sesión">
-                    <i class="bi bi-box-arrow-right"></i>
-                </a>
+                <form method="POST"
+                      action="{{ url_for('auth.logout') }}"
+                      class="d-inline m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-secondary"
+                            title="Cerrar sesión">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
             {% else %}
                 <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">
                     Iniciar sesión

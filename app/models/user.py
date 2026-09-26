@@ -201,19 +201,45 @@ class User(UserMixin):
 
     @staticmethod
     def get_online_users(minutes: int = 5) -> list[dict]:
-        """Usuarios con actividad en los últimos N minutos."""
+        """
+        Usuarios con actividad en los últimos N minutos.
+
+        Devuelve UNA fila por usuario, con el número de sesiones
+        activas y los datos de la sesión más reciente.
+
+        Sin GROUP BY, el LEFT JOIN a user_sessions produce una fila
+        por cada sesión activa: un usuario con 3 pestañas abiertas
+        aparecería 3 veces.
+        """
         conn = get_db_connection()
         if not conn:
             return []
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("""
-                SELECT u.*, s.ip_address, s.user_agent,
-                       s.login_time, s.last_activity
+                SELECT
+                    u.id,
+                    u.username,
+                    u.email,
+                    u.role,
+                    u.last_seen,
+                    u.avatar,
+                    u.teacher_id,
+                    u.active,
+                    u.created_at,
+                    COUNT(s.id) AS active_sessions,
+                    MAX(s.ip_address) AS ip_address,
+                    MAX(s.user_agent) AS user_agent,
+                    MAX(s.login_time) AS login_time,
+                    MAX(s.last_activity) AS last_activity
                 FROM users u
                 LEFT JOIN user_sessions s
                     ON s.user_id = u.id AND s.is_active = 1
                 WHERE u.last_seen >= NOW() - INTERVAL %s MINUTE
+                GROUP BY
+                    u.id, u.username, u.email, u.role,
+                    u.last_seen, u.avatar, u.teacher_id,
+                    u.active, u.created_at
                 ORDER BY u.last_seen DESC
             """, (minutes,))
             return cursor.fetchall()

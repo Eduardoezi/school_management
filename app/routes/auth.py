@@ -121,11 +121,15 @@ def login():
     return render_template('login.html')
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     """
     Cierra la sesión del usuario y marca su sesión como inactiva.
+
+    Solo acepta POST con CSRF token válido. Un GET permitiría
+    cerrar sesión a través de <img src="/auth/logout"> desde
+    cualquier sitio externo (CSRF trivial).
     """
     session_id = session.get('session_id')
 
