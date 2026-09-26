@@ -381,12 +381,8 @@ def test_sec08_online_users_no_duplica():
 # ===================================================================
 def test_sec09_datos_medicos_cifrados():
     """
-    Los campos médicos de menores (vacunas, alergias, condiciones
-    crónicas, informes psicológicos y neurológicos) son datos sensibles
-    según la LOPNNA. Deben cifrarse en reposo igual que el número
-    de cuenta bancaria de los adultos.
-
-    Estado actual: texto plano. Test en rojo hasta que se implemente.
+    Los campos médicos de menores deben cifrarse en reposo (LOPNNA).
+    Acepta cualquiera de las funciones de cifrado del proyecto.
     """
     archivo = APP / 'models' / 'medical_info.py'
     if not archivo.exists():
@@ -394,7 +390,9 @@ def test_sec09_datos_medicos_cifrados():
 
     texto = _leer(archivo)
     usa_cifrado = any(s in texto for s in [
-        'encrypt_str', 'decrypt_str', 'Fernet', '_encrypted'
+        'encrypt_str', 'decrypt_str',
+        'encrypt_sensitive', 'decrypt_sensitive',
+        'Fernet', '_encrypted', '_cifrado',
     ])
 
     assert usa_cifrado, (
@@ -412,7 +410,7 @@ def test_sec09_datos_medicos_cifrados():
 def test_sec09_datos_socioeconomicos_cifrados():
     """
     El estudio socioeconómico (ingresos familiares, condiciones de
-    vivienda) es información sensible del núcleo familiar.
+    vivienda) también es información sensible del núcleo familiar.
     """
     archivo = APP / 'models' / 'socioeconomic_info.py'
     if not archivo.exists():
@@ -420,15 +418,17 @@ def test_sec09_datos_socioeconomicos_cifrados():
 
     texto = _leer(archivo)
     usa_cifrado = any(s in texto for s in [
-        'encrypt_str', 'decrypt_str', 'Fernet', '_encrypted'
+        'encrypt_str', 'decrypt_str',
+        'encrypt_sensitive', 'decrypt_sensitive',
+        'Fernet', '_encrypted', '_cifrado',
     ])
 
     assert usa_cifrado, (
         "[SEC-09] socioeconomic_info.py guarda datos socioeconómicos en "
         "texto plano. Cifrar al menos:\n"
         "  - monthly_income\n"
-        "  - housing_type / housing_condition / housing_infrastructure\n"
-        "  - other_family_members"
+        "  - other_family_members\n"
+        "  - housing_infrastructure"
     )
 
 

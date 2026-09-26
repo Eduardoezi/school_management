@@ -95,6 +95,17 @@ class Config:
             'print(Fernet.generate_key().decode())"'
         )
 
+    # Clave Fernet para cifrar datos sensibles de menores (SEC-09):
+    # ficha médica, estudio socioeconómico.
+    DATA_ENCRYPTION_KEY = os.getenv('DATA_ENCRYPTION_KEY')
+    if IS_PRODUCTION and not DATA_ENCRYPTION_KEY:
+        raise RuntimeError(
+            "DATA_ENCRYPTION_KEY definida. Configúrada en el .env. "
+            "Generada una con: "
+            'python -c "from cryptography.fernet import Fernet; '
+            'print(Fernet.generate_key().decode())"'
+        )
+
     # ============================================================
     # SERVIDOR
     # ============================================================

@@ -1,29 +1,57 @@
+# app/models/socioeconomic_info.py
 from app.utils.db import get_db_connection
+from app.utils.crypto import encrypt_sensitive, decrypt_sensitive
 import logging
 
-# ============================================================
-# Logger del módulo
-# ============================================================
 logger = logging.getLogger(__name__)
+
+
+# Campos que se cifran antes de guardar
+CAMPOS_CIFRADOS = (
+    'other_family_members',
+    'monthly_income',
+    'housing_infrastructure',
+)
 
 
 class SocioeconomicInfo:
     @staticmethod
     def get_by_student(student_id):
         conn = get_db_connection()
-        if not conn: return None
+        if not conn:
+            return None
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM student_socioeconomic WHERE student_id = %s", (student_id,))
-        row = cursor.fetchone()
-        cursor.close(); conn.close()
-        return row
+        try:
+            cursor.execute(
+                "SELECT * FROM student_socioeconomic WHERE student_id = %s",
+                (student_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            for campo in CAMPOS_CIFRADOS:
+                if campo in row:
+                    row[campo] = decrypt_sensitive(row[campo])
+            return row
+        finally:
+            cursor.close()
+            conn.close()
 
     @staticmethod
     def save(student_id, data):
         conn = get_db_connection()
-        if not conn: return False
+        if not conn:
+            return False
         cursor = conn.cursor()
         try:
+            d = dict(data)
+            for campo in CAMPOS_CIFRADOS:
+                # monthly_income es Decimal → convertir a str antes de cifrar
+                valor = d.get(campo)
+                if valor is not None and not isinstance(valor, str):
+                    valor = str(valor)
+                d[campo] = encrypt_sensitive(valor)
+
             cursor.execute("""
                 INSERT INTO student_socioeconomic
                     (student_id, lives_with, other_family_members,
@@ -43,17 +71,21 @@ class SocioeconomicInfo:
                     housing_infrastructure = VALUES(housing_infrastructure)
             """, (
                 student_id,
-                data.get('lives_with'), data.get('other_family_members'),
-                data.get('working_members') or None,
-                data.get('monthly_income') or None,
-                data.get('household_members') or None,
-                data.get('housing_type'), data.get('rooms_count') or None,
-                data.get('housing_condition'), data.get('housing_infrastructure')
+                d.get('lives_with'),
+                d.get('other_family_members'),
+                d.get('working_members') or None,
+                d.get('monthly_income'),
+                d.get('household_members') or None,
+                d.get('housing_type'),
+                d.get('rooms_count') or None,
+                d.get('housing_condition'),
+                d.get('housing_infrastructure'),
             ))
             conn.commit()
             return True
         except Exception as e:
-            logger.exception("Error en el metodo save de la clase SocioeconomicInfo: %s", e)
+            logger.exception("Error en save de SocioeconomicInfo: %s", e)
             return False
         finally:
-            cursor.close(); conn.close()
+            cursor.close()
+            conn.close()
